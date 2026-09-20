@@ -4,7 +4,7 @@ from maxapi.client.default import DefaultConnectionProperties
 from maxapi.enums.api_path import ApiPath
 from maxapi.enums.http_method import HTTPMethod
 
-from app.tls import create_ssl_context
+from app.integrations.tls import create_ssl_context
 
 
 class MaxBot(Bot):

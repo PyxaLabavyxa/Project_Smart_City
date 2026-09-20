@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 import ssl
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 CERT_NAMES = (
     "russian_trusted_root_ca_pem.crt",
     "russian_trusted_sub_ca_pem.crt",

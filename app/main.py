@@ -4,7 +4,7 @@ from maxapi import Dispatcher
 from maxapi.types.errors import Error
 
 from app.config_data.config import Config, load_config
-from app.max_client import MaxBot
+from app.integrations.max_client import MaxBot
 from app.handlers import user_handlers, other_handlers
 from app.keyboards.main_menu import set_main_menu
 
