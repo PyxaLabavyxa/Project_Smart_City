@@ -4,6 +4,7 @@ from maxapi import Dispatcher
 from maxapi.types.errors import Error
 
 from app.config_data.config import Config, load_config
+from app.database.session import create_tables, engine
 from app.integrations.max_client import MaxBot
 from app.handlers import user_handlers, other_handlers
 from app.keyboards.main_menu import set_main_menu
@@ -15,14 +16,15 @@ async def main() -> None:
     bot = MaxBot(token=config.max_bot.token)
     dp = Dispatcher()
 
-    await set_main_menu(bot)
-
     dp.include_routers(
         user_handlers.router,
         other_handlers.router
     )
 
     try:
+        await create_tables()
+        await set_main_menu(bot)
+
         subscriptions = await bot.get_subscriptions()
 
         if isinstance(subscriptions, Error):
@@ -38,7 +40,10 @@ async def main() -> None:
         await dp.start_polling(bot)
 
     finally:
-        await bot.close_session()
+        try:
+            await bot.close_session()
+        finally:
+            await engine.dispose()
 
 
 if __name__ == "__main__":

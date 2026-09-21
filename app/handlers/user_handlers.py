@@ -36,7 +36,7 @@ async def process_command_start(event: MessageCreated, context: MemoryContext):
 
 
 @router.message_created(Command("help"))
-async def process_command_start(event: MessageCreated, context: MemoryContext):
+async def process_command_help(event: MessageCreated, context: MemoryContext):
     await event.message.answer(text=LEXICON["help"])
 
 
@@ -64,7 +64,7 @@ async def process_get_report(event: MessageCreated, context: MemoryContext):
 
 
 @router.message_created(FSMReport.waiting)
-async def process_invalid_report(event: MessageCreated,):
+async def process_invalid_report(event: MessageCreated):
     await event.message.answer(LEXICON["invalid_report"])
 
 
