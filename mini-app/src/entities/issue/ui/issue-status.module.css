@@ -1,0 +1,21 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  padding: 5px 8px;
+  border-radius: 5px;
+  font-weight: 600;
+  font-size: 12px;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+.badge span { font-size: 10px; }
+.new { color: #49618f; background: #eaf0fc; }
+.accepted { color: #5c587e; background: #efedf7; }
+.in-progress { color: #815618; background: #f8eddb; }
+.completed { color: #27685f; background: #e6f1ed; }
+:global(:root[data-theme="dark"]) .new { color: #bdd0fa; background: #2b3852; }
+:global(:root[data-theme="dark"]) .accepted { color: #d3c9f3; background: #383248; }
+:global(:root[data-theme="dark"]) .in-progress { color: #f3cf8f; background: #453821; }
+:global(:root[data-theme="dark"]) .completed { color: #a2dbcb; background: #253e37; }
