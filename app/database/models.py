@@ -27,7 +27,6 @@ class User(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     max_user_id: Mapped[int] = mapped_column(BigInteger, unique=True)
     name: Mapped[str] = mapped_column(String(200))
-    phone_number: Mapped[int | None] = mapped_column(Integer, unique=True, nullable=True)
 
     apartment_links: Mapped[list["UserApartment"]] = relationship(
         "UserApartment",
@@ -122,7 +121,7 @@ class Issue(Base):
     category: Mapped[IssueCategory] = mapped_column(SqlEnum(IssueCategory))
     status: Mapped[IssueStatus] = mapped_column(
         SqlEnum(IssueStatus),
-        server_default=IssueStatus.NEW.value
+        server_default=IssueStatus.NEW.name
     )
     priority: Mapped[IssuePriority] = mapped_column(SqlEnum(IssuePriority))
     created_at: Mapped[datetime] = mapped_column(

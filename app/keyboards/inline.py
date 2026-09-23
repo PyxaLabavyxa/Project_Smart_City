@@ -1,7 +1,10 @@
 from maxapi.utils.inline_keyboard import InlineKeyboardBuilder, AttachmentType
 from maxapi.types import CallbackButton
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.lexicon.lexicon import LEXICON_INLINE_MENU, LEXICON
+from app.database.requests import get_user_houses
 
 
 def inl_menu() -> AttachmentType.INLINE_KEYBOARD:
@@ -27,3 +30,15 @@ def inl_confirm() -> AttachmentType.INLINE_KEYBOARD:
     )
 
     return builder.as_markup()
+
+
+async def inl_houses(session: AsyncSession, max_user_id: int) -> AttachmentType.INLINE_KEYBOARD:
+    builder = InlineKeyboardBuilder()
+
+    houses = await get_user_houses(session, max_user_id)
+
+    if len(houses) > 1:
+        for id_, address, number in houses:
+            builder.add(CallbackButton(text=f"{address}, кв. {number}", payload=f"house_{id_}"))
+
+        return builder.as_markup()

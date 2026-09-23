@@ -23,7 +23,7 @@ async def main() -> None:
 
     try:
         await create_tables()
-        await set_main_menu(bot)
+        # await set_main_menu(bot)
 
         subscriptions = await bot.get_subscriptions()
 
