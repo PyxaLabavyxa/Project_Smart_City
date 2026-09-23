@@ -1,0 +1,33 @@
+.back { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; margin-bottom: 20px; color: var(--color-primary); font-size: 14px; }
+.back:hover { text-decoration: underline; }
+.heading { margin-bottom: 32px; }
+.heading h1 { max-width: 32ch; overflow-wrap: anywhere; }
+.meta { margin: 0 0 12px; color: var(--color-muted); font-size: 12px; }
+.status { margin-top: 18px; }
+.layout { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); align-items: start; gap: 48px; }
+.layout h2 { margin: 0 0 22px; font-size: 20px; font-weight: 600; letter-spacing: -0.3px; }
+.info, .history { min-width: 0; }
+.facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 24px; margin: 0; }
+.facts dt { margin-bottom: 7px; font-size: 12px; color: var(--color-muted); }
+.facts dd { margin: 0; font-size: 15px; overflow-wrap: anywhere; }
+.description { margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--color-line); }
+.description h2 { font-size: 17px; margin-bottom: 12px; }
+.description p { margin: 0; font-size: 15px; line-height: 1.65; max-width: 65ch; }
+.timeline { list-style: none; margin: 0; padding: 0; }
+.timeline li { position: relative; padding: 0 0 30px 34px; }
+.timeline li:not(:last-child)::before { content: ""; position: absolute; left: 10px; top: 24px; bottom: 3px; width: 1px; background: var(--color-line); }
+.timeline li:last-child { padding-bottom: 0; }
+.marker { position: absolute; top: 1px; left: 0; width: 21px; height: 21px; display: grid; place-items: center; color: var(--color-primary); font-size: 13px; border: 1px solid var(--color-primary); border-radius: 50%; }
+.timeline h3 { margin: 0 0 7px; font-weight: 400; font-size: 15px; }
+.timeline time { display: block; color: var(--color-muted); font-size: 12px; }
+.current { display: block; margin-top: 7px; font-size: 12px; color: var(--color-primary); }
+.timeline [aria-current="step"] h3 { font-weight: 600; }
+@media (max-width: 720px) {
+  .layout { grid-template-columns: minmax(0, 1fr); gap: 32px; }
+  .history { border-top: 1px solid var(--color-line); padding-top: 24px; }
+  .heading { margin-bottom: 28px; }
+}
+@media (max-width: 400px) {
+  .facts { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .heading h1 { font-size: 26px; }
+}

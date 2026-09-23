@@ -2,7 +2,6 @@
 .heading p { margin: 8px 0 0; color: var(--color-muted); font-size: 14px; }
 .summary { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 20px; padding-bottom: 18px; color: var(--color-muted); font-size: 13px; }
 .summary b { color: var(--color-ink); }
-.demo { font-size: 12px; }
 .list { padding: 0; margin: 0; list-style: none; border-top: 1px solid var(--color-line); }
 .list > li { border-bottom: 1px solid var(--color-line); }
 .issue { display: grid; grid-template-columns: minmax(0, 1fr) 220px; gap: 28px; padding: 24px 0; }
@@ -13,6 +12,12 @@
 .description { margin: 12px 0 0; max-width: 64ch; font-size: 14px; color: var(--color-muted); }
 .state { display: flex; align-items: flex-start; flex-direction: column; gap: 12px; padding-top: 4px; }
 .state time { font-size: 12px; color: var(--color-muted); }
+.open { display: inline-flex; align-items: center; gap: 8px; color: var(--color-primary); font-size: 12px; }
+.issue:focus-visible { outline-offset: -2px; }
+@media (hover: hover) {
+  .issue:hover { background: var(--color-surface); }
+  .issue:hover h2 { color: var(--color-primary); }
+}
 @media (max-width: 640px) {
   .issue { grid-template-columns: minmax(0, 1fr); gap: 16px; padding: 22px 0; }
   .state { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 0; }

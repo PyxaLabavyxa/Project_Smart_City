@@ -10,6 +10,7 @@ export type DemoIssue = {
   createdAt: string;
   status: DemoIssueStatus;
   description: string;
+  history: readonly { status: DemoIssueStatus; at: string }[];
 };
 
 export const demoIssues: readonly DemoIssue[] = [
@@ -21,6 +22,7 @@ export const demoIssues: readonly DemoIssue[] = [
     location: "Подъезд 2 · этаж 8 · Лестница",
     createdAt: "2026-09-23T08:40:00+03:00",
     status: "new",
+    history: [{ status: "new", at: "2026-09-23T08:40:00+03:00" }],
     description: "На лестничной площадке восьмого этажа не горят две лампы. Вечером на лестнице темно.",
   },
   {
@@ -31,6 +33,10 @@ export const demoIssues: readonly DemoIssue[] = [
     location: "Подъезд 2 · этаж 1 · Входная группа",
     createdAt: "2026-09-22T17:10:00+03:00",
     status: "accepted",
+    history: [
+      { status: "new", at: "2026-09-22T17:10:00+03:00" },
+      { status: "accepted", at: "2026-09-22T17:25:00+03:00" },
+    ],
     description: "Входная дверь остаётся открытой: доводчик не дотягивает её до замка. Пожалуйста, отрегулируйте механизм.",
   },
   {
@@ -41,6 +47,11 @@ export const demoIssues: readonly DemoIssue[] = [
     location: "Подъезд 2 · этаж 9 · Коридор",
     createdAt: "2026-09-22T09:15:00+03:00",
     status: "in-progress",
+    history: [
+      { status: "new", at: "2026-09-22T09:15:00+03:00" },
+      { status: "accepted", at: "2026-09-22T09:23:00+03:00" },
+      { status: "in-progress", at: "2026-09-22T10:30:00+03:00" },
+    ],
     description: "Вода собирается возле стояка в общем коридоре девятого этажа. На полу появилась лужа, труба влажная. Протечка продолжается.",
   },
   {
@@ -51,6 +62,12 @@ export const demoIssues: readonly DemoIssue[] = [
     location: "Подъезд 2 · этаж 1 · Лифт",
     createdAt: "2026-09-18T19:10:00+03:00",
     status: "completed",
+    history: [
+      { status: "new", at: "2026-09-18T19:10:00+03:00" },
+      { status: "accepted", at: "2026-09-19T09:00:00+03:00" },
+      { status: "in-progress", at: "2026-09-21T10:00:00+03:00" },
+      { status: "completed", at: "2026-09-21T12:40:00+03:00" },
+    ],
     description: "Перед поездкой двери лифта несколько раз открывались и закрывались. Задержка повторялась даже при пустом дверном проёме.",
   },
 ];

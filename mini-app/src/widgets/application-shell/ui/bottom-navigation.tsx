@@ -17,7 +17,7 @@ export function BottomNavigation() {
   return (
     <nav className={styles.nav} aria-label="Основная навигация">
       {items.map(({ href, label }) => (
-        <Link key={href} href={href} aria-current={pathname === href ? "page" : undefined}>
+        <Link key={href} href={href} aria-current={pathname === href || (href === "/issues" && pathname.startsWith("/issues/")) ? "page" : undefined}>
           {label}
         </Link>
       ))}
