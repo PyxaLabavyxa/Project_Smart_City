@@ -1,3 +1,4 @@
+import { IssueProvider } from "@/entities/issue";
 import type { Metadata, Viewport } from "next";
 import { ApplicationShell } from "@/widgets/application-shell";
 import "@/shared/styles";
@@ -18,7 +19,7 @@ export const viewport: Viewport = {
 export function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="ru">
-      <body><ApplicationShell>{children}</ApplicationShell></body>
+      <body><IssueProvider><ApplicationShell>{children}</ApplicationShell></IssueProvider></body>
     </html>
   );
 }

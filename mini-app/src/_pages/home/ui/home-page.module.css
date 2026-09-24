@@ -1,0 +1,9 @@
+.heading { display: flex; justify-content: space-between; align-items: center; gap: 24px; margin-bottom: 40px; }
+.heading h1 { font-size: clamp(28px, 3vw, 36px); line-height: 1.15; letter-spacing: -1px; }
+.heading p { margin: 10px 0 0; color: var(--color-muted); font-size: 14px; }
+.sectionHead { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 8px; }
+.sectionHead h2 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -.6px; }
+.sectionHead a { display: inline-flex; align-items: center; min-height: 44px; gap: 8px; font-size: 13px; color: var(--color-primary); }
+.empty { color: var(--color-muted); }
+.back { display: inline-flex; align-items: center; min-height: 44px; margin-bottom: 20px; color: var(--color-muted); font-size: 13px; }
+@media (max-width: 760px) { .heading { flex-direction: column; align-items: stretch; gap: 24px; margin-bottom: 32px; } .sectionHead h2 { font-size: 20px; } }
