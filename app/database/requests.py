@@ -15,7 +15,10 @@ async def create_issue(
         session: AsyncSession,
         max_user_id: int,
         house_id: int,
-        description: str
+        description: str,
+        title: str,
+        category: IssueCategory,
+        priority: IssuePriority
 ) -> None:
     issues = IssueRepository(session)
     users = UserRepository(session)
@@ -27,9 +30,9 @@ async def create_issue(
         user_id=user.id,
         house_id=house_id,
         description=description,
-        title="some title",
-        category=IssueCategory.OTHER,
-        priority=IssuePriority.HIGH
+        title=title,
+        category=category,
+        priority=priority
     )
 
 

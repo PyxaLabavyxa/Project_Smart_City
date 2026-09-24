@@ -20,10 +20,17 @@ class DatabaseConfig:
 
 
 @dataclass(frozen=True)
+class YandexAIConfig:
+    api_key: str
+    folder_id: str
+
+
+@dataclass(frozen=True)
 class Config:
     max_bot: BotConfig
     webapp: WebAppConfig
     database: DatabaseConfig
+    yandex_ai: YandexAIConfig
 
 
 def load_config(path: str | Path | None = None) -> Config:
@@ -38,4 +45,8 @@ def load_config(path: str | Path | None = None) -> Config:
         database=DatabaseConfig(
             url=env.str("DATABASE_URL", "sqlite+aiosqlite:///./data/smart_city.db")
         ),
+        yandex_ai=YandexAIConfig(
+            api_key=env.str("YANDEX_API_KEY"),
+            folder_id=env.str("YANDEX_FOLDER_ID")
+        )
     )

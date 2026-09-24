@@ -8,12 +8,15 @@ from maxapi.types import (
 )
 from maxapi.context import MemoryContext
 
+from yandex_ai_studio_sdk._models.completions.model import AsyncGPTModel
+
 from app.lexicon.lexicon import LEXICON
 from app.keyboards.inline import inl_menu, inl_confirm, inl_houses
 from app.states.states import FSMReport
 from app.filters.message_filters import has_photo_or_text
-from app.database.requests import create_user_if_exist, create_issue
+from app.database.requests import create_user_if_exist
 from app.database.session import session_factory
+from app.services.issues import submit_issue
 
 
 router = Router()
@@ -127,16 +130,25 @@ async def process_cancel_report(event: MessageCallback, context: MemoryContext):
 
 
 @router.message_callback(FSMReport.confirm, F.callback.payload == "yes")
-async def process_confirm_report(event: MessageCallback, context: MemoryContext):
+async def process_confirm_report(
+    event: MessageCallback, context: MemoryContext, report_model: AsyncGPTModel
+):
     data = await context.get_data()
 
-    async with session_factory.begin() as session:
-        await create_issue(
-            session=session,
-            max_user_id=event.callback.user.user_id,
-            house_id=data["house_id"],
-            description=data["description"]
-        )
+    await submit_issue(
+        max_user_id=event.callback.user.user_id,
+        house_id=data["house_id"],
+        description=data["description"],
+        report_model=report_model
+    )
+    
+    # async with session_factory.begin() as session:
+    #     await create_issue(
+    #         session=session,
+    #         max_user_id=event.callback.user.user_id,
+    #         house_id=data["house_id"],
+    #         description=data["description"]
+    #     )
 
     await event.message.edit(
         text=LEXICON["report_sent"],

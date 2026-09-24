@@ -8,6 +8,8 @@ from app.database.session import create_tables, engine
 from app.integrations.max_client import MaxBot
 from app.handlers import user_handlers, other_handlers
 from app.keyboards.main_menu import set_main_menu
+from app.ai.client import create_ai_client, create_report_model
+from app.middlewares.ai import AIMiddleware
 
 
 async def main() -> None:
@@ -15,6 +17,11 @@ async def main() -> None:
 
     bot = MaxBot(token=config.max_bot.token)
     dp = Dispatcher()
+
+    ai_client = create_ai_client(config.yandex_ai)
+    report_model  = create_report_model(ai_client, config.yandex_ai)
+
+    dp.middlewares.append(AIMiddleware(report_model))
 
     dp.include_routers(
         user_handlers.router,
