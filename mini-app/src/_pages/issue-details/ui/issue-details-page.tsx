@@ -8,7 +8,7 @@ export function IssueDetailsPage({ issue }: { issue: DemoIssue }) {
     <>
       <Link href="/issues" className={styles.back}><span aria-hidden="true">←</span> Все обращения</Link>
       <header className={styles.heading}>
-        <p className={styles.meta}>Обращение № {issue.id}</p>
+        <p className={styles.meta}>{issue.id.startsWith("local-") ? "Новое обращение · сохранено на этом устройстве до перезагрузки" : `Обращение № ${issue.id}`}</p>
         <h1>{issue.title}</h1>
         <div className={styles.status}><IssueStatus status={issue.status} /></div>
       </header>
