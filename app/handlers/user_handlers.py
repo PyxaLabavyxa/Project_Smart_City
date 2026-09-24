@@ -129,7 +129,7 @@ async def process_cancel_report(event: MessageCallback, context: MemoryContext):
 @router.message_callback(FSMReport.confirm, F.callback.payload == "yes")
 async def process_confirm_report(event: MessageCallback, context: MemoryContext):
     data = await context.get_data()
-    print(data)
+
     async with session_factory.begin() as session:
         await create_issue(
             session=session,
