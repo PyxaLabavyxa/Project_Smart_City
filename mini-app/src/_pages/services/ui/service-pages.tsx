@@ -1,15 +1,17 @@
 import { NavigationLinks, SectionPage } from "@/shared/ui/navigation";
+import { RecipientSelector } from "@/features/select-recipient";
+import { HealthSummary } from "./health-summary";
 
 export function HealthPage() {
   return <SectionPage title="Здоровье дома" description="Состояние систем вашего дома">
-    <p>Посмотрите обращения, связанные с состоянием дома.</p>
+    <HealthSummary />
     <NavigationLinks label="Обращения дома" items={[{ href: "/issues", title: "Посмотреть обращения" }]} />
   </SectionPage>;
 }
 
 export function MessagesPage({ fromPlan = false }: { fromPlan?: boolean }) {
   return <SectionPage title="Связь с квартирой" description="Сообщения соседям" backHref={fromPlan ? "/plan" : "/more"} backLabel={fromPlan ? "К плану дома" : "Ещё"}>
-    <p>Обсуждайте с соседями вопросы вашего дома, сохраняя личные контакты в тайне.</p>
+    <RecipientSelector />
     <NavigationLinks label="Навигация по дому" items={[{ href: "/plan", title: "Перейти к плану дома" }]} />
   </SectionPage>;
 }

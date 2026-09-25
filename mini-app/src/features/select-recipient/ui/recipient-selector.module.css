@@ -1,0 +1,5 @@
+.field { display: grid; gap: 8px; }
+.field select { min-width: 0; width: 100%; min-height: 44px; padding: 10px 12px; font: inherit; border: 1px solid var(--color-line); border-radius: 8px; color: var(--color-ink); background: var(--color-surface); }
+.recipient { padding: 20px 0; margin-top: 20px; border-top: 1px solid var(--color-line); }
+.recipient h2 { font-size: 20px; }
+.privacy { color: var(--color-muted); font-size: 13px; }

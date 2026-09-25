@@ -1,16 +1,10 @@
 import type { DemoIssueStatus } from "../model/demo-issues";
 import styles from "./issue-status.module.css";
-
-const labels: Record<DemoIssueStatus, string> = {
-  new: "Новое",
-  accepted: "Принято",
-  "in-progress": "В работе",
-  completed: "Выполнено",
-};
+import { issueStatusLabels } from "../model/issue-filters";
 
 export function IssueStatus({ status }: { status: DemoIssueStatus }) {
   return <span className={`${styles.badge} ${styles[status]}`}>
     <span aria-hidden="true">{status === "completed" ? "✓" : "●"}</span>
-    {labels[status]}
+    {issueStatusLabels[status]}
   </span>;
 }

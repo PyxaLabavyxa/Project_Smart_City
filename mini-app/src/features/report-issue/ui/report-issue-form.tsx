@@ -2,7 +2,7 @@
 import { useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useIssues } from "@/entities/issue";
+import { useIssues, issueCategories } from "@/entities/issue";
 import styles from "./report-issue.module.css";
 
 export function ReportIssueForm({ cancelHref = "/issues" }: { cancelHref?: string }) {
@@ -46,7 +46,7 @@ export function ReportIssueForm({ cancelHref = "/issues" }: { cancelHref?: strin
     <label className={styles.field}>Категория
       <select name="category" defaultValue="" required aria-invalid={!!errors.category} aria-describedby={errors.category ? "category-error" : undefined}>
         <option value="" disabled>Выберите категорию</option>
-        {["Электричество", "Подъезд", "Водоснабжение", "Лифт", "Уборка", "Другое"].map(category => <option key={category}>{category}</option>)}
+        {issueCategories.map(category => <option key={category}>{category}</option>)}
       </select>{error("category")}
     </label>
     <label className={styles.field}>Что случилось?

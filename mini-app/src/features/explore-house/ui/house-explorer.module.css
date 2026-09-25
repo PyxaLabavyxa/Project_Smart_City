@@ -1,0 +1,10 @@
+.map { padding: 16px; background: var(--color-surface); border: 1px solid var(--color-line); border-radius: 12px; }
+.apartments, .zones { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.zones { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--color-line); }
+.room { display: grid; gap: 8px; min-width: 0; min-height: 80px; padding: 12px; border: 1px solid var(--color-line); border-radius: 8px; background: var(--color-bg); color: var(--color-ink); text-align: left; cursor: pointer; overflow-wrap: anywhere; }
+.room small, .caption { color: var(--color-muted); font-size: 12px; }
+.room[aria-pressed="true"] { border-color: var(--color-primary); box-shadow: inset 0 0 0 1px var(--color-primary); }
+.room:hover { border-color: var(--color-primary); }
+.selected { margin-top: 24px; }
+.selected h2 { margin: 6px 0; font-size: 22px; }
+@media (max-width: 360px) { .map { padding: 10px; } .room { padding: 10px; } }
