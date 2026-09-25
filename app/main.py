@@ -10,6 +10,8 @@ from app.handlers import user_handlers, other_handlers
 from app.keyboards.main_menu import set_main_menu
 from app.ai.client import create_ai_client, create_report_model
 from app.middlewares.ai import AIMiddleware
+from app.middlewares.photos import PhotoMiddleware
+from app.storage.photos import LocalPhotoStorage
 
 
 async def main() -> None:
@@ -22,6 +24,7 @@ async def main() -> None:
     report_model  = create_report_model(ai_client, config.yandex_ai)
 
     dp.middlewares.append(AIMiddleware(report_model))
+    dp.middlewares.append(PhotoMiddleware(LocalPhotoStorage(config.storage.root)))
 
     dp.include_routers(
         user_handlers.router,

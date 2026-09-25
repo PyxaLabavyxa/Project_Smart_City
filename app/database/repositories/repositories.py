@@ -2,14 +2,13 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import load_only, selectinload
 
-from app.database.models import User, Issue, Apartment, UserApartment
+from app.database.models import User, Issue, IssuePhoto, Apartment, UserApartment
 from app.database.enums import IssueCategory, IssuePriority
 
 
 class UserRepository:
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
-
 
     async def get_user_object(self, max_user_id: int) -> User:
         stmt = (
@@ -54,15 +53,19 @@ class IssueRepository:
             title: str,
             description: str,
             category: IssueCategory,
-            priority: IssuePriority
-    ) -> None:
+            priority: IssuePriority,
+            photo_paths: list[str] | None = None,
+    ) -> Issue:
         issue = Issue(
             user_id=user_id,
             house_id=house_id,
             title=title,
             description=description,
             category=category,
-            priority=priority
+            priority=priority,
+            photos=[IssuePhoto(file_path=path) for path in (photo_paths or [])],
         )
 
         self.session.add(issue)
+        await self.session.flush()
+        return issue

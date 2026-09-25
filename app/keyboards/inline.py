@@ -33,12 +33,22 @@ def inl_confirm() -> AttachmentType.INLINE_KEYBOARD:
 
 
 async def inl_houses(session: AsyncSession, max_user_id: int) -> AttachmentType.INLINE_KEYBOARD:
-    builder = InlineKeyboardBuilder()
-
     houses = await get_user_houses(session, max_user_id)
 
-    if len(houses) > 1:
-        for id_, address, number in houses:
-            builder.add(CallbackButton(text=f"{address}, кв. {number}", payload=f"house_{id_}"))
+    if len(houses) <= 1:
+        return None
 
-        return builder.as_markup()
+    builder = InlineKeyboardBuilder()
+
+    for index, (id_, address, number) in enumerate(houses):
+        button = CallbackButton(
+            text=f"{address}, кв. {number}",
+            payload=f"house_{id_}",
+        )
+
+        if index == 0:
+            builder.add(button)
+        else:
+            builder.row(button)
+
+    return builder.as_markup()

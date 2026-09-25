@@ -10,6 +10,7 @@ __pycache__/
 htmlcov/
 *.log
 *.db
+data/media/
 node_modules/
 dist/
 .idea/

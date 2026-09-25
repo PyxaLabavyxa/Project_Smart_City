@@ -26,21 +26,30 @@ class YandexAIConfig:
 
 
 @dataclass(frozen=True)
+class StorageConfig:
+    root: Path
+
+
+@dataclass(frozen=True)
 class Config:
     max_bot: BotConfig
     webapp: WebAppConfig
     database: DatabaseConfig
     yandex_ai: YandexAIConfig
+    storage: StorageConfig
 
 
 def load_config(path: str | Path | None = None) -> Config:
     env = Env()
     env.read_env(path)
+    root = Path(env.str("MEDIA_ROOT", "data/media")).expanduser()
+    if not root.is_absolute():
+        root = Path(__file__).resolve().parents[2] / root
     return Config(
         max_bot=BotConfig(token=env.str("BOT_TOKEN")),
         webapp=WebAppConfig(
             host=env.str("WEBAPP_HOST", "0.0.0.0"),
-            port=env.int("WEBAPP_PORT", 8080),
+            port=env.int("WEBAPP_PORT", 8080)
         ),
         database=DatabaseConfig(
             url=env.str("DATABASE_URL", "sqlite+aiosqlite:///./data/smart_city.db")
@@ -48,5 +57,6 @@ def load_config(path: str | Path | None = None) -> Config:
         yandex_ai=YandexAIConfig(
             api_key=env.str("YANDEX_API_KEY"),
             folder_id=env.str("YANDEX_FOLDER_ID")
-        )
+        ),
+        storage=StorageConfig(root=root)
     )
