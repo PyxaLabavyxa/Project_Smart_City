@@ -12,6 +12,7 @@ export function IssueList({ issues }: { issues: readonly DemoIssue[] }) {
               <div className={styles.body}>
                 <h2 id={`issue-${issue.id}`}>{issue.title}</h2>
                 <p className={styles.location}>{issue.location}</p>
+                <p className={styles.location}>{issue.category}</p>
                 <div className={styles.state}>
                   <IssueStatus status={issue.status} />
                   <time dateTime={issue.createdAt}>{formatIssueDate(issue.createdAt)}</time>

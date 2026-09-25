@@ -1,0 +1,12 @@
+.list { list-style: none; padding: 0; }
+.list li { border-bottom: 1px solid var(--color-line); }
+.camera { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; min-height: 72px; padding: 16px 0; }
+.camera:hover { color: var(--color-primary); }
+.camera h2 { font-size: 18px; margin: 0; }
+.status { display: inline-flex; width: fit-content; padding: 5px 10px; border-radius: 6px; font-size: 13px; }
+.online { background: #e6f1ed; color: #27685f; }
+.maintenance { background: #f8eddb; color: #815618; }
+.unavailable { background: #f9e9e6; color: #973f37; }
+:global(:root[data-theme="dark"]) .online { background: #253e37; color: #a2dbcb; }
+:global(:root[data-theme="dark"]) .maintenance { background: #453821; color: #f3cf8f; }
+:global(:root[data-theme="dark"]) .unavailable { background: #482f2b; color: #f2b4ad; }

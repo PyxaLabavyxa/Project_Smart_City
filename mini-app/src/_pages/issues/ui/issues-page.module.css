@@ -3,5 +3,12 @@
 .heading p { margin: 12px 0 0; color: var(--color-muted); font-size: 14px; }
 .summary { display: flex; align-items: center; padding-bottom: 16px; color: var(--color-muted); font-size: 13px; }
 .summary b { display: inline-grid; place-items: center; min-width: 26px; height: 26px; margin-left: 6px; border-radius: 8px; color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 8%, var(--color-bg)); }
+.filters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-bottom: 24px; }
+.filters label { display: grid; min-width: 0; gap: 6px; font-size: 14px; }
+.filters input, .filters select, .filters button { min-width: 0; width: 100%; min-height: 44px; padding: 10px; border: 1px solid var(--color-line); border-radius: 8px; font: inherit; color: var(--color-ink); background: var(--color-surface); }
+.filters button { color: var(--color-primary); cursor: pointer; }
+.empty { padding: 20px 0; }
+@media (max-width: 600px) { .filters { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 360px) { .filters { grid-template-columns: minmax(0, 1fr); } }
 
 @media (max-width: 760px) { .heading { align-items: stretch; flex-direction: column; gap: 20px; } }

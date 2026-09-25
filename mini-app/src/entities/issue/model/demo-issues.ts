@@ -1,5 +1,8 @@
+import type { HouseLocation } from "@/entities/house";
+
 // Presentation data for one fictional resident. This is not a backend DTO.
-export type DemoIssueStatus = "new" | "accepted" | "in-progress" | "completed";
+// accepted/assigned/awaiting-confirmation are UI-only workflow states.
+export type DemoIssueStatus = "new" | "accepted" | "assigned" | "in-progress" | "awaiting-confirmation" | "completed";
 
 export type DemoIssue = {
   id: string;
@@ -7,6 +10,8 @@ export type DemoIssue = {
   category: string;
   address: string;
   location: string;
+  // Structured fixture location; free-text reports retain their original location.
+  place?: HouseLocation;
   createdAt: string;
   status: DemoIssueStatus;
   description: string;
@@ -20,6 +25,7 @@ export const demoIssues: readonly DemoIssue[] = [
     category: "Электричество",
     address: "ул. Центральная, 18",
     location: "Подъезд 2 · этаж 8 · Лестница",
+    place: { houseId: "central-18", entrance: 2, floor: 8, zone: "stairs" },
     createdAt: "2026-09-23T08:40:00+03:00",
     status: "new",
     history: [{ status: "new", at: "2026-09-23T08:40:00+03:00" }],
@@ -31,6 +37,7 @@ export const demoIssues: readonly DemoIssue[] = [
     category: "Подъезд",
     address: "ул. Центральная, 18",
     location: "Подъезд 2 · этаж 1 · Входная группа",
+    place: { houseId: "central-18", entrance: 2, floor: 1, zone: "entrance" },
     createdAt: "2026-09-22T17:10:00+03:00",
     status: "accepted",
     history: [
@@ -45,6 +52,7 @@ export const demoIssues: readonly DemoIssue[] = [
     category: "Водоснабжение",
     address: "ул. Центральная, 18",
     location: "Подъезд 2 · этаж 9 · Коридор",
+    place: { houseId: "central-18", entrance: 2, floor: 9, zone: "corridor" },
     createdAt: "2026-09-22T09:15:00+03:00",
     status: "in-progress",
     history: [
@@ -60,6 +68,7 @@ export const demoIssues: readonly DemoIssue[] = [
     category: "Лифт",
     address: "ул. Центральная, 18",
     location: "Подъезд 2 · этаж 1 · Лифт",
+    place: { houseId: "central-18", entrance: 2, floor: 1, zone: "elevator" },
     createdAt: "2026-09-18T19:10:00+03:00",
     status: "completed",
     history: [
