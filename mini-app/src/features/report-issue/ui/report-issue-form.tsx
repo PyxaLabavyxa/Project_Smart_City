@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useIssues } from "@/entities/issue";
 import styles from "./report-issue.module.css";
 
-export function ReportIssueForm() {
+export function ReportIssueForm({ cancelHref = "/issues" }: { cancelHref?: string }) {
   const { addIssue } = useIssues();
   const router = useRouter();
   const submitted = useRef(false);
@@ -38,7 +38,7 @@ export function ReportIssueForm() {
       setErrors(current => { const next = { ...current }; delete next[field.name]; return next; });
     }
   }} noValidate>
-    <p className={styles.note}>Обращение сохраняется до перезагрузки страницы. Отправка в УК пока не подключена.</p>
+    <p className={styles.note}>Укажите место и опишите проблему.</p>
     <label className={styles.field}>Место проблемы
       <input name="location" placeholder="Например: подъезд 2, этаж 8, лестница" maxLength={160} required aria-invalid={!!errors.location} aria-describedby={errors.location ? "location-error" : undefined} />
       {error("location")}
@@ -57,6 +57,6 @@ export function ReportIssueForm() {
       <textarea name="description" placeholder="Что произошло и где нужна помощь?" rows={5} maxLength={2000} required aria-invalid={!!errors.description} aria-describedby={errors.description ? "description-error" : undefined} />
       {error("description")}
     </label>
-    <div className={styles.actions}><button type="submit" className={styles.primary} disabled={saving}>{saving ? "Сохраняем…" : "Создать обращение"}</button><Link href="/issues">Отмена</Link></div>
+    <div className={styles.actions}><button type="submit" className={styles.primary} disabled={saving}>{saving ? "Сохраняем…" : "Создать обращение"}</button><Link href={cancelHref}>Отмена</Link></div>
   </form>;
 }

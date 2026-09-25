@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { NavigationLinks } from "@/shared/ui/navigation";
 import { formatIssueDate, IssueStatus, type DemoIssue } from "@/entities/issue";
 import { IssueHistory } from "./issue-history";
 import styles from "./issue-details.module.css";
@@ -8,7 +9,7 @@ export function IssueDetailsPage({ issue }: { issue: DemoIssue }) {
     <>
       <Link href="/issues" className={styles.back}><span aria-hidden="true">←</span> Все обращения</Link>
       <header className={styles.heading}>
-        <p className={styles.meta}>{issue.id.startsWith("local-") ? "Новое обращение · сохранено на этом устройстве до перезагрузки" : `Обращение № ${issue.id}`}</p>
+        <p className={styles.meta}>{issue.id.startsWith("local-") ? "Новое обращение" : `Обращение № ${issue.id}`}</p>
         <h1>{issue.title}</h1>
         <div className={styles.status}><IssueStatus status={issue.status} /></div>
       </header>
@@ -21,6 +22,7 @@ export function IssueDetailsPage({ issue }: { issue: DemoIssue }) {
             <div><dt>Категория</dt><dd>{issue.category}</dd></div>
             <div><dt>Дата создания</dt><dd><time dateTime={issue.createdAt}>{formatIssueDate(issue.createdAt)}</time></dd></div>
           </dl>
+          <NavigationLinks label="Место обращения" items={[{ href: "/plan", title: "Открыть план дома" }]} />
           <div className={styles.description}>
             <h2>Описание проблемы</h2>
             <p>{issue.description}</p>
