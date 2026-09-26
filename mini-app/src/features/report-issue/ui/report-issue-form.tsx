@@ -53,7 +53,7 @@ export function ReportIssueForm({ cancelHref = "/issues" }: { cancelHref?: strin
   const error = (name: string) => errors[name] ? <span className={styles.error} id={name + "-error"} role="alert">{errors[name]}</span> : null;
   return <form ref={formRef} className={styles.form} onSubmit={submit} noValidate>
     <ol className={styles.steps} aria-label="Этапы обращения">{steps.map((step, index) => <li key={step} aria-current={draft.step === index ? "step" : undefined}><span>{index + 1}</span>{step}</li>)}</ol>
-    <p className={styles.note}>Черновик сохраняется при переходах до перезагрузки страницы. Сейчас используется локальное сохранение, без отправки в УК.</p>
+    <p className={styles.note}>Выберите место и расскажите, что произошло.</p>
     <fieldset className={styles.fields} disabled={saving}>
       <legend>{steps[draft.step]}</legend>
       {draft.step === 0 && <><LocationSelector value={draft.place} onChange={place => updateDraft({ place })} />{error("place")}</>}

@@ -1,10 +1,10 @@
-.page { max-width: 720px; overflow-wrap: anywhere; }
-.page h1 { line-height: 1.2; }
-.description { margin: 12px 0 24px; color: var(--color-muted); }
-.back { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; margin-bottom: 20px; color: var(--color-primary); }
+.page { max-width: 100%; overflow-wrap: anywhere; }
+.page h1 { line-height: 1.15; }
+.description { margin: 10px 0 var(--space-6); color: var(--color-muted); font-size: 14px; }
+.back { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; margin-bottom: 20px; color: var(--color-muted); font-size: 13px; }
 .links { list-style: none; padding: 0; margin: 20px 0; }
 .links li + li { border-top: 1px solid var(--color-line); }
-.link { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 56px; padding: 14px 8px; border-radius: 6px; overflow-wrap: anywhere; }
+.link { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); min-height: 56px; padding: 14px 8px; border-radius: 6px; overflow-wrap: anywhere; }
 .link > span:first-child { min-width: 0; }
 .link > span:last-child { flex-shrink: 0; color: var(--color-primary); }
 .link small { display: block; margin-top: 4px; font-size: 13px; color: var(--color-muted); }

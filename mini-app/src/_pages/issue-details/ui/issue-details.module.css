@@ -1,39 +1,39 @@
-.back { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; margin-bottom: 24px; padding: 0 14px; border: 1px solid var(--color-line); border-radius: 10px; background: var(--color-surface); color: var(--color-muted); font-size: 13px; }
+.back { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; margin-bottom: 20px; color: var(--color-muted); font-size: 13px; }
 .back:hover { color: var(--color-primary); border-color: var(--color-primary); }
 .heading { margin-bottom: 36px; }
-.heading h1 { max-width: 32ch; overflow-wrap: anywhere; font-size: clamp(28px, 3vw, 36px); letter-spacing: -1px; line-height: 1.2; }
-.meta { margin: 0 0 12px; color: var(--color-muted); font-size: 12px; }
+.heading h1 { max-width: 32ch; overflow-wrap: anywhere; font-size: var(--font-page-title); letter-spacing: -1px; line-height: 1.2; }
+.meta { margin: 0 0 12px; color: var(--color-muted); font-size: var(--font-meta); }
 .status { margin-top: 20px; }
-.layout { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); align-items: start; gap: 36px; }
-.layout h2 { margin: 0 0 24px; font-size: 20px; font-weight: 600; letter-spacing: -0.4px; }
+.layout { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); align-items: start; gap: var(--space-7); }
+.layout h2 { margin: 0 0 24px; font-size: var(--font-section-title); font-weight: 600; letter-spacing: -0.4px; }
 .info, .history { min-width: 0; }
-.info { padding: 28px; background: var(--color-surface); border: 1px solid var(--color-line); border-radius: 18px; }
+.info { padding: 0; }
 .facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 24px; margin: 0; }
-.facts dt { margin-bottom: 8px; font-size: 12px; color: var(--color-muted); }
+.facts dt { margin-bottom: 8px; font-size: var(--font-meta); color: var(--color-muted); }
 .facts dd { margin: 0; font-size: 14px; line-height: 1.65; overflow-wrap: anywhere; }
 .description { margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--color-line); }
 .description h2 { font-size: 17px; margin-bottom: 14px; }
 .description p { margin: 0; font-size: 15px; line-height: 1.75; max-width: 65ch; }
-.history { padding-top: 28px; }
+.history { padding-top: 0; }
 .timeline { list-style: none; margin: 0; padding: 0; }
 .timeline li { position: relative; padding: 0 0 32px 40px; }
 .timeline li:not(:last-child)::before { content: ""; position: absolute; left: 13px; top: 30px; bottom: 5px; width: 1px; background: var(--color-line); }
 .timeline li:last-child { padding-bottom: 0; }
 .marker { position: absolute; top: 0; left: 0; width: 27px; height: 27px; display: grid; place-items: center; color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 8%, var(--color-bg)); font-size: 13px; border: 1px solid color-mix(in srgb, var(--color-primary) 25%, var(--color-line)); border-radius: 50%; }
 .timeline h3 { margin: 0 0 8px; padding-top: 2px; font-weight: 400; font-size: 15px; }
-.timeline time { display: block; color: var(--color-muted); font-size: 12px; line-height: 1.6; }
-.current { display: inline-block; margin-top: 10px; padding: 4px 8px; border-radius: 5px; font-size: 11px; color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 8%, var(--color-bg)); }
+.timeline time { display: block; color: var(--color-muted); font-size: var(--font-meta); line-height: 1.6; }
+.current { display: inline-block; margin-top: 10px; padding: 4px 8px; border-radius: var(--radius-sm); font-size: 11px; color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 8%, var(--color-bg)); }
 .timeline [aria-current="step"] h3 { font-weight: 600; }
 .timeline [aria-current="step"] .marker { color: var(--color-surface); background: var(--color-primary); border-color: var(--color-primary); box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary) 10%, transparent); }
 @media (max-width: 720px) {
   .layout { grid-template-columns: minmax(0, 1fr); gap: 32px; }
   .history { padding: 0 4px; }
   .heading { margin-bottom: 28px; }
-  .info { padding: 24px; }
+  .info { padding: 0; }
 }
 @media (max-width: 400px) {
   .facts { grid-template-columns: minmax(0, 1fr); gap: 22px; }
-  .heading h1 { font-size: 28px; }
-  .info { padding: 20px; border-radius: 14px; }
-  .layout h2 { font-size: 19px; }
+  .heading h1 { font-size: var(--font-page-title); }
+  .info { padding: 0; }
+  .layout h2 { font-size: var(--font-section-title); }
 }

@@ -6,8 +6,8 @@
 .row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
 .row h3 { margin: 0; font-size: 18px; }
 .systems meter { width: 100%; height: 12px; }
-.normal { color: #34877e; }
-.attention { color: #946719; }
+.normal { color: var(--color-teal); }
+.attention { color: var(--color-warning); }
 .note { color: var(--color-muted); font-size: 14px; }
 :global(:root[data-theme="dark"]) .normal { color: #a2dbcb; }
 :global(:root[data-theme="dark"]) .attention { color: #f3cf8f; }

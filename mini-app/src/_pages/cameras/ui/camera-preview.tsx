@@ -24,7 +24,7 @@ export function CameraPreview({ camera, gateway = mockCameraGateway }: { camera:
       {/* Static local fixture; no video stream. */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={state.frame.src} alt="Условное изображение общей зоны дома" width={960} height={540} onError={() => setState({ kind: "error", message: "Не удалось загрузить кадр. Повторите подключение." })} />
-      <figcaption>Тестовый кадр · не трансляция · {new Date(state.frame.capturedAt).toLocaleString("ru-RU", { timeZone: "Europe/Moscow" })}</figcaption>
+      <figcaption>Кадр от {new Date(state.frame.capturedAt).toLocaleString("ru-RU", { timeZone: "Europe/Moscow" })}</figcaption>
     </figure> : <div className={styles.previewPlaceholder} role={state.kind === "error" ? "alert" : "status"}>{state.kind === "loading" ? "Подключаемся к камере…" : state.message}</div>}
     <button className={styles.retry} onClick={retry} disabled={state.kind === "loading"}>{state.kind === "error" ? "Повторить подключение" : "Обновить кадр"}</button>
   </section>;

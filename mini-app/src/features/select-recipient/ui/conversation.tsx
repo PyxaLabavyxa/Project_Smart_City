@@ -19,7 +19,6 @@ export function Conversation({ place }: { place: HouseLocation & { zone: "apartm
     finally { lock.current = false; setSaving(false); }
   }
   return <section className={styles.conversation} aria-label={"Переписка с квартирой " + place.apartment}>
-    <p className={styles.privacy}>История и отправка работают локально. Сообщения не доставляются соседям и исчезают после перезагрузки.</p>
     <ol className={styles.history} aria-live="polite">{history.map(message => <li key={message.id} className={message.direction === "outgoing" ? styles.outgoing : styles.incoming}><small>{message.direction === "outgoing" ? "Вы" : "Квартира " + place.apartment}</small><p>{message.text}</p><time dateTime={message.createdAt}>{new Date(message.createdAt).toLocaleString("ru-RU", { timeZone: "Europe/Moscow", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</time></li>)}</ol>
     {!history.length && <p>Сообщений пока нет. Начните разговор.</p>}
     <form onSubmit={submit}>

@@ -3,18 +3,15 @@
 .camera { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; min-height: 72px; padding: 16px 0; }
 .camera:hover { color: var(--color-primary); }
 .camera h2 { font-size: 18px; margin: 0; }
-.status { display: inline-flex; width: fit-content; padding: 5px 10px; border-radius: 6px; font-size: 13px; }
-.online { background: #e6f1ed; color: #27685f; }
-.maintenance { background: #f8eddb; color: #815618; }
-.unavailable { background: #f9e9e6; color: #973f37; }
-:global(:root[data-theme="dark"]) .online { background: #253e37; color: #a2dbcb; }
-:global(:root[data-theme="dark"]) .maintenance { background: #453821; color: #f3cf8f; }
-:global(:root[data-theme="dark"]) .unavailable { background: #482f2b; color: #f2b4ad; }
+.status { composes: badge from "@/shared/styles/controls.module.css"; }
+.online { background: var(--color-success-bg); color: var(--color-success); }
+.maintenance { background: var(--color-warning-bg); color: var(--color-warning); }
+.unavailable { background: var(--color-danger-bg); color: var(--color-danger); }
 .previewSection { margin-top: 24px; max-width: 860px; }
 .preview { margin: 0; }
-.preview img { display: block; width: 100%; height: auto; border-radius: 12px; }
-.preview figcaption { margin-top: 12px; font-size: 12px; color: var(--color-muted); }
-.previewPlaceholder { display: grid; place-items: center; min-height: 220px; padding: 24px; border-radius: 12px; background: var(--color-surface); color: var(--color-muted); text-align: center; }
-.retry { min-height: 48px; margin-top: 20px; padding: 12px 18px; border: 1px solid var(--color-line); border-radius: 10px; background: var(--color-surface); color: var(--color-ink); cursor: pointer; }
+.preview img { display: block; width: 100%; height: auto; border-radius: var(--radius-card); }
+.preview figcaption { margin-top: 12px; font-size: var(--font-meta); color: var(--color-muted); }
+.previewPlaceholder { display: grid; place-items: center; min-height: 220px; padding: 24px; border-radius: var(--radius-card); background: var(--color-surface); color: var(--color-muted); text-align: center; }
+.retry { composes: button from "@/shared/styles/controls.module.css"; margin-top: 20px; }
 .retry:disabled { opacity: .6; cursor: wait; }
 .previewSection > .status { margin-bottom: 16px; }
