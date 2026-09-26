@@ -1,5 +1,8 @@
 import { demoHealth } from "../model/demo-health";
 import styles from "./health-summary.module.css";
+import Link from "next/link";
+
+const categories: Record<string, string> = { water: "Водоснабжение", heating: "Отопление", electricity: "Электричество", elevators: "Лифт", entrances: "Подъезд", territory: "Двор", security: "Безопасность" };
 
 export function HealthSummary() {
   return <>
@@ -14,6 +17,7 @@ export function HealthSummary() {
         <p className={system.score < 80 ? styles.attention : styles.normal}>{system.score < 80 ? "Требует внимания" : "В порядке"}</p>
         <meter min={0} max={100} value={system.score} aria-label={system.name} />
         <p className={styles.note}>{system.note}</p>
+        <Link className={styles.issueLink} href={"/issues?category=" + encodeURIComponent(categories[system.id])}>Обращения по системе →</Link>
       </li>)}</ul>
     </section>
   </>;

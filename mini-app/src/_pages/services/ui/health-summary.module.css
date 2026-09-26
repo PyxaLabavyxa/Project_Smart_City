@@ -11,3 +11,4 @@
 .note { color: var(--color-muted); font-size: 14px; }
 :global(:root[data-theme="dark"]) .normal { color: #a2dbcb; }
 :global(:root[data-theme="dark"]) .attention { color: #f3cf8f; }
+.issueLink { display: inline-flex; min-height: 44px; align-items: center; color: var(--color-primary); font-size: 13px; }

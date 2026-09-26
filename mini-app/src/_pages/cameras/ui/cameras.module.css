@@ -10,3 +10,11 @@
 :global(:root[data-theme="dark"]) .online { background: #253e37; color: #a2dbcb; }
 :global(:root[data-theme="dark"]) .maintenance { background: #453821; color: #f3cf8f; }
 :global(:root[data-theme="dark"]) .unavailable { background: #482f2b; color: #f2b4ad; }
+.previewSection { margin-top: 24px; max-width: 860px; }
+.preview { margin: 0; }
+.preview img { display: block; width: 100%; height: auto; border-radius: 12px; }
+.preview figcaption { margin-top: 12px; font-size: 12px; color: var(--color-muted); }
+.previewPlaceholder { display: grid; place-items: center; min-height: 220px; padding: 24px; border-radius: 12px; background: var(--color-surface); color: var(--color-muted); text-align: center; }
+.retry { min-height: 48px; margin-top: 20px; padding: 12px 18px; border: 1px solid var(--color-line); border-radius: 10px; background: var(--color-surface); color: var(--color-ink); cursor: pointer; }
+.retry:disabled { opacity: .6; cursor: wait; }
+.previewSection > .status { margin-bottom: 16px; }

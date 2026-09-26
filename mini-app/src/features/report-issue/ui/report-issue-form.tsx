@@ -2,61 +2,86 @@
 import { useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useIssues, issueCategories } from "@/entities/issue";
+import { useIssues, issueCategories, similarIssues, IssueCategoryIcon } from "@/entities/issue";
+import { LocationSelector, formatLocation, validLocation, demoHouse } from "@/entities/house";
 import styles from "./report-issue.module.css";
 
+const steps = ["Место", "Категория", "Описание", "Создание"];
 export function ReportIssueForm({ cancelHref = "/issues" }: { cancelHref?: string }) {
-  const { addIssue } = useIssues();
+  const { addIssue, issues, draft, updateDraft, resetDraft } = useIssues();
   const router = useRouter();
   const submitted = useRef(false);
+  const formRef = useRef<HTMLFormElement>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
-  function submit(event: FormEvent<HTMLFormElement>) {
+  const [failure, setFailure] = useState("");
+  const matches = similarIssues(issues, draft.place, draft.category);
+  function goToStep(step: number) {
+    updateDraft({ step });
+    setErrors({});
+    setFailure("");
+    formRef.current?.scrollIntoView({ block: "start" });
+  }
+  function validate() {
+    const next: Record<string, string> = {};
+    if (!validLocation(demoHouse, draft.place)) next.place = "Выберите место в доме";
+    if (draft.step >= 1 && !issueCategories.some(category => category === draft.category)) next.category = "Выберите категорию";
+    if (draft.step >= 2 && !draft.title.trim()) next.title = "Укажите, что случилось";
+    if (draft.step >= 2 && !draft.description.trim()) next.description = "Добавьте описание проблемы";
+    setErrors(next);
+    return !Object.keys(next).length;
+  }
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (submitted.current) return;
-    const form = event.currentTarget;
-    const values = new FormData(form);
-    const read = (key: string) => String(values.get(key) ?? "").trim();
-    const nextErrors: Record<string, string> = {};
-    for (const key of ["location", "category", "title", "description"]) {
-      if (!read(key)) nextErrors[key] = "Заполните это поле";
-    }
-    setErrors(nextErrors);
-    if (Object.keys(nextErrors).length) {
-      (form.elements.namedItem(Object.keys(nextErrors)[0]) as HTMLElement)?.focus();
+    if (!validate()) {
+      const form = event.currentTarget;
+      requestAnimationFrame(() => form.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus());
       return;
     }
+    if (draft.step < 3) { goToStep(draft.step + 1); return; }
     submitted.current = true;
-    setSaving(true);
-    const id = addIssue({ title: read("title"), description: read("description"), category: read("category"), location: read("location") });
-    router.push("/issues/" + id);
-  }
-  const error = (name: string) => errors[name] ? <span className={styles.error} id={name + "-error"}>{errors[name]}</span> : null;
-  return <form className={styles.form} onSubmit={submit} onChange={event => {
-    const field = event.target;
-    if ((field instanceof HTMLInputElement || field instanceof HTMLSelectElement || field instanceof HTMLTextAreaElement) && field.value.trim() && errors[field.name]) {
-      setErrors(current => { const next = { ...current }; delete next[field.name]; return next; });
+    setSaving(true); setFailure("");
+    try {
+      const id = await addIssue({ place: draft.place, category: draft.category, title: draft.title, description: draft.description });
+      router.push("/issues/" + id);
+    } catch (error) {
+      setFailure(error instanceof Error ? error.message : "Не удалось создать обращение. Попробуйте ещё раз.");
+      submitted.current = false; setSaving(false);
     }
-  }} noValidate>
-    <p className={styles.note}>Укажите место и опишите проблему.</p>
-    <label className={styles.field}>Место проблемы
-      <input name="location" placeholder="Например: подъезд 2, этаж 8, лестница" maxLength={160} required aria-invalid={!!errors.location} aria-describedby={errors.location ? "location-error" : undefined} />
-      {error("location")}
-    </label>
-    <label className={styles.field}>Категория
-      <select name="category" defaultValue="" required aria-invalid={!!errors.category} aria-describedby={errors.category ? "category-error" : undefined}>
-        <option value="" disabled>Выберите категорию</option>
-        {issueCategories.map(category => <option key={category}>{category}</option>)}
-      </select>{error("category")}
-    </label>
-    <label className={styles.field}>Что случилось?
-      <input name="title" placeholder="Кратко опишите проблему" maxLength={120} required aria-invalid={!!errors.title} aria-describedby={errors.title ? "title-error" : undefined} />
-      {error("title")}
-    </label>
-    <label className={styles.field}>Описание
-      <textarea name="description" placeholder="Что произошло и где нужна помощь?" rows={5} maxLength={2000} required aria-invalid={!!errors.description} aria-describedby={errors.description ? "description-error" : undefined} />
-      {error("description")}
-    </label>
-    <div className={styles.actions}><button type="submit" className={styles.primary} disabled={saving}>{saving ? "Сохраняем…" : "Создать обращение"}</button><Link href={cancelHref}>Отмена</Link></div>
+  }
+  const error = (name: string) => errors[name] ? <span className={styles.error} id={name + "-error"} role="alert">{errors[name]}</span> : null;
+  return <form ref={formRef} className={styles.form} onSubmit={submit} noValidate>
+    <ol className={styles.steps} aria-label="Этапы обращения">{steps.map((step, index) => <li key={step} aria-current={draft.step === index ? "step" : undefined}><span>{index + 1}</span>{step}</li>)}</ol>
+    <p className={styles.note}>Черновик сохраняется при переходах до перезагрузки страницы. Сейчас используется локальное сохранение, без отправки в УК.</p>
+    <fieldset className={styles.fields} disabled={saving}>
+      <legend>{steps[draft.step]}</legend>
+      {draft.step === 0 && <><LocationSelector value={draft.place} onChange={place => updateDraft({ place })} />{error("place")}</>}
+      {draft.step === 1 && <><div className={styles.categories} role="radiogroup" aria-label="Категория" tabIndex={-1} aria-invalid={!!errors.category} aria-describedby={errors.category ? "category-error" : undefined}>
+        {issueCategories.map(category => <label key={category} className={styles.category}>
+          <input type="radio" name="category" value={category} checked={draft.category === category} onChange={() => { updateDraft({ category }); setErrors({}); }} />
+          <IssueCategoryIcon category={category} /><span>{category}</span>
+        </label>)}
+      </div>{error("category")}</>}
+      {draft.step === 2 && <>
+        <label className={styles.field}>Что случилось?
+          <input name="title" value={draft.title} onChange={event => { updateDraft({ title: event.target.value }); setErrors(current => ({ ...current, title: "" })); }} maxLength={120} aria-invalid={!!errors.title} aria-describedby={errors.title ? "title-error" : undefined} />
+          {error("title")}
+        </label>
+        <label className={styles.field}>Описание
+          <textarea name="description" value={draft.description} onChange={event => { updateDraft({ description: event.target.value }); setErrors(current => ({ ...current, description: "" })); }} rows={5} maxLength={2000} aria-invalid={!!errors.description} aria-describedby={errors.description ? "description-error" : undefined} />
+          {error("description")}
+        </label>
+      </>}
+      {draft.step === 3 && <div className={styles.review}><h2>{draft.title}</h2><p>{demoHouse.address}</p><p>{formatLocation(draft.place)}</p><p>{draft.category}</p><p className={styles.description}>{draft.description}</p></div>}
+    </fieldset>
+    {matches.length > 0 && draft.step >= 1 && <aside className={styles.similar} aria-label="Похожие обращения"><strong>Возможно, об этой проблеме уже сообщили</strong><p>В этом месте есть активные обращения той же категории. Можно открыть их или продолжить создание.</p>{matches.map(issue => <Link key={issue.id} href={"/issues/" + issue.id}>{issue.title}</Link>)}</aside>}
+    {failure && <p role="alert" className={styles.error}>{failure}</p>}
+    <div className={styles.actions}>
+      {draft.step > 0 && <button type="button" disabled={saving} onClick={() => goToStep(draft.step - 1)}>Назад</button>}
+      <button type="submit" className={styles.primary} disabled={saving}>{saving ? "Сохраняем…" : draft.step === 3 ? "Создать обращение" : "Продолжить"}</button>
+      <Link href={cancelHref} aria-disabled={saving} onClick={event => { if (saving) event.preventDefault(); }}>Вернуться без потери черновика</Link>
+      <button type="button" disabled={saving} onClick={() => { if (window.confirm("Удалить черновик обращения?")) { resetDraft(); setErrors({}); } }}>Сбросить черновик</button>
+    </div>
   </form>;
 }

@@ -3,3 +3,13 @@
 .recipient { padding: 20px 0; margin-top: 20px; border-top: 1px solid var(--color-line); }
 .recipient h2 { font-size: 20px; }
 .privacy { color: var(--color-muted); font-size: 13px; }
+.conversation { max-width: 680px; margin-top: 32px; }
+.history { list-style: none; margin: 24px 0; padding: 0; display: grid; gap: 16px; }
+.history li { width: fit-content; max-width: 90%; padding: 14px 18px; border-radius: 14px; overflow-wrap: anywhere; }
+.incoming { background: var(--color-surface); }
+.outgoing { justify-self: end; background: color-mix(in srgb, var(--color-primary) 10%, var(--color-bg)); }
+.history p { margin: 8px 0; white-space: pre-wrap; }
+.history small, .history time { color: var(--color-muted); font-size: 12px; }
+.field textarea { width: 100%; min-width: 0; padding: 12px; border: 1px solid var(--color-line); border-radius: 8px; background: var(--color-surface); color: var(--color-ink); font: inherit; font-size: 16px; resize: vertical; }
+.send { min-height: 48px; margin-top: 16px; padding: 12px 24px; border: 0; border-radius: 10px; background: #315bef; color: white; cursor: pointer; }
+.send:disabled { opacity: .6; cursor: wait; }

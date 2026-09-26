@@ -8,3 +8,6 @@
 .selected { margin-top: 24px; }
 .selected h2 { margin: 6px 0; font-size: 22px; }
 @media (max-width: 360px) { .map { padding: 10px; } .room { padding: 10px; } }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin: 24px 0; }
+.actions a { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 12px 18px; border-radius: 10px; background: #315bef; color: white; font-size: 14px; }
+.actions span { font-size: 13px; color: var(--color-muted); }

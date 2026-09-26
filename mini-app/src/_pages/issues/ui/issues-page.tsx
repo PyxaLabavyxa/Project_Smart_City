@@ -5,9 +5,9 @@ import { ReportIssueLink } from "@/features/report-issue";
 import { NavigationLinks } from "@/shared/ui/navigation";
 import { IssueFilters } from "./issue-filters";
 import styles from "./issues-page.module.css";
-export function IssuesPage() {
+export function IssuesPage({ initialCategory = "" }: { initialCategory?: string }) {
   const { issues } = useIssues();
-  const [filters, setFilters] = useState(initialIssueFilters);
+  const [filters, setFilters] = useState({ ...initialIssueFilters, category: initialCategory });
   const visible = filterIssues(issues, filters);
   return <><header className={styles.heading}><div><h1>Мои обращения</h1><p>ул. Центральная, 18</p></div><ReportIssueLink /></header>
     <IssueFilters filters={filters} categories={issues.map(issue => issue.category)} onChange={setFilters} onReset={() => setFilters(initialIssueFilters)} />

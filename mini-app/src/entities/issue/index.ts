@@ -6,3 +6,5 @@ export { IssueList } from "./ui/issue-list";
 export { IssueProvider, useIssues } from "./model/issue-provider";
 export { issueStatusLabels, issueCategories, initialIssueFilters, filterIssues } from "./model/issue-filters";
 export type { IssueFilters } from "./model/issue-filters";
+export { similarIssues } from "./model/similar-issues";
+export type { IssueGateway, CreateIssueInput } from "./model/issue-gateway";

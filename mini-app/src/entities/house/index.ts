@@ -2,3 +2,7 @@ export { demoHouse } from "./model/demo-house";
 export { commonZones, totalApartments, floorApartments, findApartment, zoneLabel, formatLocation, sameLocation } from "./model/house";
 export type { House, HouseLocation, CommonZone } from "./model/house";
 export { FloorControls } from "./ui/floor-controls";
+export { defaultPlace, HouseSelectionProvider, useHouseSelection } from "./model/selection-provider";
+export { PlaceLink } from "./ui/place-link";
+export { LocationSelector } from "./ui/location-selector";
+export { validLocation, locationQuery, parseLocation } from "./model/house";

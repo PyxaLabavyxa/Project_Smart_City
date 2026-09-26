@@ -1,14 +1,18 @@
 "use client";
+import Link from "next/link";
 import { useState } from "react";
+import { useHouseSelection } from "@/entities/house";
 import { demoHouse, floorApartments, commonZones, zoneLabel, formatLocation, sameLocation, FloorControls, type HouseLocation, type CommonZone } from "@/entities/house";
 import { IssueList, useIssues } from "@/entities/issue";
 import { NavigationLinks } from "@/shared/ui/navigation";
 import styles from "./house-explorer.module.css";
 
-export function HouseExplorer() {
+export function HouseExplorer({ initialPlace }: { initialPlace?: HouseLocation }) {
   const house = demoHouse;
-  const { issues } = useIssues();
-  const [selected, setSelected] = useState<HouseLocation>({ houseId: house.id, entrance: 2, floor: 9, zone: "corridor" });
+  const { issues, startAt } = useIssues();
+  const { selected: remembered, select } = useHouseSelection();
+  const [selected, setLocal] = useState(initialPlace ?? remembered);
+  function setSelected(place: HouseLocation) { setLocal(place); select(place); }
   const apartments = floorApartments(house, selected.entrance, selected.floor);
   const floorIssues = issues.filter(issue => issue.place?.houseId === house.id && issue.place.entrance === selected.entrance && issue.place.floor === selected.floor);
   const selectedIssues = floorIssues.filter(issue => sameLocation(issue.place, selected));
@@ -35,10 +39,12 @@ export function HouseExplorer() {
       <p>{formatLocation(selected)}</p>
       {selectedIssues.length ? <IssueList issues={selectedIssues} /> : <p>Обращений по этому помещению нет.</p>}
     </section>
-    <NavigationLinks label="Действия на плане" items={[
-      { href: "/issues/new?from=plan", title: "Сообщить о проблеме" },
-      { href: "/messages?from=plan", title: "Написать в квартиру" },
-      { href: "/issues", title: "Все обращения дома" },
-    ]} />
+    <div className={styles.actions}>
+      <Link href="/issues/new?from=plan" onClick={() => { select(selected); startAt(selected); }}>Сообщить о проблеме</Link>
+      {selected.zone === "apartment" && selected.apartment !== house.residentApartment
+        ? <Link href="/messages?from=plan" onClick={() => select(selected)}>Написать в квартиру {selected.apartment}</Link>
+        : <span>Для сообщения выберите квартиру соседа.</span>}
+    </div>
+    <NavigationLinks label="Действия на плане" items={[{ href: "/issues", title: "Все обращения дома" }]} />
   </>;
 }
