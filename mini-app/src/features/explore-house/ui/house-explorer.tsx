@@ -1,10 +1,8 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
-import { useHouseSelection } from "@/entities/house";
-import { demoHouse, floorApartments, commonZones, zoneLabel, formatLocation, sameLocation, FloorControls, type HouseLocation, type CommonZone } from "@/entities/house";
+import { useHouseSelection, demoHouse, floorApartments, findApartment, totalApartments, zoneLabel, formatLocation, sameLocation, FloorControls, FloorPlan, type HouseLocation } from "@/entities/house";
 import { IssueList, useIssues } from "@/entities/issue";
-import { NavigationLinks } from "@/shared/ui/navigation";
 import styles from "./house-explorer.module.css";
 
 export function HouseExplorer({ initialPlace }: { initialPlace?: HouseLocation }) {
@@ -12,39 +10,42 @@ export function HouseExplorer({ initialPlace }: { initialPlace?: HouseLocation }
   const { issues, startAt } = useIssues();
   const { selected: remembered, select } = useHouseSelection();
   const [selected, setLocal] = useState(initialPlace ?? remembered);
+  const [apartment, setApartment] = useState("");
+  const [searchError, setSearchError] = useState("");
   function setSelected(place: HouseLocation) { setLocal(place); select(place); }
   const apartments = floorApartments(house, selected.entrance, selected.floor);
   const floorIssues = issues.filter(issue => issue.place?.houseId === house.id && issue.place.entrance === selected.entrance && issue.place.floor === selected.floor);
   const selectedIssues = floorIssues.filter(issue => sameLocation(issue.place, selected));
-  const locationFor = (zone: CommonZone): HouseLocation => ({ houseId: house.id, entrance: selected.entrance, floor: selected.floor, zone });
-  function room(location: HouseLocation) {
-    const matching = floorIssues.filter(issue => sameLocation(issue.place, location));
-    const activeCount = matching.filter(issue => issue.status !== "completed").length;
-    return <button type="button" key={zoneLabel(location)} className={styles.room} aria-pressed={sameLocation(location, selected)} onClick={() => setSelected(location)}>
-      <strong>{zoneLabel(location)}</strong>
-      <small>{activeCount ? `Активных обращений: ${activeCount}` : matching.length ? "Обращения выполнены" : "Нет активных обращений"}</small>
-      {location.zone === "apartment" && location.apartment === house.residentApartment && <small>Ваша квартира</small>}
-    </button>;
-  }
-  return <>
-    <FloorControls house={house} entrance={selected.entrance} floor={selected.floor} onChange={(entrance, floor) => setSelected({ houseId: house.id, entrance, floor, zone: "corridor" })} />
-    <p>Квартиры {apartments[0]}–{apartments.at(-1)} · обращений на этаже: {floorIssues.length}</p>
-    <section aria-label={`Схема этажа ${selected.floor}`} className={styles.map}>
-      <div className={styles.apartments}>{apartments.map(apartment => room({ houseId: house.id, entrance: selected.entrance, floor: selected.floor, zone: "apartment", apartment }))}</div>
-      <div className={styles.zones}>{(Object.keys(commonZones) as CommonZone[]).filter(zone => zone !== "entrance" || selected.floor === 1).map(zone => room(locationFor(zone)))}</div>
+  const problemPlaces = floorIssues.filter(issue => issue.status !== "completed").flatMap(issue => issue.place ? [issue.place] : []);
+  return <div className={styles.layout}>
+    <section className={styles.canvas} aria-label="План этажа">
+      <FloorControls expanded house={house} entrance={selected.entrance} floor={selected.floor} onChange={(entrance, floor) => setSelected({ houseId: house.id, entrance, floor, zone: "corridor" })} />
+      <div className={styles.searchRow}>
+        <form className={styles.search} onSubmit={event => {
+          event.preventDefault(); const place = findApartment(house, Number(apartment));
+          if (place) { setSelected(place); setSearchError(""); } else setSearchError(`Введите номер от 1 до ${totalApartments(house)}`);
+        }}>
+          <label htmlFor="find-apartment">Найти квартиру в доме</label>
+          <div><input id="find-apartment" inputMode="numeric" value={apartment} onChange={event => { setApartment(event.target.value); setSearchError(""); }} placeholder="№ квартиры" aria-invalid={!!searchError} aria-describedby={searchError ? "apartment-error" : undefined} /><button type="submit" className={styles.searchButton}>Найти</button></div>
+          {searchError && <p id="apartment-error" role="alert">{searchError}</p>}
+        </form>
+        <p className={styles.range}>Квартиры <strong>{apartments[0]}–{apartments.at(-1)}</strong><small>на выбранном этаже</small></p>
+      </div>
+      <FloorPlan house={house} selected={selected} onSelect={setSelected} problemPlaces={problemPlaces} />
     </section>
-    <section className={styles.selected} aria-labelledby="selected-room">
-      <p className={styles.caption}>Выбранное помещение</p>
-      <h2 id="selected-room" aria-live="polite">{zoneLabel(selected)}</h2>
-      <p>{formatLocation(selected)}</p>
-      {selectedIssues.length ? <IssueList issues={selectedIssues} /> : <p>Обращений по этому помещению нет.</p>}
-    </section>
-    <div className={styles.actions}>
-      <Link href="/issues/new?from=plan" onClick={() => { select(selected); startAt(selected); }}>Сообщить о проблеме</Link>
-      {selected.zone === "apartment" && selected.apartment !== house.residentApartment
-        ? <Link href="/messages?from=plan" onClick={() => select(selected)}>Написать в квартиру {selected.apartment}</Link>
-        : <span>Для сообщения выберите квартиру соседа.</span>}
-    </div>
-    <NavigationLinks label="Действия на плане" items={[{ href: "/issues", title: "Все обращения дома" }]} />
-  </>;
+    <aside className={styles.sidebar}>
+      <header className={styles.floorHeading}><p>Подъезд {String(selected.entrance).padStart(2, "0")}</p><h2>Этаж {selected.floor}</h2><p>{apartments.length} квартиры · обращений: {floorIssues.length}</p></header>
+      <section className={styles.selected} aria-labelledby="selected-room">
+        <h2 id="selected-room" aria-live="polite">{zoneLabel(selected)}</h2><p>{formatLocation(selected)}</p>
+        <span className={styles.state}>{selectedIssues.some(issue => issue.status !== "completed") ? "△ Есть активное обращение" : "✓ В порядке"}</span>
+        <p>{selectedIssues.length ? `Обращений по этому помещению: ${selectedIssues.length}. Подробности — ниже.` : "Обращений по этому помещению нет."}</p>
+        <div className={styles.actions}>
+          <Link className={styles.action} href="/issues/new?from=plan" onClick={() => { select(selected); startAt(selected); }}>＋ Сообщить о проблеме</Link>
+          {selected.zone === "apartment" && selected.apartment !== house.residentApartment && <Link className={styles.action} href="/messages?from=plan" onClick={() => select(selected)}>Написать в квартиру {selected.apartment}</Link>}
+        </div>
+      </section>
+      <section className={styles.floorIssues}><h3>На этом этаже <span>{floorIssues.length}</span></h3>{floorIssues.length ? <IssueList issues={floorIssues} /> : <p>Других обращений нет.</p>}</section>
+      <div className={styles.neighbors}><h3>Связь с соседями</h3><p>Выберите квартиру, чтобы написать соседу без обмена телефонами.</p></div>
+    </aside>
+  </div>;
 }

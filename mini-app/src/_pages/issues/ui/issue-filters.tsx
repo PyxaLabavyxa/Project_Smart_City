@@ -9,7 +9,10 @@ export function IssueFilters({ filters, categories, onChange, onReset }: {
   onReset: () => void;
 }) {
   const statusOptions = { all: "Все статусы", active: "Активные", ...issueStatusLabels };
-  return <section aria-label="Фильтры обращений" className={styles.filters}>
+  const count = [filters.category, filters.entrance, filters.floor, filters.zone, filters.query].filter(Boolean).length;
+  return <details className={styles.filterPanel} open={count > 0 || undefined}>
+    <summary>Фильтры и поиск {count > 0 && <span>· {count}</span>}</summary>
+    <section aria-label="Фильтры обращений" className={styles.filters}>
     <label>Статус<select value={filters.status} onChange={event => onChange({ ...filters, status: event.target.value as Filters["status"] })}>
       {Object.entries(statusOptions).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
     </select></label>
@@ -32,5 +35,5 @@ export function IssueFilters({ filters, categories, onChange, onReset }: {
     </select></label>
     <label>Поиск<input type="search" value={filters.query} onChange={event => onChange({ ...filters, query: event.target.value })} placeholder="Название или место" /></label>
     <button type="button" onClick={onReset}>Сбросить фильтры</button>
-  </section>;
+  </section></details>;
 }
