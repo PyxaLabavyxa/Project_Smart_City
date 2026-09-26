@@ -7,6 +7,7 @@ import { LocationSelector, formatLocation, validLocation, demoHouse } from "@/en
 import styles from "./report-issue.module.css";
 
 const steps = ["Место", "Категория", "Описание", "Создание"];
+const stepTitles = ["Где возникла проблема?", "Что случилось?", "Расскажите о проблеме", "Проверьте обращение"];
 export function ReportIssueForm({ cancelHref = "/issues" }: { cancelHref?: string }) {
   const { addIssue, issues, draft, updateDraft, resetDraft } = useIssues();
   const router = useRouter();
@@ -21,6 +22,7 @@ export function ReportIssueForm({ cancelHref = "/issues" }: { cancelHref?: strin
     setErrors({});
     setFailure("");
     formRef.current?.scrollIntoView({ block: "start" });
+    requestAnimationFrame(() => formRef.current?.querySelector("legend")?.focus({ preventScroll: true }));
   }
   function validate() {
     const next: Record<string, string> = {};
@@ -52,11 +54,12 @@ export function ReportIssueForm({ cancelHref = "/issues" }: { cancelHref?: strin
   }
   const error = (name: string) => errors[name] ? <span className={styles.error} id={name + "-error"} role="alert">{errors[name]}</span> : null;
   return <form ref={formRef} className={styles.form} onSubmit={submit} noValidate>
-    <ol className={styles.steps} aria-label="Этапы обращения">{steps.map((step, index) => <li key={step} aria-current={draft.step === index ? "step" : undefined}><span>{index + 1}</span>{step}</li>)}</ol>
-    <p className={styles.note}>Выберите место и расскажите, что произошло.</p>
+    <p className={styles.note} aria-live="polite">Шаг {draft.step + 1} из {steps.length} · {steps[draft.step]}</p>
+    <ol className={styles.steps} aria-label="Этапы обращения">{steps.map((step, index) => <li key={step} data-reached={index <= draft.step || undefined} aria-current={draft.step === index ? "step" : undefined}><span>{index + 1}</span>{step}</li>)}</ol>
     <fieldset className={styles.fields} disabled={saving}>
-      <legend>{steps[draft.step]}</legend>
-      {draft.step === 0 && <><LocationSelector value={draft.place} onChange={place => updateDraft({ place })} />{error("place")}</>}
+      <legend tabIndex={-1}>{stepTitles[draft.step]}</legend>
+      {draft.step > 0 && <p className={styles.context}>{draft.step > 1 && `${draft.category} · `}{formatLocation(draft.place)} <button type="button" onClick={() => goToStep(0)}>Изменить место</button></p>}
+      {draft.step === 0 && <><LocationSelector value={draft.place} onChange={place => updateDraft({ place })} problemPlaces={issues.filter(issue => issue.status !== "completed").flatMap(issue => issue.place ? [issue.place] : [])} />{error("place")}</>}
       {draft.step === 1 && <><div className={styles.categories} role="radiogroup" aria-label="Категория" tabIndex={-1} aria-invalid={!!errors.category} aria-describedby={errors.category ? "category-error" : undefined}>
         {issueCategories.map(category => <label key={category} className={styles.category}>
           <input type="radio" name="category" value={category} checked={draft.category === category} onChange={() => { updateDraft({ category }); setErrors({}); }} />
@@ -65,11 +68,11 @@ export function ReportIssueForm({ cancelHref = "/issues" }: { cancelHref?: strin
       </div>{error("category")}</>}
       {draft.step === 2 && <>
         <label className={styles.field}>Что случилось?
-          <input name="title" value={draft.title} onChange={event => { updateDraft({ title: event.target.value }); setErrors(current => ({ ...current, title: "" })); }} maxLength={120} aria-invalid={!!errors.title} aria-describedby={errors.title ? "title-error" : undefined} />
+          <input name="title" placeholder="Например, течёт труба возле стояка" value={draft.title} onChange={event => { updateDraft({ title: event.target.value }); setErrors(current => ({ ...current, title: "" })); }} maxLength={120} aria-invalid={!!errors.title} aria-describedby={errors.title ? "title-error" : undefined} />
           {error("title")}
         </label>
         <label className={styles.field}>Описание
-          <textarea name="description" value={draft.description} onChange={event => { updateDraft({ description: event.target.value }); setErrors(current => ({ ...current, description: "" })); }} rows={5} maxLength={2000} aria-invalid={!!errors.description} aria-describedby={errors.description ? "description-error" : undefined} />
+          <textarea name="description" placeholder="Что вы заметили и когда это началось" value={draft.description} onChange={event => { updateDraft({ description: event.target.value }); setErrors(current => ({ ...current, description: "" })); }} rows={5} maxLength={2000} aria-invalid={!!errors.description} aria-describedby={errors.description ? "description-error" : undefined} />
           {error("description")}
         </label>
       </>}
@@ -78,9 +81,11 @@ export function ReportIssueForm({ cancelHref = "/issues" }: { cancelHref?: strin
     {matches.length > 0 && draft.step >= 1 && <aside className={styles.similar} aria-label="Похожие обращения"><strong>Возможно, об этой проблеме уже сообщили</strong><p>В этом месте есть активные обращения той же категории. Можно открыть их или продолжить создание.</p>{matches.map(issue => <Link key={issue.id} href={"/issues/" + issue.id}>{issue.title}</Link>)}</aside>}
     {failure && <p role="alert" className={styles.error}>{failure}</p>}
     <div className={styles.actions}>
-      {draft.step > 0 && <button type="button" disabled={saving} onClick={() => goToStep(draft.step - 1)}>Назад</button>}
+      {draft.step > 0 && <button type="button" className={styles.previous} disabled={saving} onClick={() => goToStep(draft.step - 1)}>← Назад</button>}
       <button type="submit" className={styles.primary} disabled={saving}>{saving ? "Сохраняем…" : draft.step === 3 ? "Создать обращение" : "Продолжить"}</button>
-      <Link href={cancelHref} aria-disabled={saving} onClick={event => { if (saving) event.preventDefault(); }}>Вернуться без потери черновика</Link>
+    </div>
+    <div className={styles.draftActions}>
+      <Link href={cancelHref} aria-disabled={saving} onClick={event => { if (saving) event.preventDefault(); }}>Сохранить черновик и выйти</Link>
       <button type="button" disabled={saving} onClick={() => { if (window.confirm("Удалить черновик обращения?")) { resetDraft(); setErrors({}); } }}>Сбросить черновик</button>
     </div>
   </form>;

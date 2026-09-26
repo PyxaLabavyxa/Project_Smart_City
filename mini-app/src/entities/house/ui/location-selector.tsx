@@ -2,11 +2,11 @@
 import { demoHouse } from "../model/demo-house";
 import { commonZones, floorApartments, type HouseLocation, type CommonZone } from "../model/house";
 import { FloorControls } from "./floor-controls";
+import { FloorPlan } from "./floor-plan";
 import styles from "./house-controls.module.css";
-export function LocationSelector({ value, onChange }: { value: HouseLocation; onChange: (place: HouseLocation) => void }) {
+export function LocationSelector({ value, onChange, problemPlaces }: { value: HouseLocation; onChange: (place: HouseLocation) => void; problemPlaces?: readonly HouseLocation[] }) {
   const house = demoHouse;
   return <div>
-    <p>{house.address}</p>
     <FloorControls house={house} entrance={value.entrance} floor={value.floor} onChange={(entrance, floor) => onChange({ houseId: house.id, entrance, floor, zone: "corridor" })} />
     <label className={styles.locationField}>Помещение
       <select value={value.zone === "apartment" ? "apartment:" + value.apartment : value.zone} onChange={event => {
@@ -18,5 +18,6 @@ export function LocationSelector({ value, onChange }: { value: HouseLocation; on
         {floorApartments(house, value.entrance, value.floor).map(apartment => <option key={apartment} value={"apartment:" + apartment}>Квартира {apartment}</option>)}
       </select>
     </label>
+    <FloorPlan house={house} selected={value} onSelect={onChange} problemPlaces={problemPlaces} />
   </div>;
 }

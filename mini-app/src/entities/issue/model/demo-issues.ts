@@ -14,6 +14,7 @@ export type DemoIssue = {
   place?: HouseLocation;
   createdAt: string;
   status: DemoIssueStatus;
+  priority?: "normal" | "high";
   description: string;
   history: readonly { status: DemoIssueStatus; at: string }[];
 };
@@ -48,6 +49,7 @@ export const demoIssues: readonly DemoIssue[] = [
   },
   {
     id: "148",
+    priority: "high",
     title: "Протечка возле стояка",
     category: "Водоснабжение",
     address: "ул. Центральная, 18",
