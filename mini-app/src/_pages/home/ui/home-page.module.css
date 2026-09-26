@@ -51,4 +51,4 @@
 .message h3 { display: flex; align-items: center; gap: 10px; margin: 0; font-size: 15px; }
 .message p { font-size: 14px; line-height: 1.7; }
 @media (max-width: 900px) { .layout { gap: 24px; grid-template-columns: minmax(0,1.3fr) minmax(0,1fr); } .today,.house { padding: 20px; } .condition { gap: 12px; } .sectionHead { flex-wrap: wrap; } }
-@media (max-width: 760px) { .heading { align-items: stretch; flex-direction: column; } .layout { grid-template-columns: minmax(0,1fr); } .quick a { padding: 16px 12px; gap: 10px; } .quick a span:last-child { display: none; } .sectionHead h2 { font-size: 20px; } .condition h3 { font-size: 17px; } .score strong { font-size: 48px; } .entrance button { min-height: 38px; } }
+@media (max-width: 760px) { .heading { align-items: stretch; flex-direction: column; } .layout { grid-template-columns: minmax(0,1fr); } .quick a { padding: 16px 12px; gap: 10px; } .quick a span:last-child { display: none; } .sectionHead h2 { font-size: 20px; } .condition h3 { font-size: 17px; } .score strong { font-size: 48px; } .entrance button { min-height: 44px; } }

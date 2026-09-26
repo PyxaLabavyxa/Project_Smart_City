@@ -3,6 +3,12 @@ export const demoHealth = {
   score: 82,
   condition: "Дом в хорошем состоянии",
   summary: "Водоснабжение и лифты требуют внимания.",
+  history: [
+    { date: "2026-08-29", label: "29 авг.", score: 78 },
+    { date: "2026-09-05", label: "5 сент.", score: 79 },
+    { date: "2026-09-12", label: "12 сент.", score: 80 },
+    { date: "2026-09-19", label: "19 сент.", score: 82 },
+  ],
   systems: [
     { id: "water", name: "Водоснабжение", score: 68, note: "Повторные протечки и увеличенное время устранения." },
     { id: "heating", name: "Отопление", score: 96, note: "Подготовка к отопительному сезону." },
