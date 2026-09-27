@@ -26,13 +26,13 @@ export function HomePage() {
           <div className={styles.statusBottom}><span><b>{active.length}</b> активных проблем</span><span>✓ Состояние под контролем</span></div>
         </section>
         <section className={styles.issues} aria-labelledby="active-issues"><div className={styles.sectionHead}><h2 id="active-issues">Обращения в доме <span>{active.length}</span></h2><Link href="/issues">Все ↗</Link></div>{active.length ? <IssueList issues={active.slice(0, 3)} /> : <p className={styles.muted}>Все проблемы решены.</p>}</section>
-        <nav className={styles.quick} aria-label="Быстрые действия">{([{ href: "/plan", title: "План дома", icon: "plan" }, { href: "/cameras", title: "Камеры", icon: "cameras" }, { href: "/messages", title: "Сообщения", icon: "messages" }] as const).map(item => <Link key={item.href} href={item.href}><Icon name={item.icon} /><span>{item.title}</span><span aria-hidden="true">↗</span></Link>)}</nav>
+        <nav className={styles.quick} aria-label="Быстрые действия">{([{ href: "/plan", title: "План дома", icon: "plan" }, { href: "/cameras", title: "Камеры", icon: "cameras" }, { href: "/messages?from=home", title: "Сообщения", icon: "messages" }] as const).map(item => <Link key={item.href} href={item.href}><Icon name={item.icon} /><span>{item.title}</span><span aria-hidden="true">↗</span></Link>)}</nav>
         {update && <section className={styles.update} aria-label="Последнее обновление"><Icon name="check" /><div><h3>Обновление по обращению</h3><Link href={`/issues/${update.id}`}>{update.title}</Link><p>{formatIssueDate(update.history.at(-1)!.at)}</p></div></section>}
       </div>
       <div className={styles.side}>
         <HousePreview />
         <section className={styles.schedule} aria-labelledby="works"><div className={styles.sectionHead}><h2 id="works">Ближайшие работы</h2><Icon name="calendar" /></div>{homeOverview.works.map(work => <div key={work.title} className={styles.work}><time dateTime={work.date}><strong>{work.day}</strong><small>сентября</small></time><div><h3>{work.title}</h3><p>{work.time} · {work.location}</p>{work.note && <p>{work.note}</p>}</div></div>)}</section>
-        {message && <section className={styles.message}><div className={styles.sectionHead}><h3><Icon name="messages" /> Сообщение из кв. {message.apartment}</h3></div><p>«{message.text}»</p><Link href="/messages?from=plan" onClick={() => { const place = findApartment(house, message.apartment); if (place) select(place); }}>Открыть сообщение →</Link></section>}
+        {message && <section className={styles.message}><div className={styles.sectionHead}><h3><Icon name="messages" /> Сообщение из кв. {message.apartment}</h3></div><p>«{message.text}»</p><Link href="/messages?from=home" onClick={() => { const place = findApartment(house, message.apartment); if (place) select(place); }}>Открыть сообщение →</Link></section>}
       </div>
     </div>
   </>;

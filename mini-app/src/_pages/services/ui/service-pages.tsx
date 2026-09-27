@@ -10,8 +10,8 @@ export function HealthPage() {
   </SectionPage>;
 }
 
-export function MessagesPage({ fromPlan = false }: { fromPlan?: boolean }) {
-  return <SectionPage title="Связь с квартирой" description="Телефон и личные контакты остаются скрытыми" backHref={fromPlan ? "/plan" : "/more"} backLabel={fromPlan ? "К плану дома" : "Ещё"}>
+export function MessagesPage({ from }: { from?: "plan" | "home" }) {
+  return <SectionPage title="Связь с квартирой" description="Телефон и личные контакты остаются скрытыми" backHref={from === "plan" ? "/plan" : from === "home" ? "/" : "/more"} backLabel={from === "plan" ? "К плану дома" : from === "home" ? "На главную" : "Ещё"}>
     <RecipientSelector />
   </SectionPage>;
 }

@@ -1,5 +1,5 @@
 import type { IssueGateway } from "@/entities/issue";
-import { demoHouse, formatLocation, validLocation, type House } from "@/entities/house";
+import { formatLocation, validLocation, type House } from "@/entities/house";
 import { issueCategories } from "@/entities/issue";
 
 // No network calls. Replace through IssueProvider.gateway when an API is available.
@@ -11,4 +11,3 @@ export const createMockIssueGateway = (house: House): IssueGateway => ({
     return { ...input, mine: true, title: input.title.trim(), description: input.description.trim(), id: "local-" + requestId, createdAt, address: house.address, location: formatLocation(input.place), status: "new", history: [{ status: "new", at: createdAt }] };
   },
 });
-export const mockIssueGateway = createMockIssueGateway(demoHouse);

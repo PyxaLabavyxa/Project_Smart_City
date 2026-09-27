@@ -16,7 +16,7 @@ export function IssueHistory({ issue }: { issue: DemoIssue }) {
       <h2 id="issue-history">История обращения</h2>
       <ol className={styles.timeline}>
         {issue.history.map((event, index) => (
-          <li key={event.status} aria-current={index === issue.history.length - 1 ? "step" : undefined}>
+          <li key={`${event.status}:${event.at}:${index}`} aria-current={index === issue.history.length - 1 ? "step" : undefined}>
             <span className={styles.marker} aria-hidden="true">{index === issue.history.length - 1 ? "●" : "✓"}</span>
             <h3>{historyLabels[event.status]}</h3>
             <time dateTime={event.at}>{formatIssueDate(event.at)}</time>

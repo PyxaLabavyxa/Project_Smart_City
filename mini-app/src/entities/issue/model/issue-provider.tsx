@@ -9,6 +9,9 @@ import type { CreateIssueInput, IssueGateway } from "./issue-gateway";
 type IssueState = {
   issues: readonly DemoIssue[];
   draft: IssueDraft;
+  creating: boolean;
+  createdIssueId: string | null;
+  dismissCreationNotice: () => void;
   updateDraft: (patch: Partial<IssueDraft>) => void;
   startAt: (place: HouseLocation) => void;
   resetDraft: () => void;
@@ -19,6 +22,8 @@ const IssueContext = createContext<IssueState | null>(null);
 export function IssueProvider({ children, gateway }: { children: ReactNode; gateway: IssueGateway }) {
   const [issues, setIssues] = useState<readonly DemoIssue[]>(demoIssues);
   const [draft, setDraft] = useState(() => emptyDraft(defaultPlace));
+  const [creating, setCreating] = useState(false);
+  const [createdIssueId, setCreatedIssueId] = useState<string | null>(null);
   const { house, selected } = useHouseSelection();
   const pending = useRef<Promise<string> | null>(null);
   const requestId = useRef<string | null>(null);
@@ -35,11 +40,14 @@ export function IssueProvider({ children, gateway }: { children: ReactNode; gate
       requestId.current = crypto.randomUUID();
       requestPayload.current = payload;
     }
-    const task = gateway.create(input, requestId.current).then(issue => {
+    setCreating(true);
+    const id = requestId.current;
+    const task = Promise.resolve().then(() => gateway.create(input, id)).then(issue => {
       setIssues(current => current.some(item => item.id === issue.id) ? current : [issue, ...current]);
       resetDraft();
+      setCreatedIssueId(issue.id);
       return issue.id;
-    }).finally(() => { pending.current = null; });
+    }).finally(() => { pending.current = null; setCreating(false); });
     pending.current = task;
     return task;
   }
@@ -48,7 +56,7 @@ export function IssueProvider({ children, gateway }: { children: ReactNode; gate
     return { ...issue, place, location: place ? formatLocation(place) : issue.location };
   });
   const currentDraft = { ...draft, place: fallbackLocation(house, draft.place) };
-  return <IssueContext.Provider value={{ issues: locatedIssues, draft: currentDraft, updateDraft: patch => setDraft(current => ({ ...current, place: fallbackLocation(house, current.place), ...patch })), startAt: place => setDraft(current => ({ ...current, place, step: 0 })), resetDraft, addIssue, respondToResolution }}>{children}</IssueContext.Provider>;
+  return <IssueContext.Provider value={{ issues: locatedIssues, draft: currentDraft, creating, createdIssueId, dismissCreationNotice: () => setCreatedIssueId(null), updateDraft: patch => setDraft(current => ({ ...current, place: fallbackLocation(house, current.place), ...patch })), startAt: place => setDraft(current => ({ ...current, place, step: 0 })), resetDraft, addIssue, respondToResolution }}>{children}</IssueContext.Provider>;
 }
 export function useIssues() {
   const context = useContext(IssueContext);

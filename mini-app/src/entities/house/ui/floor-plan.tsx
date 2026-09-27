@@ -38,7 +38,7 @@ export function FloorPlan({ house, selected, onSelect, problemPlaces = [], resol
       {pages > 1 && <div className={styles.services}>{zone("elevator", styles.service)}{zone("stairs", styles.service)}{zone("technical", styles.service)}</div>}
       <div className={styles.floor} data-large={pages > 1 || undefined} style={{ "--rows": Math.ceil(apartments.length / 2) } as CSSProperties}>
         <div className={styles.core}>{pages === 1 && <div className={styles.transport}>{zone("elevator", styles.service)}{zone("stairs", styles.service)}</div>}{zone("corridor", styles.corridor)}{pages === 1 && zone("technical", `${styles.service} ${styles.technical}`)}</div>
-        {apartments.map((apartment, index) => room({ ...base, zone: "apartment", apartment }, styles.apartment, { gridColumn: index % 2 ? 3 : 1, gridRow: Math.floor(index / 2) + 1 }))}
+        {apartments.map((apartment, index) => room({ ...base, zone: "apartment", apartment }, "", { gridColumn: index % 2 ? 3 : 1, gridRow: Math.floor(index / 2) + 1 }))}
         {apartments.length % 2 === 1 && <div className={styles.end} style={{ gridColumn: 3, gridRow: Math.ceil(apartments.length / 2) }}>Граница этажа</div>}
       </div>
       {selected.floor === 1 && zone("entrance", styles.entrance)}

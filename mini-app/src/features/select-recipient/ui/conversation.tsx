@@ -6,8 +6,8 @@ import styles from "./recipient-selector.module.css";
 import { Icon } from "@/shared/ui/icon";
 const suggestions = ["Здравствуйте!", "У вас есть вода?", "Не шумите, пожалуйста", "Спасибо!"];
 export function Conversation({ place }: { place: HouseLocation & { zone: "apartment" } }) {
-  const { messages, drafts, setDraft, send } = useMessages();
-  const [saving, setSaving] = useState(false);
+  const { messages, drafts, sending, setDraft, send } = useMessages();
+  const saving = sending.includes(place.apartment);
   const [error, setError] = useState("");
   const lock = useRef(false);
   const input = useRef<HTMLTextAreaElement>(null);
@@ -17,11 +17,11 @@ export function Conversation({ place }: { place: HouseLocation & { zone: "apartm
   useEffect(() => { const list = historyList.current; if (list) list.scrollTop = list.scrollHeight; }, [history.length]);
   async function submit(event: FormEvent) {
     event.preventDefault();
-    if (lock.current) return;
-    if (!text.trim()) { setError("Введите сообщение"); return; }
-    lock.current = true; setSaving(true); setError("");
+    if (lock.current || saving) return;
+    if (!text.trim()) { setError("Введите сообщение"); input.current?.focus(); return; }
+    lock.current = true; setError("");
     try { await send(place, text); } catch (error) { setError(error instanceof Error ? error.message : "Не удалось отправить сообщение. Повторите попытку."); }
-    finally { lock.current = false; setSaving(false); }
+    finally { lock.current = false; }
   }
   return <section className={styles.conversation} aria-label={"Переписка с квартирой " + place.apartment}>
     <ol ref={historyList} className={styles.history} aria-live="polite" tabIndex={history.length ? 0 : undefined} aria-label="История сообщений">{history.map(message => <li key={message.id} className={message.direction === "outgoing" ? styles.outgoing : styles.incoming}><small>{message.direction === "outgoing" ? "Вы" : "Квартира " + place.apartment}</small><p>{message.text}</p><time dateTime={message.createdAt}>{new Date(message.createdAt).toLocaleString("ru-RU", { timeZone: "Europe/Moscow", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</time></li>)}</ol>

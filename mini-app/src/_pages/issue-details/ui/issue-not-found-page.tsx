@@ -1,10 +1,10 @@
 import Link from "next/link";
-import styles from "./issue-details.module.css";
+import styles from "@/shared/ui/navigation/page-state.module.css";
 
 export function IssueNotFoundPage() {
-  return <>
+  return <section className={styles.state}>
     <h1>Обращение не найдено</h1>
     <p>В списке нет обращения с таким номером.</p>
-    <Link href="/issues" className={styles.back}>Вернуться к обращениям</Link>
-  </>;
+    <Link href="/issues" className={styles.primary}>Вернуться к обращениям</Link>
+  </section>;
 }

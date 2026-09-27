@@ -4,5 +4,5 @@ export default async function Page({ searchParams }: {
   searchParams: Promise<{ from?: string | string[] }>;
 }) {
   const { from } = await searchParams;
-  return <MessagesPage fromPlan={from === "plan"} />;
+  return <MessagesPage from={from === "plan" || from === "home" ? from : undefined} />;
 }

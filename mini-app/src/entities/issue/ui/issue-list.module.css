@@ -12,6 +12,15 @@
 .state time { font-size: var(--font-meta); color: var(--color-muted); line-height: 18px; }
 .chevron { margin-top: 12px; color: var(--color-muted); }
 .issue:focus-visible { outline-offset: 4px; border-radius: 4px; }
+@media (min-width: 901px) {
+  .list[data-wide] .issue { align-items: center; padding-block: 24px; }
+  .list[data-wide] .body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, .85fr); column-gap: 32px; align-items: center; }
+  .list[data-wide] .body > h2, .list[data-wide] .location, .list[data-wide] .category { grid-column: 1; }
+  .list[data-wide] .category { margin-bottom: 0; }
+  .list[data-wide] .state { grid-column: 2; grid-row: 1 / 4; }
+  .list[data-wide] .state time { width: 100%; }
+  .list[data-wide] .chevron { margin-top: 0; }
+}
 :global(:root[data-theme="dark"]) .categoryIcon { color: #b8c5e0; background: #2a3242; }
 @media (hover: hover) {
   .issue:hover h2, .issue:hover .chevron { color: var(--color-primary); }

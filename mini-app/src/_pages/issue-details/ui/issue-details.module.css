@@ -1,4 +1,8 @@
 .back { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; margin-bottom: 20px; color: var(--color-muted); font-size: 13px; }
+.success { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 24px; padding: 20px; border-radius: var(--radius-card); background: var(--color-success-bg); color: var(--color-success); }
+.success > div { flex: 1; min-width: 0; }
+.success p { margin: 6px 0 0; font-size: 13px; }
+.success button { flex-shrink: 0; width: 44px; height: 44px; border: 0; border-radius: var(--radius-input); background: transparent; color: inherit; font-size: 24px; }
 .back:hover { color: var(--color-primary); border-color: var(--color-primary); }
 .heading { margin-bottom: 36px; }
 .heading h1 { max-width: 32ch; overflow-wrap: anywhere; font-size: var(--font-page-title); letter-spacing: -1px; line-height: 1.2; }

@@ -3,14 +3,14 @@ import { formatIssueDate, type DemoIssue } from "../model/demo-issues";
 import { IssueStatus } from "./issue-status";
 import { IssueCategoryIcon } from "./issue-category-icon";
 import styles from "./issue-list.module.css";
-export function IssueList({ issues }: { issues: readonly DemoIssue[] }) {
-  return (      <ul className={styles.list} aria-label="Мои обращения">
+export function IssueList({ issues, wide = false }: { issues: readonly DemoIssue[]; wide?: boolean }) {
+  return (      <ul className={styles.list} aria-label="Обращения" data-wide={wide || undefined}>
         {issues.map(issue => (
           <li key={issue.id}>
-            <Link href={`/issues/${issue.id}`} className={styles.issue} aria-labelledby={`issue-${issue.id}`}>
+            <Link href={`/issues/${issue.id}`} className={styles.issue} aria-label={issue.title}>
               <span className={styles.categoryIcon} data-priority={issue.priority}><IssueCategoryIcon category={issue.category} /></span>
               <div className={styles.body}>
-                <h2 id={`issue-${issue.id}`}>{issue.title}</h2>
+                <h2>{issue.title}</h2>
                 <p className={styles.location}>{issue.location}</p>
                 <p className={styles.category}>{issue.category}</p>
                 <div className={styles.state}>

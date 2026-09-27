@@ -9,7 +9,7 @@ export function StructureEditor() {
   const [values, setValues] = useState({ entrances: String(house.entrances), floors: String(house.floors), apartmentsPerFloor: String(house.apartmentsPerFloor) });
   const [overrides, setOverrides] = useState({ ...house.overrides });
   const [previewSelection, setPreviewSelection] = useState<HouseLocation>(selected);
-  const [count, setCount] = useState(String(floorCount(house, selected.entrance, selected.floor)));
+  const [countDraft, setCountDraft] = useState({ key: "", value: "" });
   const [message, setMessage] = useState("");
   const [overrideError, setOverrideError] = useState("");
   const base = { ...house, entrances: Number(values.entrances), floors: Number(values.floors), apartmentsPerFloor: Number(values.apartmentsPerFloor), overrides: {} };
@@ -18,12 +18,15 @@ export function StructureEditor() {
   const valid = validStructure(candidate);
   const previewHouse = valid ? candidate : house;
   const place = fallbackLocation(previewHouse, previewSelection);
+  const defaultCount = floorCount(previewHouse, place.entrance, place.floor);
+  const floorKey = `${place.entrance}:${place.floor}:${defaultCount}`;
+  const count = countDraft.key === floorKey ? countDraft.value : String(defaultCount);
   const removed = Object.keys(overrides).length - Object.keys(keptOverrides).length;
   const changed = JSON.stringify({ ...house, overrides: house.overrides ?? {} }) !== JSON.stringify(candidate);
   const errors = { entrances: "Укажите целое число от 1 до 8", floors: "Укажите целое число от 1 до 40", apartmentsPerFloor: "Укажите целое число от 1 до 60" };
   const fields = [{ key: "entrances", label: "Подъездов", max: 8 }, { key: "floors", label: "Этажей в подъезде", max: 40 }, { key: "apartmentsPerFloor", label: "Квартир на типовом этаже", max: 60 }] as const;
   const numbers = floorApartments(previewHouse, place.entrance, place.floor);
-  function selectFloor(next: HouseLocation) { setPreviewSelection(next); setCount(String(floorCount(previewHouse, next.entrance, next.floor))); setOverrideError(""); }
+  function selectFloor(next: HouseLocation) { setPreviewSelection(next); setCountDraft({ key: "", value: "" }); setOverrideError(""); }
   return <div className={styles.layout}>
     <div><form className={styles.panel} noValidate onSubmit={event => { event.preventDefault(); if (!valid) { setMessage("Проверьте параметры дома."); return; } applyStructure(candidate); setOverrides(keptOverrides); setMessage("Структура дома сохранена. План и номера квартир обновлены."); }}>
       <h2>{house.address}</h2><div className={styles.fields}>{fields.map(field => {
@@ -41,7 +44,7 @@ export function StructureEditor() {
     </form>
     <section className={styles.panel}><h2>Отдельный этаж</h2><p className={styles.note}>Выберите этаж в предпросмотре и задайте своё количество квартир.</p>
       <p>Подъезд {place.entrance} · этаж {place.floor}</p>
-      <label className={styles.field}>Квартир на этом этаже<input type="number" inputMode="numeric" min={1} max={60} value={count} aria-invalid={!!overrideError} aria-describedby={overrideError ? "override-error" : undefined} onChange={event => { setCount(event.target.value); setOverrideError(""); }} /></label>
+      <label className={styles.field}>Квартир на этом этаже<input type="number" inputMode="numeric" min={1} max={60} value={count} aria-invalid={!!overrideError} aria-describedby={overrideError ? "override-error" : undefined} onChange={event => { setCountDraft({ key: floorKey, value: event.target.value }); setOverrideError(""); }} /></label>
       {overrideError && <p id="override-error" role="alert" className={styles.error}>{overrideError}</p>}
       <button type="button" className={styles.button} disabled={!valid} onClick={() => { const n = Number(count); if (!Number.isInteger(n) || n < 1 || n > 60) { setOverrideError("Укажите целое число от 1 до 60"); return; } setOverrides({ ...overrides, [`${place.entrance}:${place.floor}`]: n }); setMessage("Настройка этажа добавлена в предпросмотр. Примените изменения ко всему дому."); }}>Добавить в предпросмотр</button>
       <h3>Индивидуальные настройки</h3><ul className={styles.overrides}>{Object.entries(keptOverrides).map(([key, n]) => <li key={key}><span>Подъезд {key.split(":")[0]} · этаж {key.split(":")[1]}<small>{n} кв.</small></span><button type="button" className={styles.button} aria-label={`Вернуть типовой этаж ${key}`} onClick={() => { const next = { ...overrides }; delete next[key]; setOverrides(next); setMessage(""); }}>Убрать</button></li>)}</ul>

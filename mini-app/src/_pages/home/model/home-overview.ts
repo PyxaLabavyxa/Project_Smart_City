@@ -1,6 +1,5 @@
 // Local presentation fixtures based on the supplied prototype; not live house telemetry.
 export const homeOverview = {
-  score: 82,
   condition: "Всё под контролем",
   summary: "Водоснабжение и лифты требуют внимания. Следите за ходом работ в обращениях.",
   works: [

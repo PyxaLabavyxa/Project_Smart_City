@@ -13,7 +13,7 @@ export function IssuesPage({ initialCategory = "" }: { initialCategory?: string 
     <nav className={styles.tabs} aria-label="Статус обращений">{([{ value: "active", label: "Активные" }, { value: "completed", label: "Решённые" }, { value: "all", label: "Все" }] as const).map(tab => <button key={tab.value} type="button" aria-pressed={filters.status === tab.value} onClick={() => setFilters({ ...filters, status: tab.value })}>{tab.label}<span>{issues.filter(issue => tab.value === "all" || (tab.value === "active" ? issue.status !== "completed" : issue.status === "completed")).length}</span></button>)}</nav>
     <IssueFilters filters={filters} categories={issues.map(issue => issue.category)} onChange={setFilters} onReset={() => setFilters(initialIssueFilters)} />
     <div className={styles.summary} role="status"><span>Найдено: <b>{visible.length}</b> из {issues.length}</span></div>
-    {visible.length ? <IssueList issues={visible} /> : <div className={styles.empty}>
+    {visible.length ? <IssueList issues={visible} wide /> : <div className={styles.empty}>
       <h2>{issues.length ? "Обращения не найдены" : "Обращений ещё нет"}</h2>
       <p>{issues.length ? "Измените условия поиска или сбросьте фильтры." : "Сообщите о проблеме с помощью кнопки выше."}</p>
       {issues.length > 0 && <button type="button" className={styles.emptyButton} onClick={() => setFilters(initialIssueFilters)}>Сбросить фильтры</button>}

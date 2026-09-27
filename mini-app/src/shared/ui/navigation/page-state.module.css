@@ -1,0 +1,14 @@
+.state { max-width: 640px; margin: 32px auto; padding: 32px; border-radius: var(--radius-panel); background: var(--color-surface); text-align: center; }
+.state p { color: var(--color-muted); margin: 20px 0 28px; }
+.symbol { display: grid; place-items: center; width: 52px; height: 52px; margin: 0 auto 24px; border-radius: 50%; color: var(--color-primary); background: var(--color-soft); font-size: 26px; }
+.actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
+.button { composes: button from "@/shared/styles/controls.module.css"; }
+.primary { composes: primary from "@/shared/styles/controls.module.css"; }
+.loading { color: var(--color-muted); }
+.skeleton { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 24px; }
+.skeleton > * { border-radius: var(--radius-card); background: var(--color-neutral); }
+.skeleton span { height: 36px; }
+.skeleton div { height: 240px; }
+@media (prefers-reduced-motion: no-preference) { .skeleton { animation: pulse 1.4s ease-in-out infinite alternate; } }
+@keyframes pulse { to { opacity: .45; } }
+@media (max-width: 600px) { .state { padding: 28px 20px; margin: 16px auto; } .actions > * { width: 100%; } .skeleton { grid-template-columns: 1fr; } .skeleton > :nth-child(2) { display: none; } }

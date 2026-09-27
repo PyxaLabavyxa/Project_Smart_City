@@ -32,7 +32,8 @@
 .update p { color: var(--color-muted); font-size: 12px; margin: 6px 0 0; }
 .house { padding: 24px; background: var(--color-surface); border-radius: var(--radius-panel); }
 .muted { color: var(--color-muted); font-size: 12px; }
-.houseMeta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; margin: 16px 0; color: var(--color-muted); font-size: 11px; }
+.houseMeta { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin: 16px 0; color: var(--color-muted); font-size: 11px; }
+.houseMeta a { display: grid; place-items: center; width: 44px; height: 44px; border-radius: var(--radius-input); }
 .planButton { composes: primary from "@/shared/styles/controls.module.css"; width: 100%; text-align: center; }
 .schedule { padding: 0 4px; }
 .work { display: flex; gap: 20px; padding: 22px 0; border-bottom: 1px solid var(--color-line); }

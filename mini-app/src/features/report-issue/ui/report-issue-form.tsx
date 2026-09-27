@@ -9,13 +9,14 @@ import styles from "./report-issue.module.css";
 const steps = ["Место", "Категория", "Описание", "Создание"];
 const stepTitles = ["Где возникла проблема?", "Что случилось?", "Расскажите о проблеме", "Проверьте обращение"];
 export function ReportIssueForm({ cancelHref = "/issues" }: { cancelHref?: string }) {
-  const { addIssue, issues, draft, updateDraft, resetDraft } = useIssues();
+  const { addIssue, issues, draft, creating, updateDraft, resetDraft } = useIssues();
   const { house } = useHouseSelection();
   const router = useRouter();
   const submitted = useRef(false);
   const formRef = useRef<HTMLFormElement>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [saving, setSaving] = useState(false);
+  const [navigating, setNavigating] = useState(false);
+  const saving = creating || navigating;
   const [failure, setFailure] = useState("");
   const matches = similarIssues(issues, draft.place, draft.category);
   function goToStep(step: number) {
@@ -36,7 +37,7 @@ export function ReportIssueForm({ cancelHref = "/issues" }: { cancelHref?: strin
   }
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (submitted.current) return;
+    if (submitted.current || saving) return;
     if (!validate()) {
       const form = event.currentTarget;
       requestAnimationFrame(() => form.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus());
@@ -44,17 +45,18 @@ export function ReportIssueForm({ cancelHref = "/issues" }: { cancelHref?: strin
     }
     if (draft.step < 3) { goToStep(draft.step + 1); return; }
     submitted.current = true;
-    setSaving(true); setFailure("");
+    setFailure("");
     try {
       const id = await addIssue({ place: draft.place, category: draft.category, title: draft.title, description: draft.description });
+      setNavigating(true);
       router.push("/issues/" + id);
     } catch (error) {
       setFailure(error instanceof Error ? error.message : "Не удалось создать обращение. Попробуйте ещё раз.");
-      submitted.current = false; setSaving(false);
+      submitted.current = false; setNavigating(false);
     }
   }
   const error = (name: string) => errors[name] ? <span className={styles.error} id={name + "-error"} role="alert">{errors[name]}</span> : null;
-  return <form ref={formRef} className={styles.form} onSubmit={submit} noValidate>
+  return <form ref={formRef} className={styles.form} onSubmit={submit} noValidate aria-busy={saving}>
     <p className={styles.note} aria-live="polite">Шаг {draft.step + 1} из {steps.length} · {steps[draft.step]}</p>
     <ol className={styles.steps} aria-label="Этапы обращения">{steps.map((step, index) => <li key={step} data-reached={index <= draft.step || undefined} aria-current={draft.step === index ? "step" : undefined}><span>{index + 1}</span>{step}</li>)}</ol>
     <fieldset className={styles.fields} disabled={saving}>

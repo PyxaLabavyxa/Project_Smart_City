@@ -7,13 +7,12 @@
 .filters label { display: grid; min-width: 0; gap: 6px; font-size: 14px; }
 .filters input, .filters select, .filters button { min-width: 0; width: 100%; min-height: var(--control-height); padding: 12px 14px; border: 1px solid var(--color-line); border-radius: var(--radius-input); font: inherit; color: var(--color-ink); background: var(--color-surface); }
 .filters button { color: var(--color-primary); cursor: pointer; }
-.empty { padding: 20px 0; }
 .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
 .tabs button { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 10px 16px; border: 0; border-radius: 8px; background: transparent; color: var(--color-muted); cursor: pointer; font-size: 14px; }
 .tabs button[aria-pressed="true"] { background: var(--color-soft); color: var(--color-primary); font-weight: 600; }
 .tabs span { font-size: 11px; }
 .filterPanel { margin-bottom: 24px; border-bottom: 1px solid var(--color-line); }
-.filterPanel summary { padding: 0 0 16px; width: fit-content; cursor: pointer; color: var(--color-muted); font-size: 13px; }
+.filterPanel summary { min-height: 44px; padding: 8px 0 16px; width: fit-content; cursor: pointer; color: var(--color-muted); font-size: 13px; }
 .filterPanel[open] .filters { padding-top: 8px; }
 .empty { padding: 48px 24px; text-align: center; border-radius: var(--radius-panel); background: var(--color-surface); }
 .empty h2 { font-size: 22px; }

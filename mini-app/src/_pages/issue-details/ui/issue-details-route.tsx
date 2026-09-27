@@ -2,8 +2,12 @@
 import { useIssues } from "@/entities/issue";
 import { IssueDetailsPage } from "./issue-details-page";
 import { IssueNotFoundPage } from "./issue-not-found-page";
+import styles from "./issue-details.module.css";
 export function IssueDetailsRoute({ id }: { id: string }) {
-  const { issues } = useIssues();
+  const { issues, createdIssueId, dismissCreationNotice } = useIssues();
   const issue = issues.find(item => item.id === id);
-  return issue ? <IssueDetailsPage issue={issue} /> : <IssueNotFoundPage />;
+  return issue ? <>
+    {createdIssueId === id && <div className={styles.success} role="status"><div><strong>Обращение создано</strong><p>Место и описание сохранены. Здесь можно следить за статусом.</p></div><button type="button" aria-label="Закрыть подтверждение" onClick={dismissCreationNotice}>×</button></div>}
+    <IssueDetailsPage issue={issue} />
+  </> : <IssueNotFoundPage />;
 }
