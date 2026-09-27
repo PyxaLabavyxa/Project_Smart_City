@@ -1,9 +1,0 @@
-aiohttp==3.14.3
-environs>=14,<15
-SQLAlchemy>=2.0,<3
-aiosqlite>=0.20,<1
-aiofiles>=24,<26
-Pillow>=11,<13
-pydantic>=2,<3
-yandex-ai-studio-sdk
-maxapi @ git+https://github.com/max-messenger/max-botapi-python.git@4a286baa06d38f2db9f7244d94f89508743f8fee
