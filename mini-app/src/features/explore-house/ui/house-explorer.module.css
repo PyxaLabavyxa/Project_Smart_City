@@ -1,10 +1,42 @@
-.map { padding: 16px; background: var(--color-surface); border: 1px solid var(--color-line); border-radius: 12px; }
-.apartments, .zones { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-.zones { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--color-line); }
-.room { display: grid; gap: 8px; min-width: 0; min-height: 80px; padding: 12px; border: 1px solid var(--color-line); border-radius: 8px; background: var(--color-bg); color: var(--color-ink); text-align: left; cursor: pointer; overflow-wrap: anywhere; }
-.room small, .caption { color: var(--color-muted); font-size: 12px; }
-.room[aria-pressed="true"] { border-color: var(--color-primary); box-shadow: inset 0 0 0 1px var(--color-primary); }
-.room:hover { border-color: var(--color-primary); }
-.selected { margin-top: 24px; }
-.selected h2 { margin: 6px 0; font-size: 22px; }
-@media (max-width: 360px) { .map { padding: 10px; } .room { padding: 10px; } }
+.layout { display: grid; grid-template-columns: minmax(0,2.2fr) minmax(0,1fr); gap: 32px; align-items: start; }
+.canvas { min-width: 0; padding: 4px 24px 24px; background: var(--color-surface); border-radius: var(--radius-panel); }
+.searchRow { display: flex; align-items: center; gap: 24px; padding: 24px 0; border-block: 1px solid var(--color-line); }
+.search { flex: 1; min-width: 0; }
+.search label { display: block; margin-bottom: 8px; color: var(--color-muted); font-size: 12px; }
+.search > div { display: flex; gap: 6px; }
+.search input { width: 100%; min-width: 0; }
+.searchButton { composes: button from "@/shared/styles/controls.module.css"; flex-shrink: 0; white-space: nowrap; color: var(--color-primary); background: var(--color-soft); }
+.search > p { font-size: 12px; color: var(--color-danger); }
+.range { flex: .65; font-size: 12px; color: var(--color-muted); }
+.range strong { color: var(--color-ink); }
+.range small { display: block; margin-top: 4px; }
+.sidebar { min-width: 0; }
+.sheet { width:min(520px,calc(100% - 24px)); max-height:85dvh; margin:auto auto max(12px,env(safe-area-inset-bottom)); padding:24px; border:0; border-radius:20px; background:var(--color-surface); color:var(--color-ink); }
+.sheet::backdrop { background:#20242a66; }
+.sheet .selected { padding-top:8px; border:0; }
+.sheet .selected > h2 { padding-right:48px; }
+.sheetClose { position:absolute; top:16px; right:16px; width:44px; height:44px; border:0; border-radius:8px; background:var(--color-neutral); color:var(--color-ink); font-size:26px; }
+.otherZones { display:flex; flex-wrap:wrap; gap:8px; border-top:1px solid var(--color-line); margin-top:20px; padding-top:16px; }
+.otherZones button { min-height:44px; padding:8px 16px; border:0; border-radius:8px; background:var(--color-neutral); color:var(--color-ink); }
+.otherZones button[aria-pressed=true] { color:var(--color-primary); background:var(--color-soft); box-shadow:inset 0 0 0 1px var(--color-primary); }
+.sidebar p { color: var(--color-muted); font-size: 13px; line-height: 1.7; }
+.floorHeading { padding-bottom: 20px; border-bottom: 1px solid var(--color-line); }
+.floorHeading h2 { margin: 0; font-size: 28px; }
+.floorHeading p:first-child { margin-top: 8px; font-size: 12px; }
+.selected { padding: 24px 0; border-bottom: 1px solid var(--color-line); }
+.selected > h2 { margin: 0; font-size: 22px; }
+.state { display: block; margin: 24px 0 12px; color: var(--color-teal); font-size: 12px; }
+.state[data-attention] { color: var(--color-warning); }
+.state[data-planned] { color: var(--color-info); }
+.otherZones button:active:not(:disabled) { transform: translateY(1px); }
+@media (hover:hover) { .otherZones button:hover { box-shadow: inset 0 0 0 1px var(--color-primary); } }
+.actions { display: grid; gap: 10px; margin-top: 24px; }
+.action { composes: primary from "@/shared/styles/controls.module.css"; text-align: center; }
+.actions a + a { color: var(--color-primary); background: var(--color-soft); }
+.floorIssues { padding-top: 24px; }
+.floorIssues h3 { display: flex; justify-content: space-between; margin: 0; font-size: 14px; }
+.floorIssues h3 span { padding: 2px 8px; border-radius: 4px; background: var(--color-soft); color: var(--color-primary); }
+.neighbors { border-top: 1px solid var(--color-line); margin-top: 24px; padding-top: 24px; }
+.neighbors h3 { margin: 0; font-size: 14px; }
+@media (max-width: 900px) { .layout { grid-template-columns: minmax(0,1fr); } }
+@media (max-width: 480px) { .canvas { padding: 1px 12px 20px; } .searchRow { display: block; padding: 16px 0; } .range { margin-bottom: 0; } .range small { display: inline; margin-left: 8px; } }

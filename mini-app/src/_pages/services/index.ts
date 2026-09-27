@@ -1,1 +1,1 @@
-export { HealthPage, MessagesPage, HouseInfoPage, CompanyPage } from "./ui/service-pages";
+export { HealthPage, MessagesPage, HouseInfoPage } from "./ui/service-pages";

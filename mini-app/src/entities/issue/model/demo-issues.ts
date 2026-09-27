@@ -14,11 +14,29 @@ export type DemoIssue = {
   place?: HouseLocation;
   createdAt: string;
   status: DemoIssueStatus;
+  priority?: "normal" | "high";
+  mine?: boolean;
+  assignee?: string;
+  deadline?: string;
   description: string;
   history: readonly { status: DemoIssueStatus; at: string }[];
 };
 
 export const demoIssues: readonly DemoIssue[] = [
+  {
+    id: "149", mine: true,
+    title: "Уборка площадки после ремонта", category: "Уборка",
+    address: "ул. Центральная, 18", location: "Подъезд 2 · этаж 9 · Коридор",
+    place: { houseId: "central-18", entrance: 2, floor: 9, zone: "corridor" },
+    createdAt: "2026-09-22T08:00:00+03:00", status: "awaiting-confirmation",
+    description: "После ремонта на площадке остались пыль и строительный мусор.",
+    history: [
+      { status: "new", at: "2026-09-22T08:00:00+03:00" },
+      { status: "accepted", at: "2026-09-22T09:00:00+03:00" },
+      { status: "in-progress", at: "2026-09-23T10:00:00+03:00" },
+      { status: "awaiting-confirmation", at: "2026-09-23T12:00:00+03:00" },
+    ],
+  },
   {
     id: "151",
     title: "Не работает свет на лестнице",
@@ -48,6 +66,7 @@ export const demoIssues: readonly DemoIssue[] = [
   },
   {
     id: "148",
+    priority: "high",
     title: "Протечка возле стояка",
     category: "Водоснабжение",
     address: "ул. Центральная, 18",
@@ -64,6 +83,7 @@ export const demoIssues: readonly DemoIssue[] = [
   },
   {
     id: "146",
+    mine: true,
     title: "Лифт закрывается с задержкой",
     category: "Лифт",
     address: "ул. Центральная, 18",

@@ -1,13 +1,47 @@
 :root {
   color-scheme: light;
   --color-bg: #f7f7f4;
-  --color-surface: #fff;
+  --color-surface: #ffffff;
   --color-ink: #20242a;
   --color-muted: #616771;
   --color-line: #e4e5e3;
   --color-primary: #315bef;
+  --color-action: #315bef;
+  --color-on-action: #ffffff;
+  --color-teal: #34877e;
+  --color-soft: #edf1ff;
+  --color-neutral: #eeefec;
+  --color-danger: #b04a40;
+  --color-danger-bg: #f9e9e6;
+  --color-warning: #815618;
+  --color-warning-bg: #f8eddb;
+  --color-success: #27685f;
+  --color-success-bg: #e6f1ed;
+  --color-info: #49618f;
+  --color-info-bg: #eaf0fc;
+  --color-focus: #a3b5ff;
+  --radius-sm: 5px;
+  --radius-input: 8px;
+  --radius-button: 10px;
+  --radius-card: 14px;
+  --radius-panel: 18px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --container-width: 1184px;
+  --page-gutter: 28px;
+  --page-spacing: 34px;
+  --font-page-title: 36px;
+  --font-section-title: 22px;
+  --font-body: 15px;
+  --font-meta: 12px;
+  --control-height: 48px;
+  --shadow-surface: none;
 }
-
 :root[data-theme="dark"] {
   color-scheme: dark;
   --color-bg: #181a1e;
@@ -16,4 +50,18 @@
   --color-muted: #b3b9c4;
   --color-line: #3a3f48;
   --color-primary: #91a7ff;
+  --color-teal: #8ac9bd;
+  --color-soft: #28324d;
+  --color-neutral: #292d33;
+  --color-danger: #f2b4ad;
+  --color-danger-bg: #482f2b;
+  --color-warning: #f3cf8f;
+  --color-warning-bg: #453821;
+  --color-success: #a2dbcb;
+  --color-success-bg: #253e37;
+  --color-info: #bdd0fa;
+  --color-info-bg: #2b3852;
+}
+@media (max-width: 760px) {
+  :root { --page-gutter: 16px; --page-spacing: 24px; --font-page-title: 28px; }
 }

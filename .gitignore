@@ -15,3 +15,7 @@ node_modules/
 dist/
 .idea/
 .vscode/
+tests/
+!mini-app/tests/
+mini-app/tests/*
+!mini-app/tests/*.test.mjs

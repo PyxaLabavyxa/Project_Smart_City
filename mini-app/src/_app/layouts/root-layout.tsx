@@ -1,4 +1,4 @@
-import { IssueProvider } from "@/entities/issue";
+import { AppProviders } from "./app-providers";
 import type { Metadata, Viewport } from "next";
 import { ApplicationShell } from "@/widgets/application-shell";
 import "@/shared/styles";
@@ -6,7 +6,7 @@ import "../styles/globals.css";
 
 export const metadata: Metadata = {
   title: "ДомПульс",
-  description: "Ваш дом и обращения в управляющую компанию.",
+  description: "Ваш дом, обращения и связь с соседями.",
 };
 
 export const viewport: Viewport = {
@@ -19,7 +19,7 @@ export const viewport: Viewport = {
 export function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="ru">
-      <body><IssueProvider><ApplicationShell>{children}</ApplicationShell></IssueProvider></body>
+      <body><AppProviders><ApplicationShell>{children}</ApplicationShell></AppProviders></body>
     </html>
   );
 }
