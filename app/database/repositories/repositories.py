@@ -1,9 +1,9 @@
-from sqlalchemy import select
+from sqlalchemy import select, and_, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import load_only, selectinload
 
 from app.database.models import User, Issue, IssuePhoto, Apartment, UserApartment
-from app.database.enums import IssueCategory, IssuePriority
+from app.database.enums import IssueCategory, IssuePriority, IssueStatus
 
 
 class UserRepository:
@@ -69,3 +69,65 @@ class IssueRepository:
         self.session.add(issue)
         await self.session.flush()
         return issue
+
+    async def get_last_issue(self, max_user_id: int, house_id: int) -> Issue | None:
+        stmt = (
+            select(Issue)
+            .join(User, Issue.user_id == User.id)
+            .where(
+                and_(
+                    User.max_user_id == max_user_id,
+                    Issue.house_id == house_id
+                )
+            )
+            .order_by(
+                Issue.id,
+                Issue.created_at.desc()
+            )
+            .options(
+                load_only(
+                    Issue.description,
+                    Issue.status,
+                    Issue.title
+                )
+            )
+        )
+
+        result = await self.session.execute(stmt)
+
+        return result.scalar_one_or_none()
+
+    async def get_issue_statuses(self, max_user_id: int, house_id: int) -> dict[str, int | None]:
+        stmt = (
+            select(
+                func.IFNULL(
+                    func.sum(
+                        func.IF(Issue.status == IssueStatus.NEW.name, 1, 0)
+                    ),
+                    0
+                ).label("new"),
+                func.IFNULL(
+                    func.sum(
+                        func.IF(Issue.status == IssueStatus.IN_PROGRESS.name, 1, 0)
+                    ),
+                    0
+                ).label("in_progress"),
+                func.IFNULL(
+                    func.sum(
+                        func.IF(Issue.status == IssueStatus.RESOLVED.name, 1, 0)
+                    ),
+                    0
+                ).label("resolved"),
+            )
+            .join(User, Issue.user_id == User.id)
+            .where(
+                and_(
+                    User.max_user_id == max_user_id,
+                    Issue.house_id == house_id
+                )
+            )
+        )
+
+        result = await self.session.execute(stmt)
+
+        return result.mappings().one()

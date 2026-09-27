@@ -11,10 +11,10 @@ from maxapi.context import MemoryContext
 from yandex_ai_studio_sdk._models.completions.model import AsyncGPTModel
 
 from app.lexicon.lexicon import LEXICON
-from app.keyboards.inline import inl_menu, inl_confirm, inl_houses
-from app.states.states import FSMReport
+from app.keyboards.inline import inl_menu, inl_confirm, inl_houses, inl_back_to_menu
+from app.states.states import FSMReport, FSMViewingReports
 from app.filters.message_filters import has_photo_or_text
-from app.database.requests import create_user_if_exist, get_user_houses
+from app.database.requests import create_user_if_exist, get_user_houses, get_issue_information
 from app.database.session import session_factory
 from app.services.issues import submit_issue
 from app.services.report_draft import collect_report
@@ -60,39 +60,60 @@ async def process_command_start(event: MessageCreated, context: MemoryContext):
     await context.clear()
 
 
+@router.message_callback(
+        FSMReport.waiting,
+        FSMViewingReports.viewing,
+        F.callback.payload == "back_to_menu"
+)
+async def process_main_menu(event: MessageCreated, context: MemoryContext):
+    await context.clear()
+    
+    await event.message.edit(
+        text=LEXICON["bot_start"],
+        attachments=[inl_menu()]
+    )
+
+
 @router.message_created(Command("help"))
-async def process_command_help(event: MessageCreated, context: MemoryContext):
+async def process_command_help(event: MessageCreated):
     await event.message.answer(text=LEXICON["help"])
 
 
+# начало реализации отправки жалобы
 @router.message_callback(F.callback.payload == "send_report")
 async def process_start_report(event: MessageCallback, context: MemoryContext):
     await context.clear()
 
-    async with session_factory() as session:
-        houses = await get_user_houses(session, event.callback.user.user_id)
+    max_user_id = event.callback.user.user_id
 
-        
+    async with session_factory() as session:
+        houses = await get_user_houses(session, max_user_id)
+
         if len(houses) == 0:
-            await event.message.answer(LEXICON["report_no_house"])
-        
-        keyboard = await inl_houses(
-            session,
-            event.callback.user.user_id
-        )
+            await event.message.edit(
+                text=LEXICON["report_no_house"],
+                attachments=[]
+            )
+            return
 
     if len(houses) == 1:
         await context.update_data(house_id=houses[0][0])
         
         await event.message.edit(
             text=LEXICON["send_report"],
-            attachments=[]
+            attachments=[inl_back_to_menu()]
         )
 
+        await context.update_data(message_id=event.message.body.mid)
         await context.set_state(FSMReport.waiting)
     else:
+        keyboard = await inl_houses(
+            session,
+            max_user_id
+        )
+
         await event.message.edit(
-            text=LEXICON["choose_house"],
+            text=LEXICON["choose_house_send"],
             attachments=[keyboard]
         )
 
@@ -121,6 +142,11 @@ async def process_get_report(event: MessageCreated, context: MemoryContext):
     except PhotoError as exc:
         await event.message.answer(str(exc))
         return
+
+    await event.bot.edit_message(
+        message_id=data["message_id"],
+        attachments=[]
+    )
 
     if not new_data["description"]:
         await event.message.answer(LEXICON["report_need_text"])
@@ -162,11 +188,13 @@ async def process_cancel_report(event: MessageCallback, context: MemoryContext):
 
     if "house_id" in data:
         await context.update_data(house_id=data["house_id"])
+
     await event.message.edit(
         text=LEXICON["report_cancelled"],
-        attachments=[]
+        attachments=[inl_back_to_menu()]
     )
 
+    await context.update_data(message_id=event.message.body.mid)
     await context.set_state(FSMReport.waiting)
 
 
@@ -201,3 +229,65 @@ async def process_confirm_report(
         text=LEXICON["report_sent"],
         attachments=[]
     )
+
+
+# начало реализации просмотра жалоб
+@router.message_callback(F.callback.payload == "my_issues")
+async def process_my_issues(event: MessageCallback, context: MemoryContext):
+    await context.clear()
+
+    max_user_id = event.callback.user.user_id
+
+    async with session_factory() as session:
+        houses = await get_user_houses(session, max_user_id)
+
+    if len(houses) == 0:
+        await event.message.answer(
+            text=LEXICON["report_no_house"],
+            attachments=[]
+        )
+        return
+
+    if len(houses) == 1:
+        await context.update_data(house_id=houses[0][0])
+
+        async with session_factory() as session:
+            await event.message.edit(
+                text=await get_issue_information(
+                    session=session,
+                    max_user_id=max_user_id,
+                    house_id=houses[0][0]
+                ),
+                attachments=[inl_back_to_menu()]
+            )
+
+        await context.set_state(FSMViewingReports.viewing)
+    else:
+        keyboard = await inl_houses(
+            session,
+            max_user_id
+        )
+
+        await event.message.edit(
+            text=LEXICON["choose_house_send"],
+            attachments=[keyboard]
+        )
+
+        await context.set_state(FSMViewingReports.choose_house)
+
+
+@router.message_callback(FSMViewingReports.choose_house, F.callback.payload.startswith("house_"))
+async def process_my_issues_after_choice(event: MessageCallback, context: MemoryContext):
+    house_id = int(event.callback.payload.removeprefix("house_"))
+
+    async with session_factory() as session:
+        await event.message.edit(
+            text=await get_issue_information(
+                session=session,
+                max_user_id=event.callback.user.user_id,
+                house_id=house_id
+            ),
+            attachments=[inl_back_to_menu()]
+        )
+
+    await context.set_state(FSMViewingReports.viewing)

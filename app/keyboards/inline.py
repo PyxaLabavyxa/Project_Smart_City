@@ -52,3 +52,13 @@ async def inl_houses(session: AsyncSession, max_user_id: int) -> AttachmentType.
             builder.row(button)
 
     return builder.as_markup()
+
+
+def inl_back_to_menu():
+    builder = InlineKeyboardBuilder()
+
+    builder.add(
+        CallbackButton(text=LEXICON["back_to_menu"], payload="back_to_menu")
+    )
+
+    return builder.as_markup()

@@ -6,3 +6,8 @@ class FSMReport(StatesGroup):
     confirm = State()
     choose_house = State()
     get_description = State()
+
+
+class FSMViewingReports(StatesGroup):
+    viewing = State()
+    choose_house = State()
