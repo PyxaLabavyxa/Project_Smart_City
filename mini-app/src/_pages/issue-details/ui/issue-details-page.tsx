@@ -4,6 +4,7 @@ import { Icon } from "@/shared/ui/icon";
 import { formatIssueDate, IssueStatus, type DemoIssue } from "@/entities/issue";
 import { IssueHistory } from "./issue-history";
 import styles from "./issue-details.module.css";
+import { IssueWorkflow } from "@/features/manage-issue";
 
 export function IssueDetailsPage({ issue }: { issue: DemoIssue }) {
   return (
@@ -24,10 +25,12 @@ export function IssueDetailsPage({ issue }: { issue: DemoIssue }) {
             <div><dt>Дата создания</dt><dd><time dateTime={issue.createdAt}>{formatIssueDate(issue.createdAt)}</time></dd></div>
           </dl>
           {issue.place && <PlaceLink place={issue.place} className={styles.planAction}><Icon name="plan" />Открыть место на плане</PlaceLink>}
+          {!issue.place && <p>Место отсутствует в текущей структуре дома. Исходное описание сохранено.</p>}
           <div className={styles.description}>
             <h2>Описание проблемы</h2>
             <p>{issue.description}</p>
           </div>
+          <IssueWorkflow issue={issue} />
         </section>
         <IssueHistory issue={issue} />
       </div>

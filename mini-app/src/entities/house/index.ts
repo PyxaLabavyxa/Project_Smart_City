@@ -7,3 +7,5 @@ export { defaultPlace, HouseSelectionProvider, useHouseSelection } from "./model
 export { PlaceLink } from "./ui/place-link";
 export { LocationSelector } from "./ui/location-selector";
 export { validLocation, locationQuery, parseLocation } from "./model/house";
+export { floorCount, validStructure, resolveLocation, fallbackLocation } from "./model/house";
+export { HouseElevation } from "./ui/house-elevation";

@@ -3,7 +3,7 @@ import styles from "./issue-details.module.css";
 
 const historyLabels: Record<DemoIssueStatus, string> = {
   new: "Создано",
-  accepted: "Принято УК",
+  accepted: "Принято",
   assigned: "Назначен исполнитель",
   "in-progress": "В работе",
   "awaiting-confirmation": "Ожидает подтверждения",

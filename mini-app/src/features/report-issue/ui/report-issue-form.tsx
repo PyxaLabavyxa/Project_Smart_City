@@ -3,13 +3,14 @@ import { useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useIssues, issueCategories, similarIssues, IssueCategoryIcon } from "@/entities/issue";
-import { LocationSelector, formatLocation, validLocation, demoHouse } from "@/entities/house";
+import { LocationSelector, formatLocation, validLocation, useHouseSelection } from "@/entities/house";
 import styles from "./report-issue.module.css";
 
 const steps = ["Место", "Категория", "Описание", "Создание"];
 const stepTitles = ["Где возникла проблема?", "Что случилось?", "Расскажите о проблеме", "Проверьте обращение"];
 export function ReportIssueForm({ cancelHref = "/issues" }: { cancelHref?: string }) {
   const { addIssue, issues, draft, updateDraft, resetDraft } = useIssues();
+  const { house } = useHouseSelection();
   const router = useRouter();
   const submitted = useRef(false);
   const formRef = useRef<HTMLFormElement>(null);
@@ -26,7 +27,7 @@ export function ReportIssueForm({ cancelHref = "/issues" }: { cancelHref?: strin
   }
   function validate() {
     const next: Record<string, string> = {};
-    if (!validLocation(demoHouse, draft.place)) next.place = "Выберите место в доме";
+    if (!validLocation(house, draft.place)) next.place = "Выберите место в доме";
     if (draft.step >= 1 && !issueCategories.some(category => category === draft.category)) next.category = "Выберите категорию";
     if (draft.step >= 2 && !draft.title.trim()) next.title = "Укажите, что случилось";
     if (draft.step >= 2 && !draft.description.trim()) next.description = "Добавьте описание проблемы";
@@ -76,7 +77,7 @@ export function ReportIssueForm({ cancelHref = "/issues" }: { cancelHref?: strin
           {error("description")}
         </label>
       </>}
-      {draft.step === 3 && <div className={styles.review}><h2>{draft.title}</h2><p>{demoHouse.address}</p><p>{formatLocation(draft.place)}</p><p>{draft.category}</p><p className={styles.description}>{draft.description}</p></div>}
+      {draft.step === 3 && <div className={styles.review}><h2>{draft.title}</h2><p>{house.address}</p><p>{formatLocation(draft.place)}</p><p>{draft.category}</p><p className={styles.description}>{draft.description}</p></div>}
     </fieldset>
     {matches.length > 0 && draft.step >= 1 && <aside className={styles.similar} aria-label="Похожие обращения"><strong>Возможно, об этой проблеме уже сообщили</strong><p>В этом месте есть активные обращения той же категории. Можно открыть их или продолжить создание.</p>{matches.map(issue => <Link key={issue.id} href={"/issues/" + issue.id}>{issue.title}</Link>)}</aside>}
     {failure && <p role="alert" className={styles.error}>{failure}</p>}

@@ -15,7 +15,7 @@ const items = [
 
 export function BottomNavigation() {
   const pathname = usePathname();
-  const section = ["/health", "/messages", "/info", "/company"].includes(pathname)
+  const section = ["/health", "/messages", "/info", "/settings"].includes(pathname)
     ? "/more"
     : items.find(item => item.href !== "/" && (pathname === item.href || pathname.startsWith(item.href + "/")))?.href ?? pathname;
 

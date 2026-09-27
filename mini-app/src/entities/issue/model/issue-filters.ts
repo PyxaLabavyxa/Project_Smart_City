@@ -18,6 +18,7 @@ export type IssueFilters = {
   floor: string;
   zone: string;
   query: string;
+  onlyMine?: boolean;
 };
 
 export const initialIssueFilters: IssueFilters = {
@@ -27,6 +28,7 @@ export const initialIssueFilters: IssueFilters = {
 export function filterIssues(issues: readonly DemoIssue[], filters: IssueFilters) {
   const query = filters.query.trim().toLocaleLowerCase("ru");
   return issues.filter(issue => {
+    if (filters.onlyMine && !issue.mine) return false;
     if (filters.status === "active" ? issue.status === "completed" : filters.status !== "all" && issue.status !== filters.status) return false;
     if (filters.category && issue.category !== filters.category) return false;
     if (filters.entrance && issue.place?.entrance !== Number(filters.entrance)) return false;

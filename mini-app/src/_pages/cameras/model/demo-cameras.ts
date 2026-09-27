@@ -1,6 +1,9 @@
 // Local state fixtures. No video stream, polling or backend connection.
 export type CameraStatus = "online" | "maintenance" | "unavailable";
 export type Camera = { id: string; name: string; status: CameraStatus; note: string };
+export function cameraImage(camera: Camera) {
+  return camera.id.startsWith("entrance-") ? "/images/camera-preview.svg" : "/images/camera-courtyard.svg";
+}
 
 export const cameraStatusLabels: Record<CameraStatus, string> = {
   online: "Онлайн", maintenance: "Обслуживание", unavailable: "Нет связи",

@@ -1,0 +1,12 @@
+.trigger { display:flex; align-items:center; justify-content:space-between; gap:16px; width:100%; min-width:0; padding:12px 16px; border:1px solid var(--color-line); border-radius:10px; background:var(--color-surface); color:var(--color-ink); text-align:left; }
+.trigger span:first-child { display:flex; align-items:center; justify-content:space-between; flex:1; gap:8px; font-size:12px; color:var(--color-muted); }
+.trigger strong { font-size:15px; font-weight:600; color:var(--color-ink); }
+.dialog { width:min(400px,calc(100% - 32px)); max-height:80dvh; padding:24px; border:0; border-radius:18px; background:var(--color-surface); color:var(--color-ink); box-shadow:0 24px 80px #0003; }
+.dialog::backdrop { background:#20242a66; }
+.dialog header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+.dialog h2 { margin:0; font-size:22px; }
+.dialog header button { width:44px; height:44px; border:0; border-radius:8px; font-size:26px; background:var(--color-neutral); color:var(--color-ink); }
+.numbers { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; }
+.numbers button { min-height:52px; border:1px solid transparent; border-radius:8px; background:var(--color-neutral); color:var(--color-ink); font-size:16px; }
+.numbers button[aria-pressed="true"] { background:var(--color-action); color:var(--color-on-action); }
+@media(max-width:600px) { .dialog { margin:auto auto max(16px,env(safe-area-inset-bottom)); padding:20px; } }

@@ -32,12 +32,6 @@
 .update p { color: var(--color-muted); font-size: 12px; margin: 6px 0 0; }
 .house { padding: 24px; background: var(--color-surface); border-radius: var(--radius-panel); }
 .muted { color: var(--color-muted); font-size: 12px; }
-.structure { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; margin-top: 24px; }
-.entrance > span { display: block; margin-bottom: 10px; color: var(--color-muted); font-size: 12px; }
-.entrance > div { display: grid; gap: 4px; }
-.entrance button { display: flex; justify-content: space-between; gap: 8px; min-height: 32px; padding: 5px 12px; border: 1px solid transparent; border-radius: 3px; color: var(--color-muted); background: var(--color-neutral); cursor: pointer; font-size: 12px; }
-.entrance button[aria-pressed="true"] { background: var(--color-action); color: var(--color-on-action); }
-.entrance button:hover { border-color: var(--color-primary); }
 .houseMeta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; margin: 16px 0; color: var(--color-muted); font-size: 11px; }
 .planButton { composes: primary from "@/shared/styles/controls.module.css"; width: 100%; text-align: center; }
 .schedule { padding: 0 4px; }
@@ -51,4 +45,4 @@
 .message h3 { display: flex; align-items: center; gap: 10px; margin: 0; font-size: 15px; }
 .message p { font-size: 14px; line-height: 1.7; }
 @media (max-width: 900px) { .layout { gap: 24px; grid-template-columns: minmax(0,1.3fr) minmax(0,1fr); } .today,.house { padding: 20px; } .condition { gap: 12px; } .sectionHead { flex-wrap: wrap; } }
-@media (max-width: 760px) { .heading { align-items: stretch; flex-direction: column; } .layout { grid-template-columns: minmax(0,1fr); } .quick a { padding: 16px 12px; gap: 10px; } .quick a span:last-child { display: none; } .sectionHead h2 { font-size: 20px; } .condition h3 { font-size: 17px; } .score strong { font-size: 48px; } .entrance button { min-height: 38px; } }
+@media (max-width: 760px) { .heading { align-items: stretch; flex-direction: column; } .layout { grid-template-columns: minmax(0,1fr); } .quick a { padding: 16px 12px; gap: 10px; } .quick a span:last-child { display: none; } .sectionHead h2 { font-size: 20px; } .condition h3 { font-size: 17px; } .score strong { font-size: 48px; } }

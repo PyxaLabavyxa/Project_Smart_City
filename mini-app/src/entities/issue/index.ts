@@ -8,3 +8,4 @@ export { issueStatusLabels, issueCategories, initialIssueFilters, filterIssues }
 export type { IssueFilters } from "./model/issue-filters";
 export { similarIssues } from "./model/similar-issues";
 export type { IssueGateway, CreateIssueInput } from "./model/issue-gateway";
+export { houseHealthScore, resolvedDelta } from "./model/issue-workflow";
