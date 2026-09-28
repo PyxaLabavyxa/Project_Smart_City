@@ -17,14 +17,14 @@ async def get_issue_information(session: AsyncSession, max_user_id: int, house_i
     total = new + in_progress + resolved
 
     if last_issue is None:
-        last_issue_text = "Вы пока не отправляли обращений по этому дому."
+        last_issue_text = LEXICON["no_issues"]
     else:
         status = ISSUE_STATUS_LABELS[last_issue.status]
 
-        last_issue_text = (
-            f"{last_issue.title}\n"
-            f"{last_issue.description}\n\n"
-            f"Статус: {status}"
+        last_issue_text = LEXICON["last_issue"].format(
+            title=last_issue.title,
+            description=last_issue.description,
+            status=status
         )
 
     all_statuses = "\n".join(
