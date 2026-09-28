@@ -1,8 +1,8 @@
-from sqlalchemy import select, and_, func
+from sqlalchemy import select, and_, func, case
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import load_only, selectinload
 
-from app.database.models import User, Issue, IssuePhoto, Apartment, UserApartment
+from app.database.models import User, Issue, IssuePhoto, Apartment, UserApartment, IssueEvent
 from app.database.enums import IssueCategory, IssuePriority, IssueStatus
 
 
@@ -68,6 +68,8 @@ class IssueRepository:
 
         self.session.add(issue)
         await self.session.flush()
+        self.session.add(IssueEvent(issue_id=issue.id, status=IssueStatus.NEW.value,
+                                   created_at=issue.created_at))
         return issue
 
     async def get_last_issue(self, max_user_id: int, house_id: int) -> Issue | None:
@@ -81,9 +83,10 @@ class IssueRepository:
                 )
             )
             .order_by(
-                Issue.id,
-                Issue.created_at.desc()
+                Issue.created_at.desc(),
+                Issue.id.desc()
             )
+            .limit(1)
             .options(
                 load_only(
                     Issue.description,
@@ -100,21 +103,21 @@ class IssueRepository:
     async def get_issue_statuses(self, max_user_id: int, house_id: int) -> dict[str, int | None]:
         stmt = (
             select(
-                func.IFNULL(
+                func.coalesce(
                     func.sum(
-                        func.IF(Issue.status == IssueStatus.NEW.name, 1, 0)
+                        case((Issue.status == IssueStatus.NEW, 1), else_=0)
                     ),
                     0
                 ).label("new"),
-                func.IFNULL(
+                func.coalesce(
                     func.sum(
-                        func.IF(Issue.status == IssueStatus.IN_PROGRESS.name, 1, 0)
+                        case((Issue.status == IssueStatus.IN_PROGRESS, 1), else_=0)
                     ),
                     0
                 ).label("in_progress"),
-                func.IFNULL(
+                func.coalesce(
                     func.sum(
-                        func.IF(Issue.status == IssueStatus.RESOLVED.name, 1, 0)
+                        case((Issue.status == IssueStatus.RESOLVED, 1), else_=0)
                     ),
                     0
                 ).label("resolved"),

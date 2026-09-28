@@ -19,7 +19,7 @@ class WebAppConfig:
 
 @dataclass(frozen=True)
 class DatabaseConfig:
-    url: str = "sqlite+aiosqlite:///./data/smart_city.db"
+    url: str = "postgresql+psycopg://dompulse@localhost:5432/dompulse"
 
 
 @dataclass(frozen=True)
@@ -50,6 +50,8 @@ def read_environment(path: str | Path | None = None) -> Env:
 
 def normalize_database_url(value: str) -> str:
     url = make_url(value)
+    if url.get_backend_name() in ("postgres", "postgresql"):
+        return url.set(drivername="postgresql+psycopg").render_as_string(hide_password=False)
     if url.get_backend_name() == "sqlite" and url.database not in (None, "", ":memory:"):
         url = url.set(database=project_path(url.database).as_posix())
         return url.render_as_string(hide_password=False)
@@ -58,7 +60,7 @@ def normalize_database_url(value: str) -> str:
 
 def database_config(env: Env) -> DatabaseConfig:
     return DatabaseConfig(url=normalize_database_url(
-        env.str("DATABASE_URL", "sqlite+aiosqlite:///./data/smart_city.db")
+        env.str("DATABASE_URL", "postgresql+psycopg://dompulse@localhost:5432/dompulse")
     ))
 
 

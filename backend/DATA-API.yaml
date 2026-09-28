@@ -1,0 +1,57 @@
+# Development draft, not an official evaluation-platform schema.
+# The PDF describes fields but supplies no exact schema or version identifier.
+# Align field names/schema_version with the organizer's template before submission.
+schema_version: "draft-0.1"
+solution: "ДомПульс"
+status: development
+base_url: null # Set the deployed public HTTPS URL before submission.
+local_base_url: "http://127.0.0.1:8000"
+openapi: "openapi.json"
+checks:
+  - id: service-live
+    description: "Процесс API доступен"
+    method: GET
+    path: /health/live
+    parameters:
+      path: {}
+      query: {}
+      headers: {}
+      body: null
+    role: anonymous
+    expected:
+      status_codes: [200]
+      content_type: application/json
+      json_schema:
+        type: object
+        required: [status]
+        properties:
+          status: {type: string, const: ok}
+  - id: database-ready
+    description: "Настроенное соединение с БД доступно; без DATABASE_URL ожидается 503"
+    method: GET
+    path: /health/ready
+    parameters:
+      path: {}
+      query: {}
+      headers: {}
+      body: null
+    role: anonymous
+    expected:
+      status_codes: [200]
+      content_type: application/json
+      json_schema:
+        type: object
+        required: [status]
+        properties:
+          status: {type: string, const: ok}
+  - id: anonymous-resident-denied
+    description: "Данные жителя недоступны без подтверждённого входа MAX"
+    method: GET
+    path: /api/v1/me
+    parameters: {path: {}, query: {}, headers: {}, body: null}
+    role: anonymous
+    expected:
+      status_codes: [401]
+      content_type: application/json
+# Authenticated checks require an organizer-approved resident account and MAX launch data.
+# Integration tests cover those scenarios using isolated PostgreSQL schemas.

@@ -5,6 +5,8 @@ export type House = {
   floors: number;
   apartmentsPerFloor: number;
   residentApartment: number;
+  residentApartmentId?: number;
+  apartments?: readonly { id: number; number: number; entrance: number; floor: number }[];
   overrides?: Readonly<Record<string, number>>;
 };
 
@@ -25,12 +27,14 @@ export type HouseLocation = { houseId: string; entrance: number; floor: number }
 );
 
 export function totalApartments(house: House) {
+  if (house.apartments) return house.apartments.length;
   let total = 0;
   for (let e = 1; e <= house.entrances; e++) for (let f = 1; f <= house.floors; f++) total += floorCount(house, e, f);
   return total;
 }
 
 export function floorCount(house: House, entrance: number, floor: number) {
+  if (house.apartments) return house.apartments.filter(a => a.entrance === entrance && a.floor === floor).length;
   return house.overrides?.[`${entrance}:${floor}`] ?? house.apartmentsPerFloor;
 }
 
@@ -44,6 +48,7 @@ export function validStructure(house: House) {
 }
 
 export function floorApartments(house: House, entrance: number, floor: number): number[] {
+  if (house.apartments) return house.apartments.filter(a => a.entrance === entrance && a.floor === floor).map(a => a.number).sort((a, b) => a - b);
   if (!Number.isInteger(entrance) || !Number.isInteger(floor) || entrance < 1 || entrance > house.entrances || floor < 1 || floor > house.floors) return [];
   let first = 1;
   for (let e = 1; e <= entrance; e++) for (let f = 1; f <= (e === entrance ? floor - 1 : house.floors); f++) first += floorCount(house, e, f);
@@ -51,6 +56,10 @@ export function floorApartments(house: House, entrance: number, floor: number): 
 }
 
 export function findApartment(house: House, apartment: number): HouseLocation | null {
+  if (house.apartments) {
+    const found = house.apartments.find(a => a.number === apartment);
+    return found ? { houseId: house.id, entrance: found.entrance, floor: found.floor, zone: "apartment", apartment } : null;
+  }
   if (!Number.isInteger(apartment) || apartment < 1 || apartment > totalApartments(house)) return null;
   let first = 1;
   for (let entrance = 1; entrance <= house.entrances; entrance++) for (let floor = 1; floor <= house.floors; floor++) {
@@ -88,8 +97,8 @@ export function sameLocation(a: HouseLocation | undefined, b: HouseLocation) {
 
 export function validLocation(house: House, place: HouseLocation | undefined): place is HouseLocation {
   if (!place || place.houseId !== house.id) return false;
+  if (!Number.isInteger(place.entrance) || !Number.isInteger(place.floor) || place.entrance < 1 || place.entrance > house.entrances || place.floor < 1 || place.floor > house.floors) return false;
   const apartments = floorApartments(house, place.entrance, place.floor);
-  if (!apartments.length) return false;
   if (place.zone === "apartment") return apartments.includes(place.apartment);
   if (["house", "courtyard", "parking"].includes(place.zone)) return place.entrance === 1 && place.floor === 1;
   return Object.hasOwn(commonZones, place.zone) && (place.zone !== "entrance" || place.floor === 1);

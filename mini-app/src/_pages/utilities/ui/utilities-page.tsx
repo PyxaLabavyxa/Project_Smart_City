@@ -6,7 +6,6 @@ import { money, totalCharges, useUtilityAccount } from "@/entities/utilities";
 import { SectionPage } from "@/shared/ui/navigation";
 import { Icon } from "@/shared/ui/icon";
 import { Meters } from "./meters";
-import { Payment } from "./payment";
 import styles from "./utilities.module.css";
 
 export function UtilitiesPage() {
@@ -23,12 +22,12 @@ export function UtilitiesPage() {
     {!apartment ? <section className={styles.panel}><h2>Квартира не найдена</h2><p>Проверьте структуру дома: квартира {house.residentApartment} в ней отсутствует. Начисления и счётчики недоступны.</p></section> : <>
       <div className={styles.layout}>
         <section className={styles.panel} aria-labelledby="bill-title">
-          <div className={styles.row}><h2 id="bill-title">{account.period}</h2><span className={styles.badge}>К оплате</span></div>
-          <p className={styles.muted}>Квитанция № {account.invoiceNumber}</p>
+          <div className={styles.row}><h2 id="bill-title">{account.period || "Квитанция пока не выставлена"}</h2></div>
+          {account.invoiceNumber && <p className={styles.muted}>Квитанция № {account.invoiceNumber}</p>}
           <p className={styles.amount}>{money(total)}</p>
-          <p>Оплатить до {account.due}</p>
-          <dl className={styles.totals}><div><dt>Начислено за месяц</dt><dd>{money(total)}</dd></div><div><dt>Задолженность и пени</dt><dd>{money(0)}</dd></div><div><dt>Перерасчёт</dt><dd>{money(0)}</dd></div></dl>
-          <Payment amount={total} apartment={house.residentApartment} period={account.period} />
+          {account.due && <p>Оплатить до {account.due}</p>}
+          <p className={styles.muted}>Сумма по строкам квитанции</p>
+          <button type="button" className={styles.secondary} disabled>Оплата пока недоступна</button><p className={styles.muted}>Приём платежей ещё не подключён.</p>
         </section>
         <aside className={styles.account}><span className={styles.accountIcon}><Icon name="home" size={28} /></span><h2>Квартира {house.residentApartment}</h2><p>{house.address}</p><p className={styles.muted}>Подъезд {apartment.entrance} · этаж {apartment.floor}</p><dl className={styles.totals}><div><dt>Лицевой счёт</dt><dd>{account.number}</dd></div><div><dt>Площадь</dt><dd>{account.area} м²</dd></div><div><dt>Проживающих</dt><dd>{account.residents}</dd></div></dl></aside>
       </div>

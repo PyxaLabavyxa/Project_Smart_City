@@ -1,4 +1,5 @@
-from datetime import datetime
+from datetime import datetime, date
+from decimal import Decimal
 
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy import (
@@ -13,6 +14,7 @@ from sqlalchemy import (
     func,
     UniqueConstraint
 )
+from sqlalchemy import JSON, Numeric, Date
 
 from app.database.enums import IssueCategory, IssuePriority, IssueStatus
 
@@ -128,6 +130,14 @@ class Issue(Base):
         DateTime(timezone=True),
         server_default=func.now()
     )
+    entrance: Mapped[int | None] = mapped_column(SmallInteger)
+    floor: Mapped[int | None] = mapped_column(SmallInteger)
+    zone: Mapped[str | None] = mapped_column(String(30))
+    apartment_id: Mapped[int | None] = mapped_column(ForeignKey("apartments.id"))
+    request_id: Mapped[str | None] = mapped_column(String(36))
+    request_hash: Mapped[str | None] = mapped_column(String(64))
+
+    __table_args__ = (UniqueConstraint("user_id", "request_id", name="uq_issue_request"),)
 
     user: Mapped["User"] = relationship(
         back_populates="issues"
@@ -152,3 +162,90 @@ class IssuePhoto(Base):
     issue: Mapped["Issue"] = relationship(
         back_populates="photos"
     )
+
+
+class IssueEvent(Base):
+    __tablename__ = "issue_events"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    issue_id: Mapped[int] = mapped_column(ForeignKey("issues.id"), index=True)
+    status: Mapped[str] = mapped_column(String(30))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class ApartmentMessage(Base):
+    __tablename__ = "apartment_messages"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    sender_id: Mapped[int] = mapped_column(ForeignKey("apartments.id"), index=True)
+    recipient_id: Mapped[int] = mapped_column(ForeignKey("apartments.id"), index=True)
+    text: Mapped[str] = mapped_column(Text)
+    request_id: Mapped[str] = mapped_column(String(36))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    __table_args__ = (UniqueConstraint("user_id", "request_id", name="uq_message_request"),)
+
+
+class UtilityAccount(Base):
+    __tablename__ = "utility_accounts"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    apartment_id: Mapped[int] = mapped_column(ForeignKey("apartments.id"), unique=True)
+    number: Mapped[str] = mapped_column(String(100))
+    area: Mapped[Decimal] = mapped_column(Numeric(10, 2))
+    residents: Mapped[int] = mapped_column(SmallInteger)
+    reading_period: Mapped[str] = mapped_column(String(7))
+    reading_open: Mapped[date] = mapped_column(Date)
+    reading_close: Mapped[date] = mapped_column(Date)
+
+
+class Invoice(Base):
+    __tablename__ = "invoices"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    account_id: Mapped[int] = mapped_column(ForeignKey("utility_accounts.id"), index=True)
+    number: Mapped[str] = mapped_column(String(100))
+    period: Mapped[str] = mapped_column(String(7))
+    due: Mapped[date] = mapped_column(Date)
+    # Immutable billing lines supplied by the billing system; amounts are integer kopecks.
+    charges: Mapped[list[dict]] = mapped_column(JSON)
+    __table_args__ = (UniqueConstraint("account_id", "period", name="uq_invoice_period"),)
+
+
+class Meter(Base):
+    __tablename__ = "meters"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    account_id: Mapped[int] = mapped_column(ForeignKey("utility_accounts.id"), index=True)
+    kind: Mapped[str] = mapped_column(String(20))
+    serial: Mapped[str] = mapped_column(String(100))
+    previous: Mapped[Decimal] = mapped_column(Numeric(12, 3))
+    __table_args__ = (UniqueConstraint("account_id", "serial", name="uq_meter_serial"),)
+
+
+class MeterReading(Base):
+    __tablename__ = "meter_readings"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    meter_id: Mapped[int] = mapped_column(ForeignKey("meters.id"))
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    period: Mapped[str] = mapped_column(String(7))
+    value: Mapped[Decimal] = mapped_column(Numeric(12, 3))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    __table_args__ = (UniqueConstraint("meter_id", "period", name="uq_reading_period"),)
+
+
+class HouseCamera(Base):
+    __tablename__ = "house_cameras"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    house_id: Mapped[int] = mapped_column(ForeignKey("houses.id"), index=True)
+    name: Mapped[str] = mapped_column(String(200))
+    status: Mapped[str] = mapped_column(String(20))
+    note: Mapped[str] = mapped_column(Text)
+    # Public or short-lived HTTPS frame URL, never a camera credential.
+    preview_url: Mapped[str | None] = mapped_column(String(2000))
+    captured_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class HouseWork(Base):
+    __tablename__ = "house_works"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    house_id: Mapped[int] = mapped_column(ForeignKey("houses.id"), index=True)
+    title: Mapped[str] = mapped_column(String(300))
+    starts_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    ends_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    location: Mapped[str] = mapped_column(String(300))

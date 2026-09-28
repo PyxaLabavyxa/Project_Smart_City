@@ -10,7 +10,7 @@ const steps = ["Место", "Категория", "Описание", "Созд
 const stepTitles = ["Где возникла проблема?", "Что случилось?", "Расскажите о проблеме", "Проверьте обращение"];
 export function ReportIssueForm({ cancelHref = "/issues" }: { cancelHref?: string }) {
   const { addIssue, issues, draft, creating, updateDraft, resetDraft } = useIssues();
-  const { house } = useHouseSelection();
+  const { house, choices } = useHouseSelection();
   const router = useRouter();
   const submitted = useRef(false);
   const formRef = useRef<HTMLFormElement>(null);
@@ -29,6 +29,8 @@ export function ReportIssueForm({ cancelHref = "/issues" }: { cancelHref?: strin
   function validate() {
     const next: Record<string, string> = {};
     if (!validLocation(house, draft.place)) next.place = "Выберите место в доме";
+    const place = draft.place;
+    if (place.zone === "apartment" && !choices.some(choice => choice.houseId === house.id && choice.apartment === place.apartment)) next.place = "Обращение внутри квартиры доступно только её жильцам. Выберите свою квартиру или общую зону.";
     if (draft.step >= 1 && !issueCategories.some(category => category === draft.category)) next.category = "Выберите категорию";
     if (draft.step >= 2 && !draft.title.trim()) next.title = "Укажите, что случилось";
     if (draft.step >= 2 && !draft.description.trim()) next.description = "Добавьте описание проблемы";

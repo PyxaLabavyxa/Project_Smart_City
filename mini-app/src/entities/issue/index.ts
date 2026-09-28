@@ -1,5 +1,5 @@
-export { demoIssues, formatIssueDate } from "./model/demo-issues";
-export type { DemoIssue, DemoIssueStatus } from "./model/demo-issues";
+export { formatIssueDate } from "./model/issue";
+export type { IssueRecord, IssueStateStatus } from "./model/issue";
 export { IssueStatus } from "./ui/issue-status";
 export { IssueCategoryIcon } from "./ui/issue-category-icon";
 export { IssueList } from "./ui/issue-list";
@@ -8,4 +8,4 @@ export { issueStatusLabels, issueCategories, initialIssueFilters, filterIssues }
 export type { IssueFilters } from "./model/issue-filters";
 export { similarIssues } from "./model/similar-issues";
 export type { IssueGateway, CreateIssueInput } from "./model/issue-gateway";
-export { houseHealthScore, resolvedDelta } from "./model/issue-workflow";
+export { houseHealthScore } from "./model/issue-workflow";

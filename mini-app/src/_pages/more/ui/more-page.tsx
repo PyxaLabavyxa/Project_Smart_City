@@ -1,7 +1,8 @@
+"use client";
 import { SectionPage } from "@/shared/ui/navigation";
 import Link from "next/link";
 import { Icon } from "@/shared/ui/icon";
-import { demoHouse } from "@/entities/house";
+import { useHouseSelection } from "@/entities/house";
 import styles from "./more-page.module.css";
 
 const items = [
@@ -14,7 +15,8 @@ const items = [
 ] as const;
 
 export function MorePage() {
-  return <SectionPage title="Ещё" description={`Мой дом · квартира ${demoHouse.residentApartment}`} backHref="/" backLabel="На главную">
+  const { house } = useHouseSelection();
+  return <SectionPage title="Ещё" description={`Мой дом · квартира ${house.residentApartment}`} backHref="/" backLabel="На главную">
     <div className={styles.content}><nav aria-label="Дополнительные разделы"><ul className={styles.menu}>{items.map(item => <li key={item.href}>
       <Link href={item.href}><span className={styles.icon}><Icon name={item.icon} /></span><span><strong>{item.title}</strong><small>{item.description}</small></span><Icon name="arrow" size={16} /></Link>
     </li>)}</ul></nav>

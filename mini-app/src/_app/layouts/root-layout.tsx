@@ -16,9 +16,10 @@ export const viewport: Viewport = {
   themeColor: "#f7f7f4",
 };
 
-export function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export function RootLayout({ children, bridge }: Readonly<{ children: React.ReactNode; bridge: React.ReactNode }>) {
   return (
     <html lang="ru">
+      <head>{bridge}</head>
       <body><AppProviders><ApplicationShell>{children}</ApplicationShell></AppProviders></body>
     </html>
   );

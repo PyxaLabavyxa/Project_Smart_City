@@ -1,4 +1,9 @@
 .address { min-width:0; }
+.choice { display:flex; align-items:center; gap:12px; width:100%; border:0; padding:0; text-align:left; background:transparent; color:inherit; }
+.choice > span:nth-child(2) { display:grid; gap:6px; flex:1; min-width:0; }
+.choice > span:nth-child(2) > span { color:var(--color-muted); font-size:12px; }
+.list li + li { margin-top:10px; }
+.list li:not([aria-current]) { border-color:var(--color-line); background:var(--color-surface); }
 .address .eyeline { margin:0 0 12px; color:var(--color-muted); font-size:12px; }
 .trigger { display:flex; align-items:center; gap:12px; min-height:44px; max-width:100%; padding:0; border:0; background:transparent; color:var(--color-ink); font:inherit; letter-spacing:inherit; text-align:left; overflow-wrap:anywhere; }
 .chevron { display:grid; place-items:center; flex-shrink:0; color:var(--color-muted); transform:rotate(90deg); }

@@ -1,10 +1,9 @@
-import { demoIssues, type DemoIssue, type DemoIssueStatus } from "./demo-issues.ts";
+import type { IssueRecord, IssueStateStatus } from "./issue.ts";
 
-export function withStatus(issue: DemoIssue, status: DemoIssueStatus, at: string): DemoIssue {
+export function withStatus(issue: IssueRecord, status: IssueStateStatus, at: string): IssueRecord {
   return issue.status === status ? issue : { ...issue, status, history: [...issue.history, { status, at }] };
 }
-export function resolvedDelta(issues: readonly DemoIssue[], category?: string) {
-  const count = (list: readonly DemoIssue[]) => list.filter(issue => issue.status === "completed" && (!category || issue.category === category)).length;
-  return count(issues) - count(demoIssues);
+// Indicator of visible open reports, not a sensor measurement.
+export function houseHealthScore(issues: readonly IssueRecord[]) {
+  return Math.max(0, 100 - issues.reduce((sum, issue) => sum + (issue.status === "completed" ? 0 : issue.priority === "high" ? 10 : 3), 0));
 }
-export function houseHealthScore(issues: readonly DemoIssue[]) { return Math.max(0, Math.min(100, 82 + resolvedDelta(issues) * 3)); }

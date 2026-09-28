@@ -30,7 +30,7 @@ function MeterReading({ meter, onSave }: { meter: Meter; onSave: (value: string)
     {error && <p id={`${meter.id}-error`} role="alert" className={styles.error}>{error}</p>}
     {meter.current !== undefined && <p className={styles.muted}>Расход: {(meter.current - meter.previous).toLocaleString("ru-RU", { maximumFractionDigits: 3 })} {unit}</p>}
     <button className={styles.secondary} disabled={saving || saved || (meter.current !== undefined && value === String(meter.current))}>{saving ? "Сохраняем…" : "Сохранить показание"}</button>
-    <p role="status" className={styles.success}>{saved ? "Сохранено локально. Поставщику не отправлено." : meter.current !== undefined ? "Показание сохранено в приложении." : ""}</p>
+    <p role="status" className={styles.success}>{saved || meter.current !== undefined ? "Показание сохранено на сервере." : ""}</p>
   </form>;
 }
 

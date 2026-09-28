@@ -6,10 +6,11 @@ import { messageThreads, useMessages } from "@/entities/message";
 import { Icon } from "@/shared/ui/icon";
 import { Conversation } from "./conversation";
 import styles from "./recipient-selector.module.css";
+import { RequestState } from "@/shared/ui/navigation/request-state";
 
 export function RecipientSelector({ openSelected = false }: { openSelected?: boolean }) {
   const { house, selected, select } = useHouseSelection();
-  const { messages, drafts } = useMessages();
+  const { messages, drafts, loading, error, reload } = useMessages();
   const dialog = useRef<HTMLDialogElement>(null);
   const threadHeading = useRef<HTMLHeadingElement>(null);
   const inboxHeading = useRef<HTMLHeadingElement>(null);
@@ -37,7 +38,8 @@ export function RecipientSelector({ openSelected = false }: { openSelected?: boo
     dialog.current?.showModal();
   }
   return <>
-
+    <RequestState loading={loading} error={error} reload={reload} />
+    <button type="button" className={styles.chip} disabled={loading} onClick={reload}>Обновить сообщения</button>
     <div className={styles.chatLayout} data-open={active !== null}>
       <section className={styles.inbox} aria-label="Список переписок">
         <div className={styles.inboxHeading}><h2 ref={inboxHeading} tabIndex={-1}>Переписки</h2><button className={styles.chip} onClick={openPicker}>Написать</button></div>

@@ -10,3 +10,6 @@ Pillow==12.3.0
 yandex-ai-studio-sdk==0.22.1
 fastapi==0.141.1
 uvicorn==0.54.0
+psycopg==3.3.6
+psycopg-binary==3.3.6
+tzdata==2026.4

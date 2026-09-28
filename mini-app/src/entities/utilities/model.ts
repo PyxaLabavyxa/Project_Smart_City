@@ -3,7 +3,7 @@ export type Meter = { id: string; kind: MeterKind; serial: string; previous: num
 export type Charge = { title: string; quantity: string; tariff: string; amount: number };
 export type UtilityAccount = { number: string; invoiceNumber: string; area: number; residents: number; period: string; readingPeriod: string; due: string; charges: Charge[]; meters: Meter[] };
 export interface UtilitiesGateway {
-  loadAccount(): Promise<UtilityAccount>;
+  loadAccount(): Promise<UtilityAccount | undefined>;
   saveReading(meterId: string, value: string): Promise<UtilityAccount>;
 }
 export const meterLabels: Record<MeterKind, string> = { cold: "Холодная вода", hot: "Горячая вода", electricity: "Электроэнергия" };

@@ -1,4 +1,4 @@
-import { cameraStatusLabels, type CameraStatus as Status } from "../model/demo-cameras";
+import { cameraStatusLabels, type CameraStatus as Status } from "../model/camera";
 import styles from "./cameras.module.css";
 
 export function CameraStatus({ status }: { status: Status }) {

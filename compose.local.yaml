@@ -1,0 +1,30 @@
+# Explicit local-development override; never use this file on a public server.
+services:
+  seed:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      DATABASE_URL: postgresql+psycopg://dompulse:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}@db:5432/dompulse
+      LOCAL_LOGIN_ENABLED: "true"
+    command: ["python", "-m", "scripts.seed_local"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+  api:
+    environment:
+      LOCAL_LOGIN_ENABLED: "true"
+      LOCAL_SESSION_SECRET: ${LOCAL_SESSION_SECRET:?Set LOCAL_SESSION_SECRET in .env.docker}
+      LOCAL_LOGIN_NETWORKS: '["127.0.0.0/8","::1/128","${LOCAL_DOCKER_SUBNET:-172.28.74.0/24}"]'
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+  frontend:
+    build:
+      args:
+        NEXT_PUBLIC_ENABLE_LOCAL_LOGIN: "true"
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: ${LOCAL_DOCKER_SUBNET:-172.28.74.0/24}

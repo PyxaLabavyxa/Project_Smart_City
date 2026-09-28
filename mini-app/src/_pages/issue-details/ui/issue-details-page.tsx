@@ -1,18 +1,18 @@
 import Link from "next/link";
 import { PlaceLink } from "@/entities/house";
 import { Icon } from "@/shared/ui/icon";
-import { formatIssueDate, IssueStatus, type DemoIssue } from "@/entities/issue";
+import { formatIssueDate, IssueStatus, type IssueRecord } from "@/entities/issue";
 import { IssueHistory } from "./issue-history";
 import styles from "./issue-details.module.css";
 import { IssueWorkflow } from "@/features/manage-issue";
 
-export function IssueDetailsPage({ issue }: { issue: DemoIssue }) {
+export function IssueDetailsPage({ issue }: { issue: IssueRecord }) {
   return (
     <>
       <Link href="/issues" className={styles.back}><span aria-hidden="true">←</span> Все обращения</Link>
       <header className={styles.heading}>
         <h1>{issue.title}</h1>
-        <p className={styles.meta}>{issue.id.startsWith("local-") ? "Новое обращение" : `Обращение № ${issue.id}`} · <time dateTime={issue.createdAt}>{formatIssueDate(issue.createdAt)}</time></p>
+        <p className={styles.meta}>{`Обращение № ${issue.id}`} · <time dateTime={issue.createdAt}>{formatIssueDate(issue.createdAt)}</time></p>
       </header>
       <div className={styles.layout}>
         <section className={styles.info} aria-labelledby="issue-information">

@@ -1,12 +1,12 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { useIssues, issueStatusLabels, type DemoIssue, type DemoIssueStatus } from "@/entities/issue";
+import { useIssues, issueStatusLabels, type IssueRecord, type IssueStateStatus } from "@/entities/issue";
 import styles from "./manage-issue.module.css";
-const comments: Record<DemoIssueStatus, string> = {
+const comments: Record<IssueStateStatus, string> = {
   new: "Обращение ожидает рассмотрения.", accepted: "Обращение принято. Следующий этап — назначение исполнителя.", assigned: "Исполнитель назначен. Следующий этап — начало работ.", "in-progress": "Идут работы по обращению.", "awaiting-confirmation": "Работы завершены. Проверьте, устранена ли проблема.", completed: "Решение подтверждено. Обращение закрыто.",
 };
-export function IssueWorkflow({ issue }: { issue: DemoIssue }) {
+export function IssueWorkflow({ issue }: { issue: IssueRecord }) {
   const { respondToResolution } = useIssues();
   const [feedback, setFeedback] = useState("");
   function update(status: "completed" | "in-progress") { respondToResolution(issue.id, status); setFeedback("Статус изменён: " + issueStatusLabels[status]); }

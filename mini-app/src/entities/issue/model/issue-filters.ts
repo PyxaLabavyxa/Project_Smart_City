@@ -1,18 +1,18 @@
-import type { DemoIssue, DemoIssueStatus } from "./demo-issues";
+import type { IssueRecord, IssueStateStatus } from "./issue";
 
 // Labels match the existing frontend model. Extra workflow statuses are UI-only.
-export const issueStatusLabels: Record<DemoIssueStatus, string> = {
+export const issueStatusLabels: Record<IssueStateStatus, string> = {
   new: "Новое", accepted: "Принято", assigned: "Назначен исполнитель",
   "in-progress": "В работе", "awaiting-confirmation": "Ожидает подтверждения", completed: "Выполнено",
 };
 
 export const issueCategories = [
   "Водоснабжение", "Отопление", "Электричество", "Лифт", "Подъезд",
-  "Двор", "Мусор", "Безопасность", "Уборка", "Другое",
+  "Двор", "Мусор", "Безопасность", "Другое",
 ] as const;
 
 export type IssueFilters = {
-  status: "all" | "active" | DemoIssueStatus;
+  status: "all" | "active" | IssueStateStatus;
   category: string;
   entrance: string;
   floor: string;
@@ -25,7 +25,7 @@ export const initialIssueFilters: IssueFilters = {
   status: "all", category: "", entrance: "", floor: "", zone: "", query: "",
 };
 
-export function filterIssues(issues: readonly DemoIssue[], filters: IssueFilters) {
+export function filterIssues(issues: readonly IssueRecord[], filters: IssueFilters) {
   const query = filters.query.trim().toLocaleLowerCase("ru");
   return issues.filter(issue => {
     if (filters.onlyMine && !issue.mine) return false;

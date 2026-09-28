@@ -11,7 +11,7 @@ export function UtilitiesProvider({ children, gateway }: { children: ReactNode; 
   function reload() { setLoading(true); setError(""); setAttempt(current => current + 1); }
   useEffect(() => {
     let cancelled = false;
-    gateway.loadAccount().then(value => { if (!cancelled) setAccount(value); }).catch(() => { if (!cancelled) setError("Не удалось загрузить лицевой счёт. Повторите попытку."); }).finally(() => { if (!cancelled) setLoading(false); });
+    gateway.loadAccount().then(value => { if (!cancelled) setAccount(value); }).catch((error: unknown) => { if (!cancelled) setError(error instanceof Error ? error.message : "Не удалось загрузить лицевой счёт. Повторите попытку."); }).finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [gateway, attempt]);
   async function saveReading(id: string, value: string) {

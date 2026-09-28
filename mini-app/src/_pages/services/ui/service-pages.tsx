@@ -17,7 +17,7 @@ export function MessagesPage({ from }: { from?: "plan" | "home" }) {
 }
 
 export function HouseInfoPage() {
-  return <SectionPage title="Информация о доме" description="ул. Центральная, 18">
+  return <SectionPage title="Информация о доме" description="Характеристики вашего дома">
     <HouseInformation />
   </SectionPage>;
 }

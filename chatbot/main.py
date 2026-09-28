@@ -1,4 +1,5 @@
 import asyncio
+from app.database.runtime import loop_factory
 
 from maxapi import Dispatcher
 from maxapi.types.errors import Error
@@ -57,4 +58,4 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(main(), loop_factory=loop_factory)

@@ -28,7 +28,7 @@ export function HouseExplorer({ initialPlace }: { initialPlace?: HouseLocation }
         <div className={styles.actions}>
           <Link className={styles.action} href="/issues/new?from=plan" onClick={() => { closeSheet(); select(selected); startAt(selected); }}>＋ Сообщить о проблеме</Link>
           {selected.zone === "apartment" && selected.apartment !== house.residentApartment && <Link className={styles.action} href="/messages?from=plan" onClick={() => { closeSheet(); select(selected); }}>Написать в квартиру {selected.apartment}</Link>}
-          {selected.zone !== "apartment" && selected.entrance <= 2 && <Link className={styles.action} onClick={closeSheet} href={`/cameras/${selected.zone === "courtyard" ? "courtyard" : selected.zone === "parking" ? "parking" : "entrance-" + selected.entrance}`}>Камера общей зоны</Link>}
+          {selected.zone !== "apartment" && <Link className={styles.action} onClick={closeSheet} href="/cameras">Камеры дома</Link>}
         </div>
         {sheetOpen && selectedIssues.length > 0 && <div onClick={event => { if ((event.target as Element).closest("a")) closeSheet(); }}><IssueList issues={selectedIssues} /></div>}
       </section>);

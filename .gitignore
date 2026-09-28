@@ -1,6 +1,7 @@
 .env
 .env.*
 !.env.example
+!.env.docker.example
 .venv/
 __pycache__/
 *.py[cod]
@@ -21,3 +22,7 @@ tests/
 !mini-app/tests/
 mini-app/tests/*
 !mini-app/tests/*.test.mjs
+!mini-app/tests/fixtures/
+!mini-app/tests/fixtures/**
+!backend/tests/
+!backend/tests/**

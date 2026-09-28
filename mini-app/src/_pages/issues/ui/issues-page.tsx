@@ -5,11 +5,16 @@ import { ReportIssueLink } from "@/features/report-issue";
 import { NavigationLinks } from "@/shared/ui/navigation";
 import { IssueFilters } from "./issue-filters";
 import styles from "./issues-page.module.css";
+import { useHouseSelection } from "@/entities/house";
+import { RequestState } from "@/shared/ui/navigation/request-state";
 export function IssuesPage({ initialCategory = "" }: { initialCategory?: string }) {
-  const { issues } = useIssues();
+  const { issues, loading, error, reload } = useIssues();
+  const { house } = useHouseSelection();
   const [filters, setFilters] = useState({ ...initialIssueFilters, category: initialCategory });
   const visible = filterIssues(issues, filters);
-  return <><header className={styles.heading}><div><h1>Обращения</h1><p>Всё, что происходит в вашем доме · ул. Центральная, 18</p></div><ReportIssueLink /></header>
+  if (loading || error) return <RequestState loading={loading} error={error} reload={reload} />;
+  return <><header className={styles.heading}><div><h1>Обращения</h1><p>Всё, что происходит в вашем доме · {house.address}</p></div><ReportIssueLink /></header>
+    <button type="button" onClick={reload}>Обновить обращения</button>
     <nav className={styles.tabs} aria-label="Статус обращений">{([{ value: "active", label: "Активные" }, { value: "completed", label: "Решённые" }, { value: "all", label: "Все" }] as const).map(tab => <button key={tab.value} type="button" aria-pressed={filters.status === tab.value} onClick={() => setFilters({ ...filters, status: tab.value })}>{tab.label}<span>{issues.filter(issue => tab.value === "all" || (tab.value === "active" ? issue.status !== "completed" : issue.status === "completed")).length}</span></button>)}</nav>
     <IssueFilters filters={filters} categories={issues.map(issue => issue.category)} onChange={setFilters} onReset={() => setFilters(initialIssueFilters)} />
     <div className={styles.summary} role="status"><span>Найдено: <b>{visible.length}</b> из {issues.length}</span></div>

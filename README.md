@@ -2,12 +2,13 @@
 
 Один репозиторий для MAX-бота, HTTP backend и мини-приложения. Бот и backend используют общие модели БД и сервисы из `app`.
 
+Запуск всего проекта в контейнерах: [DOCKER.md](DOCKER.md).
+
 ## Запуск бота
 
 Из корня проекта:
 
 ```powershell
-cd C:\Users\kvmar\Desktop\Project_Smart_City
 .\.venv\Scripts\python.exe -m chatbot
 ```
 
@@ -24,15 +25,18 @@ py -3.13 -m venv .venv
 
 ## Запуск backend
 
-В другом терминале из того же корня:
+В другом терминале:
 
 ```powershell
-.\.venv\Scripts\python.exe -m backend
+cd backend
+$env:PYTHONPATH = ".."
+.\.venv\Scripts\python.exe -m alembic upgrade head
+.\.venv\Scripts\python.exe -m uvicorn smart_city_api.main:app --host 127.0.0.1 --port 8000 --loop smart_city_api.runtime:loop_factory
 ```
 
-Адрес по умолчанию: http://localhost:8080. Проверка приложения и подключения к БД: http://localhost:8080/health. Документация: http://localhost:8080/docs. Настройки адреса и порта: `WEBAPP_HOST` и `WEBAPP_PORT`.
+API: http://localhost:8000. Проверка БД: `/health/ready`, документация: `/docs`.
 
-Пока backend содержит только проверочный маршрут. API обращений, авторизация жителей и диспетчеров и выдача фотографий ещё не реализованы. Для запуска этого каркаса токены MAX и Яндекса не нужны.
+Установка зависимостей, PostgreSQL и настройки описаны в [backend/README.md](backend/README.md). Реализованы авторизация MAX, обращения, сообщения, квитанции и показания счётчиков. Для входа нужен токен бота; временного входа без MAX нет.
 
 ## Мини-приложение
 
@@ -42,7 +46,7 @@ npm ci
 npm run dev
 ```
 
-Подробности: [mini-app/README.md](mini-app/README.md). Интерфейс пока работает с тестовыми данными; подключение его к backend — отдельный этап.
+Подробности: [mini-app/README.md](mini-app/README.md). Интерфейс получает данные из API; при отсутствии данных показывает пустое состояние.
 
 ## Структура и ответственность
 
@@ -60,11 +64,10 @@ Project_Smart_City/
 │   ├── middlewares/
 │   └── services/            # черновик и текст статистики для бота
 ├── backend/
-│   ├── __main__.py          # команда python -m backend
-│   ├── main.py              # приложение FastAPI
-│   ├── dependencies.py      # сессия БД на HTTP-запрос
-│   ├── routers/             # HTTP-маршруты
-│   └── schemas/             # форматы HTTP-запросов и ответов
+│   ├── smart_city_api/      # FastAPI, маршруты, сервисы и схемы
+│   ├── migrations/          # версии схемы PostgreSQL
+│   ├── scripts/             # импорт прежней SQLite
+│   └── tests/               # проверки API и миграций
 ├── app/                     # общая библиотека Python
 │   ├── paths.py             # единый корень проекта
 │   ├── config_data/         # настройки
@@ -76,7 +79,6 @@ Project_Smart_City/
 ├── mini-app/                # Next.js frontend
 ├── certs/                   # сертификаты
 ├── data/                    # локальная БД и фотографии, вне Git
-├── tests/                   # проверки структуры и запуска
 ├── .env                     # локальные секреты, вне Git
 ├── .env.example
 ├── requirements.txt
@@ -85,17 +87,14 @@ Project_Smart_City/
 
 Бот и backend импортируют общие функции `app`, но запускаются отдельными процессами и используют свои сессии БД. Общий код не импортирует бот или backend. Модели таблиц не нужно копировать в backend. Черновик MAX-сообщения и форматирование текста статистики находятся в `chatbot/services`, так как относятся к интерфейсу бота.
 
-`DATABASE_URL`, `MEDIA_ROOT` и `MAX_CA_BUNDLE`, если содержат относительные пути, разрешаются от корня репозитория. По умолчанию используются `data/smart_city.db`, `data/media` и сертификаты из `certs`. Папки данных и сертификатов при переносе не перемещались.
+`DATABASE_URL`, `MEDIA_ROOT` и `MAX_CA_BUNDLE`, если содержат относительные пути, разрешаются от корня репозитория. Рабочая БД — PostgreSQL через `DATABASE_URL`; медиа — `data/media`, сертификаты — `certs`. Папки данных и сертификатов при переносе не перемещались.
 
-На одном сервере процессы могут пользоваться общей SQLite и папкой фотографий. Для разных серверов понадобятся серверная БД и доступное обоим приложениям файловое хранилище. При старте создаются отсутствующие таблицы; `create_all()` не изменяет схему существующих таблиц и не заменяет миграции.
+Бот и API используют одну PostgreSQL и общие ORM-модели. Перед запуском выполняются миграции из `backend`; автоматического изменения PostgreSQL при старте нет. Для фотографий обоим процессам нужен доступ к MEDIA_ROOT. Подробности запуска и переноса SQLite: [backend/README.md](backend/README.md). Мини-приложение подключено к HTTP API: [mini-app/README.md](mini-app/README.md).
 
 ## Проверки
 
-```powershell
-.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
-.\.venv\Scripts\python.exe -m unittest discover -s tests -v
-```
+В `backend`: `python -m pytest`, `python -m ruff check .`. Для проверки PostgreSQL задайте `TEST_POSTGRES_URL` отдельной проверочной базы; подробности в backend README.
 
-Тесты используют отдельную SQLite в памяти и временный файл, настоящий FastAPI и заглушки внешних сервисов. Рабочая БД, реальные ключи MAX и Яндекса не используются. Проверяются импорты, точки запуска, независимость путей от терминала, HTTP-проверка backend и сценарий отправки фотографии с подписью с сохранением обращения.
+В `mini-app`: `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`.
 
-Это проверка переноса и указанного сценария, а не всех пользовательских веток. Логика существующих обработчиков сохранена. Live-проверку в MAX нужно выполнить после заполнения локальных настроек.
+Live-проверка внутри MAX требует токена бота, зарегистрированного пользователя с квартирой и доступных HTTPS-адресов frontend и API.

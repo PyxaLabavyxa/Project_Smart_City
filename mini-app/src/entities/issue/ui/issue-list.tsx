@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { formatIssueDate, type DemoIssue } from "../model/demo-issues";
+import { formatIssueDate, type IssueRecord } from "../model/issue";
 import { IssueStatus } from "./issue-status";
 import { IssueCategoryIcon } from "./issue-category-icon";
 import styles from "./issue-list.module.css";
-export function IssueList({ issues, wide = false }: { issues: readonly DemoIssue[]; wide?: boolean }) {
+export function IssueList({ issues, wide = false }: { issues: readonly IssueRecord[]; wide?: boolean }) {
   return (      <ul className={styles.list} aria-label="Обращения" data-wide={wide || undefined}>
         {issues.map(issue => (
           <li key={issue.id}>

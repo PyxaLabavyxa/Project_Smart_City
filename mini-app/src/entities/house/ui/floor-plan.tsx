@@ -21,10 +21,9 @@ export function FloorPlan({ house, selected, onSelect, problemPlaces = [], resol
   function room(place: HouseLocation, className: string, position?: CSSProperties) {
     const problem = problemPlaces.some(location => sameLocation(location, place));
     const resolved = !problem && resolvedPlaces.some(location => sameLocation(location, place));
-    const planned = !problem && !resolved && place.zone === "technical";
-    const condition = problem ? "Есть обращение" : resolved ? "Недавно решено" : planned ? "Плановые работы" : "В порядке";
+    const condition = problem ? "Есть обращение" : resolved ? "Недавно решено" : "Нет обращений";
     const own = place.zone === "apartment" && place.apartment === house.residentApartment;
-    return <button key={zoneLabel(place)} type="button" style={position} className={`${styles.room} ${className}`} data-planned={planned || undefined} data-problem={problem || undefined} data-resolved={resolved || undefined}
+    return <button key={zoneLabel(place)} type="button" style={position} className={`${styles.room} ${className}`} data-problem={problem || undefined} data-resolved={resolved || undefined}
       aria-label={`${zoneLabel(place)} · ${own ? "Ваша квартира · " : ""}${condition}`} aria-pressed={sameLocation(place, selected)} onClick={() => onSelect(place)}>
       {place.zone === "apartment" ? <><span className={styles.apartmentHeading}>Квартира {sameLocation(place, selected) && <Icon name="check" size={14} />}</span><strong className={styles.number} data-long={place.apartment >= 1000 || undefined}>{place.apartment}</strong></> : place.zone === "corridor" ? <><strong>{pages > 1 ? "Коридор" : "Холл"}</strong>{pages === 1 && <span>Общий коридор</span>}</> : <><Icon name={place.zone === "elevator" ? "lift" : place.zone === "stairs" ? "stairs" : place.zone === "technical" ? "settings" : "door"} /><strong>{place.zone === "technical" ? "Тех. помещение" : zoneLabel(place)}</strong></>}
       {(place.zone === "apartment" || place.zone === "corridor") && <small><Icon name={problem ? "warning" : "check"} size={12} />{own && !problem ? "Ваша квартира" : condition}</small>}
@@ -36,7 +35,7 @@ export function FloorPlan({ house, selected, onSelect, problemPlaces = [], resol
     <div className={styles.caption}><span>Схема этажа {selected.floor}</span><span>Квартир: {allApartments.length}{pages > 1 ? ` · участок ${page + 1}/${pages}` : ""}</span></div>
     <div className={styles.map} aria-label={`Помещения этажа ${selected.floor}`}>
       {pages > 1 && <div className={styles.services}>{zone("elevator", styles.service)}{zone("stairs", styles.service)}{zone("technical", styles.service)}</div>}
-      <div className={styles.floor} data-large={pages > 1 || undefined} style={{ "--rows": Math.ceil(apartments.length / 2) } as CSSProperties}>
+      <div className={styles.floor} data-large={pages > 1 || undefined} style={{ "--rows": Math.max(1, Math.ceil(apartments.length / 2)) } as CSSProperties}>
         <div className={styles.core}>{pages === 1 && <div className={styles.transport}>{zone("elevator", styles.service)}{zone("stairs", styles.service)}</div>}{zone("corridor", styles.corridor)}{pages === 1 && zone("technical", `${styles.service} ${styles.technical}`)}</div>
         {apartments.map((apartment, index) => room({ ...base, zone: "apartment", apartment }, "", { gridColumn: index % 2 ? 3 : 1, gridRow: Math.floor(index / 2) + 1 }))}
         {apartments.length % 2 === 1 && <div className={styles.end} style={{ gridColumn: 3, gridRow: Math.ceil(apartments.length / 2) }}>Граница этажа</div>}
