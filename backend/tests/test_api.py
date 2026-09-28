@@ -124,6 +124,19 @@ def api(tmp_path):
             ]
         )
         session.commit()
+    if postgres:
+        # Explicit fixture IDs do not advance PostgreSQL sequences.
+        with engine.begin() as connection:
+            for table in Base.metadata.sorted_tables:
+                name = table.name
+                connection.execute(
+                    text(
+                        "SELECT setval(pg_get_serial_sequence(:table, 'id'), "
+                        f"COALESCE((SELECT max(id) FROM {name}), 1), "
+                        f"EXISTS(SELECT 1 FROM {name}))"
+                    ),
+                    {"table": name},
+                )
     try:
         settings = Settings(
             _env_file=None, database_url=SecretStr(async_url), bot_token=SecretStr(TOKEN)

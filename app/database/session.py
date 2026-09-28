@@ -1,4 +1,3 @@
-import asyncio
 from pathlib import Path
 
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
@@ -9,7 +8,7 @@ from app.database.models import Base
 
 database_config = load_database_config()
 
-engine = create_async_engine(database_config.url)
+engine = create_async_engine(database_config.url, pool_pre_ping=True, hide_parameters=True)
 
 session_factory = async_sessionmaker(
     bind=engine,

@@ -1,3 +1,5 @@
+import logging
+
 from maxapi import Router, F
 from maxapi.types import (
     BotStarted,
@@ -23,6 +25,7 @@ from app.storage.photos import LocalPhotoStorage, PhotoError
 
 
 router = Router()
+logger = logging.getLogger(__name__)
 
 @router.bot_started()
 async def process_bot_start(event: BotStarted):
@@ -104,10 +107,7 @@ async def process_start_report(event: MessageCallback, context: MemoryContext):
         await context.update_data(message_id=event.message.body.mid)
         await context.set_state(FSMReport.waiting)
     else:
-        keyboard = await inl_houses(
-            session,
-            max_user_id
-        )
+        keyboard = inl_houses(houses)
 
         await event.message.edit(
             text=LEXICON["choose_house_send"],
@@ -126,7 +126,7 @@ async def process_start_report_after_choice(event: MessageCallback, context: Mem
         attachments=[inl_back_to_menu()]
     )
 
-    await context.update_data(house_id=house_id)
+    await context.update_data(house_id=house_id, message_id=event.message.body.mid)
     await context.set_state(FSMReport.waiting)
 
 
@@ -142,10 +142,12 @@ async def process_get_report(event: MessageCreated, context: MemoryContext):
 
     await context.update_data(**new_data)
 
-    await event.bot.edit_message(
-        message_id=data["message_id"],
-        attachments=[]
-    )
+    if data.get("message_id"):
+        try:
+            await event.bot.edit_message(message_id=data["message_id"], attachments=[])
+        except Exception as exc:
+            # A stale/deleted prompt must not prevent saving the resident's draft.
+            logger.warning("Could not remove report prompt keyboard: %s", type(exc).__name__)
 
     if not new_data["description"]:
         await event.message.answer(
@@ -235,6 +237,7 @@ async def process_confirm_report(
         return
     
     except Exception as exc:
+        logger.error("Issue submission failed: %s", type(exc).__name__)
         await event.message.answer(LEXICON["report_save_error"])
         return
 
@@ -278,10 +281,7 @@ async def process_my_issues(event: MessageCallback, context: MemoryContext):
 
         await context.set_state(FSMViewingReports.viewing)
     else:
-        keyboard = await inl_houses(
-            session,
-            max_user_id
-        )
+        keyboard = inl_houses(houses)
 
         await event.message.edit(
             text=LEXICON["choose_house_view"],

@@ -1,3 +1,4 @@
+import asyncio
 import os
 from pathlib import Path
 from uuid import uuid4
@@ -12,6 +13,7 @@ from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.engine import make_url
 
 from scripts.import_sqlite import import_database
+from smart_city_api.runtime import loop_factory
 
 
 @pytest.fixture
@@ -67,7 +69,7 @@ def test_sqlite_import_preserves_ids_and_resets_postgres_sequences(migrated_post
             text("INSERT INTO users(id, max_user_id, name) VALUES(7, 70, 'original')")
         )
     source.dispose()
-    counts = import_database(path, target)
+    counts = asyncio.run(import_database(path, target), loop_factory=loop_factory)
     assert counts["users"] == 1
     with engine.begin() as connection:
         assert connection.scalar(text("SELECT name FROM users WHERE id=7")) == "original"
@@ -78,6 +80,6 @@ def test_sqlite_import_preserves_ids_and_resets_postgres_sequences(migrated_post
             == 8
         )
     with pytest.raises(ValueError, match="empty"):
-        import_database(path, target)
+        asyncio.run(import_database(path, target), loop_factory=loop_factory)
     with engine.connect() as connection:
         assert connection.scalar(text("SELECT count(*) FROM users")) == 2

@@ -1,3 +1,5 @@
+import os
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -12,6 +14,13 @@ async def create_user_if_exist(session: AsyncSession, max_user_id: int, name: st
 
     if not await users.user_exist(max_user_id):
         await users.create_user(max_user_id, name)
+        await session.flush()
+
+    if os.environ.get("SAMPLE_DATA_ENABLED", "false").lower() == "true":
+        from app.database.sample_data import provision_sample_resident
+
+        user_id = await session.scalar(select(User.id).where(User.max_user_id == max_user_id))
+        await provision_sample_resident(session, user_id)
 
 
 async def create_issue(
@@ -53,10 +62,14 @@ async def get_issue_author(session: AsyncSession, max_user_id: int, house_id: in
 
 
 async def get_user_houses(session: AsyncSession, max_user_id: int) -> list[tuple[int, str, int]]:
-    users = UserRepository(session)
-    user = await users.get_user_object(max_user_id)
+    from app.database.models import House
 
-    return [
-        (ap.apartment.house_id, ap.apartment.house.address, ap.apartment.number)
-        for ap in user.apartment_links
-    ]
+    rows = await session.execute(
+        select(House.id, House.address, Apartment.number)
+        .join(Apartment, Apartment.house_id == House.id)
+        .join(UserApartment, UserApartment.apartment_id == Apartment.id)
+        .join(User, User.id == UserApartment.user_id)
+        .where(User.max_user_id == max_user_id)
+        .order_by(House.id, Apartment.number)
+    )
+    return [(house_id, address, number) for house_id, address, number in rows]

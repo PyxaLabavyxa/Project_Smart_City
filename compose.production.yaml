@@ -1,0 +1,17 @@
+services:
+  bot:
+    environment:
+      SAMPLE_DATA_ENABLED: "true"
+    volumes:
+      - ./certs:/srv/certs:ro
+  api:
+    environment:
+      SESSION_COOKIE_SECURE: "true"
+      LOCAL_LOGIN_ENABLED: "false"
+      SAMPLE_DATA_ENABLED: "true"
+      CORS_ORIGINS: '["https://201.34.159.33"]'
+  frontend:
+    build:
+      args:
+        NEXT_PUBLIC_API_BASE_URL: /api/v1
+        NEXT_PUBLIC_ENABLE_LOCAL_LOGIN: "false"
