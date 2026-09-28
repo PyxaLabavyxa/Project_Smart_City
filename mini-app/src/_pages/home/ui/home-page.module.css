@@ -47,3 +47,25 @@
 .message p { font-size: 14px; line-height: 1.7; }
 @media (max-width: 900px) { .layout { gap: 24px; grid-template-columns: minmax(0,1.3fr) minmax(0,1fr); } .today,.house { padding: 20px; } .condition { gap: 12px; } .sectionHead { flex-wrap: wrap; } }
 @media (max-width: 760px) { .heading { align-items: stretch; flex-direction: column; } .layout { grid-template-columns: minmax(0,1fr); } .quick a { padding: 16px 12px; gap: 10px; } .quick a span:last-child { display: none; } .sectionHead h2 { font-size: 20px; } .condition h3 { font-size: 17px; } .score strong { font-size: 48px; } }
+.overview { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; margin-bottom:40px; }
+.service { display:flex; align-items:flex-start; gap:14px; padding:22px 18px; background:var(--color-surface); border-radius:var(--radius-card); min-width:0; }
+.serviceIcon { flex-shrink:0; color:var(--color-primary); margin-top:2px; }
+.service > span:nth-child(2) { display:grid; gap:8px; flex:1; min-width:0; }
+.service strong { font-size:13px; font-weight:400; color:var(--color-muted); }
+.service b { font-size:17px; line-height:1.4; font-weight:600; }
+.service small { font-size:12px; color:var(--color-muted); }
+.service > svg { flex-shrink:0; align-self:center; color:var(--color-muted); }
+.healthPanel { padding:22px; border-radius:var(--radius-card); background:var(--color-surface); }
+.healthPanel h2, .schedule h2 { font-size:18px; }
+.healthPanel > p { font-size:13px; color:var(--color-muted); margin-bottom:0; }
+.healthLink { display:flex; align-items:center; justify-content:space-between; padding:20px 0; border-bottom:1px solid var(--color-line); }
+.healthLink strong { display:block; font-size:32px; color:var(--color-teal); letter-spacing:-1px; }
+.healthLink small { color:var(--color-muted); font-size:12px; }
+@media(max-width:1000px) { .service { padding:18px 14px; gap:10px; } .service b { font-size:15px; } }
+@media(max-width:760px) { .overview { grid-template-columns:1fr; gap:10px; margin-bottom:28px; } .service { padding:18px; } .service > span:nth-child(2) { gap:4px; } .layout { gap:28px; } }
+
+.secondaryGrid { margin-top:32px; }
+.secondaryGrid .schedule { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); column-gap:32px; }
+.secondaryGrid .sectionHead { grid-column:1 / -1; }
+@media(max-width:760px) { .secondaryGrid { grid-template-columns:1fr; gap:24px; } }
+@media(max-width:760px) { .secondaryGrid .schedule { grid-template-columns:1fr; } }
