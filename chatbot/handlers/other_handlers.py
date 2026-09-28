@@ -1,6 +1,7 @@
 from maxapi import Router
 from maxapi.types import MessageCreated
 
+from chatbot.lexicon.lexicon import LEXICON
 
 router = Router()
 
@@ -8,4 +9,4 @@ router = Router()
 @router.message_created()
 async def process_other_answer(event: MessageCreated):
     # await event.bot.delete_message(event.message.body.mid)
-    await event.message.answer("Игнорю")
+    await event.message.answer(LEXICON["unknown_message"])

@@ -81,9 +81,10 @@ class IssueRepository:
                 )
             )
             .order_by(
-                Issue.id,
-                Issue.created_at.desc()
+                Issue.created_at.desc(),
+                Issue.id.desc()
             )
+            .limit(1)
             .options(
                 load_only(
                     Issue.description,

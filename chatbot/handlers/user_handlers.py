@@ -61,11 +61,7 @@ async def process_command_start(event: MessageCreated, context: MemoryContext):
     await context.clear()
 
 
-@router.message_callback(
-        FSMReport.waiting,
-        FSMViewingReports.viewing,
-        F.callback.payload == "back_to_menu"
-)
+@router.message_callback(F.callback.payload == "back_to_menu")
 async def process_main_menu(event: MessageCreated, context: MemoryContext):
     await context.clear()
     
@@ -127,7 +123,7 @@ async def process_start_report_after_choice(event: MessageCallback, context: Mem
 
     await event.message.edit(
         text=LEXICON["send_report"],
-        attachments=[]
+        attachments=[inl_back_to_menu()]
     )
 
     await context.update_data(house_id=house_id)
@@ -144,16 +140,20 @@ async def process_get_report(event: MessageCreated, context: MemoryContext):
         await event.message.answer(str(exc))
         return
 
+    await context.update_data(**new_data)
+
     await event.bot.edit_message(
         message_id=data["message_id"],
         attachments=[]
     )
 
     if not new_data["description"]:
-        await event.message.answer(LEXICON["report_need_text"])
+        await event.message.answer(
+            text=LEXICON["report_need_text"],
+            attachments=[inl_back_to_menu()]
+        )
         await context.set_state(FSMReport.get_description)
     else:
-        await context.update_data(**new_data)
         await context.set_state(FSMReport.confirm)
        
         await event.message.answer(
@@ -169,6 +169,20 @@ async def process_invalid_report(event: MessageCreated):
 
 @router.message_created(FSMReport.get_description, F.message.body.text)
 async def process_get_description(event: MessageCreated, context: MemoryContext):
+    data = await context.get_data()
+
+    try:
+        new_data = collect_report(data, event.message)
+    except PhotoError as exc:
+        await event.message.answer(str(exc))
+        return
+
+    if not new_data["description"]:
+        await event.message.answer(LEXICON["report_invalid_description"])
+        return
+
+    await context.update_data(**new_data)
+
     await event.message.answer(
         text=LEXICON["confirm_report"],
         attachments=[inl_confirm()]
@@ -228,7 +242,7 @@ async def process_confirm_report(
 
     await event.message.edit(
         text=LEXICON["report_sent"],
-        attachments=[]
+        attachments=[inl_back_to_menu()]
     )
 
 
@@ -270,7 +284,7 @@ async def process_my_issues(event: MessageCallback, context: MemoryContext):
         )
 
         await event.message.edit(
-            text=LEXICON["choose_house_send"],
+            text=LEXICON["choose_house_view"],
             attachments=[keyboard]
         )
 
