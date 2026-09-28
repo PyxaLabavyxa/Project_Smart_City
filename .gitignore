@@ -16,6 +16,8 @@ dist/
 .idea/
 .vscode/
 tests/
+!/tests/
+!/tests/**
 !mini-app/tests/
 mini-app/tests/*
 !mini-app/tests/*.test.mjs

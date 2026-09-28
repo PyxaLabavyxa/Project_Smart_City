@@ -3,7 +3,7 @@ from maxapi.types import CallbackButton
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.lexicon.lexicon import LEXICON_INLINE_MENU, LEXICON
+from chatbot.lexicon.lexicon import LEXICON_INLINE_MENU, LEXICON
 from app.database.requests import get_user_houses
 
 

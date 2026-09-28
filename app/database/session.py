@@ -3,13 +3,13 @@ from pathlib import Path
 
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
-from app.config_data.config import Config, load_config
+from app.config_data.config import load_database_config
 from app.database.models import Base
 
 
-config: Config = load_config()
+database_config = load_database_config()
 
-engine = create_async_engine(config.database.url)
+engine = create_async_engine(database_config.url)
 
 session_factory = async_sessionmaker(
     bind=engine,

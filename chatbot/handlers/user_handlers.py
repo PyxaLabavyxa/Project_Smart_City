@@ -10,14 +10,15 @@ from maxapi.context import MemoryContext
 
 from yandex_ai_studio_sdk._models.completions.model import AsyncGPTModel
 
-from app.lexicon.lexicon import LEXICON
-from app.keyboards.inline import inl_menu, inl_confirm, inl_houses, inl_back_to_menu
-from app.states.states import FSMReport, FSMViewingReports
-from app.filters.message_filters import has_photo_or_text
-from app.database.requests import create_user_if_exist, get_user_houses, get_issue_information
+from chatbot.lexicon.lexicon import LEXICON
+from chatbot.keyboards.inline import inl_menu, inl_confirm, inl_houses, inl_back_to_menu
+from chatbot.states.states import FSMReport, FSMViewingReports
+from chatbot.filters.message_filters import has_photo_or_text
+from app.database.requests import create_user_if_exist, get_user_houses
+from chatbot.services.issue_information import get_issue_information
 from app.database.session import session_factory
 from app.services.issues import submit_issue
-from app.services.report_draft import collect_report
+from chatbot.services.report_draft import collect_report
 from app.storage.photos import LocalPhotoStorage, PhotoError
 
 

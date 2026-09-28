@@ -1,7 +1,7 @@
 from maxapi import Bot
 from maxapi.types.command import BotCommand
 
-from app.lexicon.lexicon import LEXICON_MAIN_MENU
+from chatbot.lexicon.lexicon import LEXICON_MAIN_MENU
 
 
 async def set_main_menu(bot: Bot):

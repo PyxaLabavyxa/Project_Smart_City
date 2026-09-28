@@ -1,6 +1,9 @@
 from dataclasses import dataclass
 from pathlib import Path
 from environs import Env
+from sqlalchemy.engine import make_url
+
+from app.paths import PROJECT_ROOT, project_path
 
 
 @dataclass(frozen=True)
@@ -39,21 +42,49 @@ class Config:
     storage: StorageConfig
 
 
-def load_config(path: str | Path | None = None) -> Config:
+def read_environment(path: str | Path | None = None) -> Env:
     env = Env()
-    env.read_env(path)
-    root = Path(env.str("MEDIA_ROOT", "data/media")).expanduser()
-    if not root.is_absolute():
-        root = Path(__file__).resolve().parents[2] / root
+    env.read_env(project_path(path) if path is not None else PROJECT_ROOT / ".env", recurse=False)
+    return env
+
+
+def normalize_database_url(value: str) -> str:
+    url = make_url(value)
+    if url.get_backend_name() == "sqlite" and url.database not in (None, "", ":memory:"):
+        url = url.set(database=project_path(url.database).as_posix())
+        return url.render_as_string(hide_password=False)
+    return value
+
+
+def database_config(env: Env) -> DatabaseConfig:
+    return DatabaseConfig(url=normalize_database_url(
+        env.str("DATABASE_URL", "sqlite+aiosqlite:///./data/smart_city.db")
+    ))
+
+
+def load_database_config(path: str | Path | None = None) -> DatabaseConfig:
+    # Работа с БД не требует токена MAX и ключа Яндекса.
+    return database_config(read_environment(path))
+
+
+def load_webapp_config(path: str | Path | None = None) -> WebAppConfig:
+    env = read_environment(path)
+    return WebAppConfig(
+        host=env.str("WEBAPP_HOST", "0.0.0.0"),
+        port=env.int("WEBAPP_PORT", 8080),
+    )
+
+
+def load_config(path: str | Path | None = None) -> Config:
+    env = read_environment(path)
+    root = project_path(env.str("MEDIA_ROOT", "data/media"))
     return Config(
         max_bot=BotConfig(token=env.str("BOT_TOKEN")),
         webapp=WebAppConfig(
             host=env.str("WEBAPP_HOST", "0.0.0.0"),
             port=env.int("WEBAPP_PORT", 8080)
         ),
-        database=DatabaseConfig(
-            url=env.str("DATABASE_URL", "sqlite+aiosqlite:///./data/smart_city.db")
-        ),
+        database=database_config(env),
         yandex_ai=YandexAIConfig(
             api_key=env.str("YANDEX_API_KEY"),
             folder_id=env.str("YANDEX_FOLDER_ID")
