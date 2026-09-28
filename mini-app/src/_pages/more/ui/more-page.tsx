@@ -5,11 +5,12 @@ import { demoHouse } from "@/entities/house";
 import styles from "./more-page.module.css";
 
 const items = [
+  { href: "/plan", icon: "plan", title: "План дома", description: "Этажи, квартиры и общие зоны" },
+  { href: "/utilities", icon: "receipt", title: "ЖКХ", description: "Квитанции, счётчики и оплата" },
   { href: "/messages", icon: "messages", title: "Сообщения", description: "Связь с соседними квартирами" },
   { href: "/health", icon: "health", title: "Здоровье дома", description: "Состояние систем и причины изменений" },
   { href: "/cameras", icon: "cameras", title: "Камеры", description: "Общие зоны вашего дома" },
   { href: "/info", icon: "home", title: "Информация о доме", description: "Характеристики и общие зоны" },
-  { href: "/settings", icon: "plan", title: "Структура дома", description: "Подъезды, этажи и квартиры" },
 ] as const;
 
 export function MorePage() {

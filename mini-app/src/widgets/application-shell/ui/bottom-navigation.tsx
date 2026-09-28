@@ -8,14 +8,14 @@ import { Icon } from "@/shared/ui/icon";
 const items = [
   { href: "/", label: "Дом", icon: "home" },
   { href: "/issues", label: "Обращения", icon: "issues" },
-  { href: "/plan", label: "План", icon: "plan" },
+  { href: "/utilities", label: "ЖКХ", icon: "receipt" },
   { href: "/cameras", label: "Камеры", icon: "cameras" },
   { href: "/more", label: "Ещё", icon: "more" },
 ] as const;
 
 export function BottomNavigation() {
   const pathname = usePathname();
-  const section = ["/health", "/messages", "/info", "/settings"].includes(pathname)
+  const section = ["/health", "/messages", "/info", "/plan"].includes(pathname)
     ? "/more"
     : items.find(item => item.href !== "/" && (pathname === item.href || pathname.startsWith(item.href + "/")))?.href ?? pathname;
 

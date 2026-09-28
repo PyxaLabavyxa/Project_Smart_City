@@ -71,7 +71,7 @@ export function ReportIssueForm({ cancelHref = "/issues" }: { cancelHref?: strin
       </div>{error("category")}</>}
       {draft.step === 2 && <>
         <label className={styles.field}>Что случилось?
-          <input name="title" placeholder="Например, течёт труба возле стояка" value={draft.title} onChange={event => { updateDraft({ title: event.target.value }); setErrors(current => ({ ...current, title: "" })); }} maxLength={120} aria-invalid={!!errors.title} aria-describedby={errors.title ? "title-error" : undefined} />
+          <input name="title" placeholder="Течёт труба возле стояка" value={draft.title} onChange={event => { updateDraft({ title: event.target.value }); setErrors(current => ({ ...current, title: "" })); }} maxLength={120} aria-invalid={!!errors.title} aria-describedby={errors.title ? "title-error" : undefined} />
           {error("title")}
         </label>
         <label className={styles.field}>Описание
