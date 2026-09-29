@@ -18,6 +18,7 @@ export type IssueRecord = {
   assignee?: string;
   deadline?: string;
   description: string;
+  photoIds?: readonly number[];
   history: readonly { status: IssueStateStatus; at: string }[];
 };
 

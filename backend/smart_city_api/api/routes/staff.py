@@ -1,6 +1,4 @@
 import asyncio
-import re
-from pathlib import Path
 from typing import Annotated
 
 from app.database.enums import IssuePriority, IssueStatus
@@ -33,6 +31,7 @@ from smart_city_api.schemas.staff import (
     StatusInput,
 )
 from smart_city_api.services import staff as service
+from smart_city_api.services.photos import photo_path
 
 router = APIRouter(prefix="/api/v1/staff", tags=["Staff"])
 
@@ -125,16 +124,6 @@ async def update_status(issue_id: int, body: StatusInput, session: Session, empl
 @router.post("/issues/{issue_id}/messages", response_model=ActionOutput)
 async def send_message(issue_id: int, body: MessageInput, session: Session, employee: Staff):
     return await service.perform_action(session, employee, issue_id, body)
-
-
-def photo_path(root: Path, key: str) -> Path:
-    if not re.fullmatch(r"issues/[0-9a-f]{32}\.(jpg|png|webp)", key):
-        raise FileNotFoundError
-    root = root.resolve()
-    path = (root / key).resolve()
-    if not path.is_relative_to(root) or not path.is_file():
-        raise FileNotFoundError
-    return path
 
 
 @router.get("/photos/{photo_id}", response_class=FileResponse)

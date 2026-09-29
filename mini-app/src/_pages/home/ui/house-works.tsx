@@ -11,7 +11,7 @@ import styles from "./home-page.module.css";
 export function HouseWorks() {
   const { house } = useHouseSelection();
   const api = useApi();
-  const load = useCallback(async (signal: AbortSignal) => array(await api(endpoints.works(house.id), { signal }), value => {
+  const load = useCallback(async (signal: AbortSignal) => array(await api(endpoints.works(house.id), { signal, cacheFor: 60000 }), value => {
     const w = record(value);
     return { id: number(w.id), title: string(w.title), at: string(w.starts_at), location: string(w.location) };
   }), [api, house.id]);

@@ -5,6 +5,7 @@ import { formatIssueDate, IssueStatus, type IssueRecord } from "@/entities/issue
 import { IssueHistory } from "./issue-history";
 import styles from "./issue-details.module.css";
 import { IssueWorkflow } from "@/features/manage-issue";
+import { IssuePhotos } from "@/entities/issue/ui/issue-photos";
 
 export function IssueDetailsPage({ issue }: { issue: IssueRecord }) {
   return (
@@ -31,6 +32,7 @@ export function IssueDetailsPage({ issue }: { issue: IssueRecord }) {
             <p>{issue.description}</p>
           </div>
           <IssueWorkflow issue={issue} />
+          <IssuePhotos issueId={issue.id} ids={issue.photoIds ?? []} />
         </section>
         <IssueHistory issue={issue} />
       </div>

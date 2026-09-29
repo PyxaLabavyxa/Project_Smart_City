@@ -42,3 +42,10 @@
 @media (max-width: 760px) { .primary { width: 100%; } .actions .primary { width: auto; flex: 1; } }
 @media (max-width: 480px) { .categories { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; } .category { font-size: 13px; } .form { gap: 24px; } }
 .context button { min-height: 44px; }
+@media (prefers-reduced-motion: no-preference) {
+  .fields { animation: step-enter .22s ease-out both; }
+  .steps li { transition: color .2s, border-color .2s; }
+  .category { transition: background .15s, border-color .15s, transform .15s; }
+  .category:active { transform: scale(.97); }
+  @keyframes step-enter { from { opacity: 0; transform: translateX(8px); } to { opacity: 1; transform: translateX(0); } }
+}

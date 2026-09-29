@@ -1,7 +1,17 @@
 from maxapi.utils.inline_keyboard import InlineKeyboardBuilder, AttachmentType
-from maxapi.types import CallbackButton
+from maxapi.types import CallbackButton, OpenAppButton
 
 from chatbot.lexicon.lexicon import LEXICON_INLINE_MENU, LEXICON
+
+
+def mini_app_button() -> OpenAppButton:
+    return OpenAppButton(text="🏙️ Открыть миниапп")
+
+
+def inl_mini_app():
+    builder = InlineKeyboardBuilder()
+    builder.row(mini_app_button())
+    return builder.as_markup()
 
 
 def inl_menu() -> AttachmentType.INLINE_KEYBOARD:
@@ -15,6 +25,7 @@ def inl_menu() -> AttachmentType.INLINE_KEYBOARD:
     for button in buttons:
         builder.add(button)
 
+    builder.row(mini_app_button())
     return builder.as_markup()
 
 
@@ -26,6 +37,7 @@ def inl_confirm() -> AttachmentType.INLINE_KEYBOARD:
         CallbackButton(text=LEXICON["no"], payload="no")
     )
 
+    builder.row(mini_app_button())
     return builder.as_markup()
 
 
@@ -47,6 +59,7 @@ def inl_houses(houses: list[tuple[int, str, int]]) -> AttachmentType.INLINE_KEYB
         else:
             builder.row(button)
 
+    builder.row(mini_app_button())
     return builder.as_markup()
 
 
@@ -57,4 +70,5 @@ def inl_back_to_menu():
         CallbackButton(text=LEXICON["back_to_menu"], payload="back_to_menu")
     )
 
+    builder.row(mini_app_button())
     return builder.as_markup()

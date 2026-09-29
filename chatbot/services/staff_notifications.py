@@ -12,6 +12,7 @@ from sqlalchemy import exists, select, update
 
 from app.database.models import StaffNotification
 from app.database.session import session_factory
+from chatbot.keyboards.inline import mini_app_button
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +20,7 @@ logger = logging.getLogger(__name__)
 def reply_keyboard(issue_id: int):
     builder = InlineKeyboardBuilder()
     builder.add(CallbackButton(text="💬 Ответить сотруднику", payload=f"staff_reply_{issue_id}"))
+    builder.row(mini_app_button())
     return builder.as_markup()
 
 

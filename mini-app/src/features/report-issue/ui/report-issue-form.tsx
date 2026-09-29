@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useIssues, issueCategories, similarIssues, IssueCategoryIcon } from "@/entities/issue";
 import { LocationSelector, formatLocation, validLocation, useHouseSelection } from "@/entities/house";
 import styles from "./report-issue.module.css";
+import { PhotoPicker } from "./photo-picker";
 
 const steps = ["Место", "Категория", "Описание", "Создание"];
 const stepTitles = ["Где возникла проблема?", "Что случилось?", "Расскажите о проблеме", "Проверьте обращение"];
@@ -49,7 +50,7 @@ export function ReportIssueForm({ cancelHref = "/issues" }: { cancelHref?: strin
     submitted.current = true;
     setFailure("");
     try {
-      const id = await addIssue({ place: draft.place, category: draft.category, title: draft.title, description: draft.description });
+      const id = await addIssue({ place: draft.place, category: draft.category, title: draft.title, description: draft.description, photos: draft.photos });
       setNavigating(true);
       router.push("/issues/" + id);
     } catch (error) {
@@ -61,7 +62,7 @@ export function ReportIssueForm({ cancelHref = "/issues" }: { cancelHref?: strin
   return <form ref={formRef} className={styles.form} onSubmit={submit} noValidate aria-busy={saving}>
     <p className={styles.note} aria-live="polite">Шаг {draft.step + 1} из {steps.length} · {steps[draft.step]}</p>
     <ol className={styles.steps} aria-label="Этапы обращения">{steps.map((step, index) => <li key={step} data-reached={index <= draft.step || undefined} aria-current={draft.step === index ? "step" : undefined}><span>{index + 1}</span>{step}</li>)}</ol>
-    <fieldset className={styles.fields} disabled={saving}>
+    <fieldset key={draft.step} className={styles.fields} disabled={saving}>
       <legend tabIndex={-1}>{stepTitles[draft.step]}</legend>
       {draft.step > 0 && <p className={styles.context}>{draft.step > 1 && `${draft.category} · `}{formatLocation(draft.place)} <button type="button" onClick={() => goToStep(0)}>Изменить место</button></p>}
       {draft.step === 0 && <><LocationSelector value={draft.place} onChange={place => updateDraft({ place })} problemPlaces={issues.filter(issue => issue.status !== "completed").flatMap(issue => issue.place ? [issue.place] : [])} />{error("place")}</>}
@@ -80,8 +81,10 @@ export function ReportIssueForm({ cancelHref = "/issues" }: { cancelHref?: strin
           <textarea name="description" placeholder="Что вы заметили и когда это началось" value={draft.description} onChange={event => { updateDraft({ description: event.target.value }); setErrors(current => ({ ...current, description: "" })); }} rows={5} maxLength={2000} aria-invalid={!!errors.description} aria-describedby={errors.description ? "description-error" : undefined} />
           {error("description")}
         </label>
+        <PhotoPicker photos={draft.photos} disabled={saving} onChange={photos => updateDraft({ photos })} />
       </>}
       {draft.step === 3 && <div className={styles.review}><h2>{draft.title}</h2><p>{house.address}</p><p>{formatLocation(draft.place)}</p><p>{draft.category}</p><p className={styles.description}>{draft.description}</p></div>}
+      {draft.step === 3 && draft.photos.length > 0 && <PhotoPicker photos={draft.photos} />}
     </fieldset>
     {matches.length > 0 && draft.step >= 1 && <aside className={styles.similar} aria-label="Похожие обращения"><strong>Возможно, об этой проблеме уже сообщили</strong><p>В этом месте есть активные обращения той же категории. Можно открыть их или продолжить создание.</p>{matches.map(issue => <Link key={issue.id} href={"/issues/" + issue.id}>{issue.title}</Link>)}</aside>}
     {failure && <p role="alert" className={styles.error}>{failure}</p>}

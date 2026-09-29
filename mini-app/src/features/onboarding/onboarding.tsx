@@ -1,10 +1,14 @@
 "use client";
-import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { Icon } from "@/shared/ui/icon";
 import { tourSteps as steps } from "./steps";
 import { tourLayout, type TourRect } from "./tour-layout";
 import styles from "./onboarding.module.css";
+import { prepareTour } from "./prepare";
+import { useIssues } from "@/entities/issue";
+import { useMessages } from "@/entities/message";
+import { useUtilityAccount } from "@/entities/utilities";
 
 const Context = createContext<{ start: () => void; activeTarget: string | null }>({ start: () => {}, activeTarget: null });
 export const useOnboarding = () => useContext(Context);
@@ -14,6 +18,11 @@ export function OnboardingProvider({ userId, children }: { userId: number; child
   const router = useRouter();
   const pathname = usePathname();
   const [step, setStep] = useState<number | null>(null);
+  const [preparation, setPreparation] = useState<{ done: number; total: number; error?: string } | null>(null);
+  const preparationRun = useRef<AbortController | null>(null);
+  const issues = useIssues();
+  const messages = useMessages();
+  const utilities = useUtilityAccount();
   const [destination, setDestination] = useState("/");
   const [position, setPosition] = useState<Position | null>(null);
   const cameraPath = useRef("/cameras");
@@ -21,17 +30,33 @@ export function OnboardingProvider({ userId, children }: { userId: number; child
   const card = useRef<HTMLElement>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const returnTo = useRef("/");
-  const isOpen = step !== null;
+  const isOpen = step !== null || preparation !== null;
   // Keep completion from the previous tour; the revised guide remains available in More.
   const storageKey = `dompulse:onboarding:v1:${userId}`;
-  function start() {
-    returnTo.current = window.location.pathname + window.location.search;
+  const start = useCallback(async () => {
+    if (!preparationRun.current) returnTo.current = window.location.pathname + window.location.search;
+    preparationRun.current?.abort();
+    const controller = new AbortController();
+    preparationRun.current = controller;
+    setStep(null);
     setPosition(null);
-    setDestination("/");
-    setStep(0);
-    router.replace("/", { scroll: false });
-  }
+    setPreparation({ done: 0, total: 11 });
+    try {
+      cameraPath.current = await prepareTour(router, controller.signal, (done, total) => setPreparation({ done, total }));
+      if (controller.signal.aborted) return;
+      setPreparation(null);
+      setDestination("/");
+      setStep(0);
+      try { localStorage.setItem(storageKey, "done"); } catch { /* Storage may be disabled. */ }
+    } catch (error) {
+      if (!controller.signal.aborted) setPreparation(previous => ({ done: previous?.done ?? 0, total: previous?.total ?? 11, error: error instanceof Error ? error.message : "Не удалось подготовить разделы" }));
+    }
+  }, [router, storageKey]);
+  useEffect(() => () => preparationRun.current?.abort(), []);
   function finish() {
+    preparationRun.current?.abort();
+    preparationRun.current = null;
+    setPreparation(null);
     try { localStorage.setItem(storageKey, "done"); } catch { /* Some webviews disable storage. */ }
     setStep(null);
     setPosition(null);
@@ -42,15 +67,10 @@ export function OnboardingProvider({ userId, children }: { userId: number; child
     const timer = window.setInterval(() => {
       if (!document.querySelector('nav[aria-label="Основная навигация"]')) return;
       window.clearInterval(timer);
-      // Remember the first display, even if the app closes before the last step.
-      try { localStorage.setItem(storageKey, "done"); } catch { /* Storage may be disabled. */ }
-      returnTo.current = window.location.pathname + window.location.search;
-      setDestination("/");
-      setStep(0);
-      router.replace("/", { scroll: false });
+      void start();
     }, 250);
     return () => window.clearInterval(timer);
-  }, [storageKey, router]);
+  }, [storageKey, start]);
   useEffect(() => {
     const element = dialog.current;
     if (!isOpen || !element) return;
@@ -141,14 +161,23 @@ export function OnboardingProvider({ userId, children }: { userId: number; child
   const description = current && position?.missing
     ? "missing" in current ? current.missing : "Этот элемент пока недоступен. " + current.text
     : current?.text;
-  return <Context value={{ start, activeTarget: current?.target ?? null }}>{children}{current && <dialog ref={dialog} className={styles.overlay} aria-labelledby="tour-title" aria-describedby="tour-description" onCancel={event => { event.preventDefault(); finish(); }}>
+  return <Context value={{ start, activeTarget: current?.target ?? null }}><span hidden data-app-loading={issues.loading || messages.loading || utilities.loading} />{children}{isOpen && <dialog ref={dialog} className={styles.overlay} aria-labelledby={preparation ? "preparation-title" : "tour-title"} aria-describedby={preparation ? undefined : "tour-description"} onCancel={event => { event.preventDefault(); finish(); }}>
+    {preparation ? <section className={styles.preparation}>
+      <div className={styles.preparationMark} aria-hidden="true"><Icon name="home" size={36} /></div>
+      <h2 id="preparation-title">Готовим ваш ДомПульс</h2><p>{preparation.error ?? "Загружаем разделы и фотографии, чтобы знакомство с домом прошло плавно."}</p>
+      <progress max={preparation.total} value={preparation.done} aria-label="Подготовка разделов" />
+      <span role="status">{preparation.error ? "Подготовка прервана" : `Готово разделов: ${preparation.done} из ${preparation.total}`}</span>
+      {preparation.error && <button type="button" className={styles.next} onClick={() => void start()}>Попробовать снова</button>}
+      <button type="button" className={styles.back} onClick={finish}>Продолжить без обучения</button>
+    </section> : current && <>
     {position ? <div aria-hidden="true" className={styles.spot} data-tour-spot={current.target} style={position.spot} /> : <div className={styles.shade} />}
     <section ref={card} data-compact={current.target === "plan-selection" || current.target === "plan-map" || undefined} className={styles.card} style={position?.card}>
       <div className={styles.top}><span>{step! + 1} из {steps.length} · {position ? "Коротко о главном" : "Открываем нужное место…"}</span><button type="button" onClick={finish} aria-label="Закрыть обучение" title="Пропустить обучение"><Icon name="close" size={17} /></button></div>
       <h2 id="tour-title" tabIndex={-1} ref={heading}>{current.title}</h2>
       <p id="tour-description">{description}</p>
-      <footer><button type="button" className={styles.back} onClick={finish}>Пропустить</button><div>{step! > 0 && <button type="button" className={styles.back} onClick={() => move(step! - 1)} aria-label="Предыдущая подсказка"><Icon name="arrow" size={16} style={{ transform: "rotate(180deg)" }} /></button>}<button type="button" className={styles.next} onClick={() => step === steps.length - 1 ? finish() : move(step! + 1)}>{step === steps.length - 1 ? "Готово" : "Далее"}<Icon name="arrow" size={15} /></button></div></footer>
+      <footer><button type="button" className={styles.back} onClick={finish}>Пропустить</button><div>{step! > 0 && <button type="button" className={styles.back} onClick={() => move(step! - 1)} aria-label="Предыдущая подсказка"><Icon name="arrow" size={16} style={{ transform: "rotate(180deg)" }} /></button>}<button type="button" disabled={!position} className={styles.next} onClick={() => step === steps.length - 1 ? finish() : move(step! + 1)}>{step === steps.length - 1 ? "Готово" : "Далее"}<Icon name="arrow" size={15} /></button></div></footer>
       <div className={styles.progress} aria-label={`Шаг ${step! + 1} из ${steps.length}`}><span style={{ width: `${(step! + 1) / steps.length * 100}%` }} /></div>
     </section>
+    </>}
   </dialog>}</Context>;
 }

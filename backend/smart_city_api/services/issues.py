@@ -1,7 +1,7 @@
 import hashlib
 
 from app.database.enums import IssuePriority, IssueStatus
-from app.database.models import Apartment, House, Issue, IssueEvent
+from app.database.models import Apartment, House, Issue, IssueEvent, IssuePhoto
 from fastapi import HTTPException
 from sqlalchemy import or_, select
 from sqlalchemy.exc import IntegrityError
@@ -54,6 +54,11 @@ async def issue_response(
         address=house.address,
         place=place,
         history=[IssueHistory(status=event.status, at=event.created_at) for event in events],
+        photo_ids=list(
+            await session.scalars(
+                select(IssuePhoto.id).where(IssuePhoto.issue_id == issue.id).order_by(IssuePhoto.id)
+            )
+        ),
     )
 
 
@@ -71,7 +76,11 @@ async def get_issue(session: AsyncSession, user_id: int, issue_id: int) -> Issue
 
 
 async def create_issue(
-    session: AsyncSession, user_id: int, house_id: int, data: CreateIssue
+    session: AsyncSession,
+    user_id: int,
+    house_id: int,
+    data: CreateIssue,
+    photos: list[tuple[str, str]] | None = None,
 ) -> IssueResponse:
     house = await require_house(session, user_id, house_id)
     place = data.place
@@ -93,9 +102,10 @@ async def create_issue(
         )
         if apartment is None:
             raise HTTPException(422, "Выберите свою квартиру или общую зону")
-    fingerprint = hashlib.sha256(
-        f"{house_id}:{data.model_dump_json(exclude={'request_id'})}".encode(),
-    ).hexdigest()
+    fingerprint_data = f"{house_id}:{data.model_dump_json(exclude={'request_id'})}"
+    if photos:
+        fingerprint_data += ":photos:" + ":".join(digest for _, digest in photos)
+    fingerprint = hashlib.sha256(fingerprint_data.encode()).hexdigest()
     statement = select(Issue).where(
         Issue.user_id == user_id, Issue.request_id == str(data.request_id)
     )
@@ -126,6 +136,7 @@ async def create_issue(
     try:
         session.add(issue)
         await session.flush()
+        session.add_all(IssuePhoto(issue_id=issue.id, file_path=key) for key, _ in photos or [])
         session.add(
             IssueEvent(issue_id=issue.id, status=IssueStatus.NEW.value, created_at=issue.created_at)
         )

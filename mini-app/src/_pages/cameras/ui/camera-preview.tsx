@@ -39,7 +39,7 @@ export function CameraPreview({ camera, gateway: providedGateway, compact = fals
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={state.frame.src} alt="Изображение общей зоны дома" width={960} height={540} onError={() => setState({ kind: "error", message: "Не удалось загрузить кадр. Повторите подключение." })} />
       <figcaption>Обновлено {new Date(state.frame.capturedAt).toLocaleString("ru-RU", { timeZone: "Europe/Moscow" })}</figcaption>
-    </figure> : <div className={styles.previewPlaceholder} data-maintenance={camera.status === "maintenance" || undefined} role={state.kind === "error" ? "alert" : "status"}>
+    </figure> : <div className={styles.previewPlaceholder} aria-busy={state.kind === "loading"} data-maintenance={camera.status === "maintenance" || undefined} role={state.kind === "error" ? "alert" : "status"}>
       <div><Icon name={state.kind === "loading" ? "refresh" : "warning"} size={28} /><h2>{state.kind === "loading" ? "Загружаем кадр" : camera.status === "maintenance" ? "Техническое обслуживание" : "Нет изображения"}</h2><p>{state.kind === "loading" ? "Подключаемся к камере…" : state.message}</p></div>
     </div>}
     {!compact && <div className={styles.previewFooter}><CameraStatus status={state.kind === "ready" ? "online" : state.kind === "error" && camera.status !== "maintenance" ? "unavailable" : camera.status} />

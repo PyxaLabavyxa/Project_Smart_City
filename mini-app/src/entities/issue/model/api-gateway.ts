@@ -30,6 +30,7 @@ export function parseIssue(value: unknown, house: House): IssueRecord {
   return { id: String(number(row.id)), title: string(row.title), description: string(row.description),
     category, address: string(row.address), createdAt: string(row.created_at), status: status(row.status),
     mine: row.mine === true, priority: number(row.priority) === 1 ? "high" : "normal", place,
+    photoIds: row.photo_ids === undefined ? [] : array(row.photo_ids, number),
     location: place ? formatLocation(place) : "Место не указано",
     history: array(row.history, value => { const event = record(value); return { status: status(event.status), at: string(event.at) }; }),
   };
@@ -44,10 +45,17 @@ export function createIssueGateway(api: ApiClient, house: House): IssueGateway {
       const place = input.place;
       const apartmentId = place.zone === "apartment" ? house.apartments?.find(a => a.number === place.apartment)?.id : undefined;
       if (place.zone === "apartment" && !apartmentId) throw new Error("Квартира не найдена");
-      return parseIssue(await api(endpoints.issues(house.id), { body: {
+      const data = {
         title: input.title, description: input.description, category, request_id: requestId,
         place: { entrance: place.entrance, floor: place.floor, zone: place.zone, apartment_id: apartmentId ?? null },
-      } }), house);
+      };
+      if (input.photos?.length) {
+        const body = new FormData();
+        body.append("data", JSON.stringify(data));
+        for (const photo of input.photos) body.append("photos", photo.file, photo.file.name);
+        return parseIssue(await api(endpoints.issues(house.id) + "/with-photos", { body }), house);
+      }
+      return parseIssue(await api(endpoints.issues(house.id), { body: data }), house);
     },
   };
 }

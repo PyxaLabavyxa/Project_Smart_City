@@ -13,7 +13,7 @@ from maxapi.context import MemoryContext
 from yandex_ai_studio_sdk._models.completions.model import AsyncGPTModel
 
 from chatbot.lexicon.lexicon import LEXICON
-from chatbot.keyboards.inline import inl_menu, inl_confirm, inl_houses, inl_back_to_menu
+from chatbot.keyboards.inline import inl_menu, inl_confirm, inl_houses, inl_back_to_menu, inl_mini_app
 from chatbot.states.states import FSMReport, FSMViewingReports
 from chatbot.filters.message_filters import has_photo_or_text
 from app.database.requests import create_user_if_exist, get_user_houses
@@ -76,7 +76,7 @@ async def process_main_menu(event: MessageCreated, context: MemoryContext):
 
 @router.message_created(Command("help"))
 async def process_command_help(event: MessageCreated):
-    await event.message.answer(text=LEXICON["help"])
+    await event.message.answer(text=LEXICON["help"], attachments=[inl_menu()])
 
 
 # начало реализации отправки жалобы
@@ -92,7 +92,7 @@ async def process_start_report(event: MessageCallback, context: MemoryContext):
         if len(houses) == 0:
             await event.message.edit(
                 text=LEXICON["report_no_house"],
-                attachments=[]
+                attachments=[inl_mini_app()]
             )
             return
 
@@ -262,7 +262,7 @@ async def process_my_issues(event: MessageCallback, context: MemoryContext):
     if len(houses) == 0:
         await event.message.answer(
             text=LEXICON["report_no_house"],
-            attachments=[]
+            attachments=[inl_mini_app()]
         )
         return
 

@@ -55,7 +55,7 @@ function AuthenticatedApp({ children, mode }: { children: ReactNode; mode: "loca
   }, [mode]);
   const state = useRemote(load);
   if (!state.data) return <main className="connection-screen"><h1>ДомПульс</h1><RequestState {...state} /></main>;
-  return <ApiContext value={state.data.api}><MiniAppPresence /><OnboardingProvider userId={state.data.profile.id}><ResidentHomes profile={state.data.profile}>{children}</ResidentHomes></OnboardingProvider></ApiContext>;
+  return <ApiContext value={state.data.api}><MiniAppPresence /><ResidentHomes profile={state.data.profile}>{children}</ResidentHomes></ApiContext>;
 }
 
 function ResidentHomes({ profile, children }: { profile: ResidentProfile; children: ReactNode }) {
@@ -64,10 +64,10 @@ function ResidentHomes({ profile, children }: { profile: ResidentProfile; childr
   const house = profile.houses.find(h => h.id === resident?.houseId);
   const choices = profile.apartments.map(a => ({ id: a.id, houseId: a.houseId, apartment: a.number, address: profile.houses.find(h => h.id === a.houseId)?.address ?? "Дом" }));
   if (!resident || !house) return <main className="connection-screen"><h1>Дом пока не привязан</h1><p>Добавьте квартиру через чатбот, затем откройте приложение заново.</p></main>;
-  return <ConnectedHouse key={resident.id} house={{ ...house, residentApartment: resident.number, residentApartmentId: resident.id }} choices={choices} choose={choose}>{children}</ConnectedHouse>;
+  return <ConnectedHouse key={resident.id} userId={profile.id} house={{ ...house, residentApartment: resident.number, residentApartmentId: resident.id }} choices={choices} choose={choose}>{children}</ConnectedHouse>;
 }
 
-function ConnectedHouse({ house, choices, choose, children }: { house: House; choices: { id: number; houseId: string; apartment: number; address: string }[]; choose: (id: number) => void; children: ReactNode }) {
+function ConnectedHouse({ userId, house, choices, choose, children }: { userId: number; house: House; choices: { id: number; houseId: string; apartment: number; address: string }[]; choose: (id: number) => void; children: ReactNode }) {
   const api = useApi();
   const load = useCallback((signal: AbortSignal) => readPages(api, endpoints.apartments(house.id), parseApartment, signal), [api, house.id]);
   const state = useRemote(load);
@@ -78,7 +78,7 @@ function ConnectedHouse({ house, choices, choose, children }: { house: House; ch
   if (!state.data) return <main className="connection-screen"><h1>{house.address}</h1><RequestState {...state} /></main>;
   return <HouseSelectionProvider house={currentHouse} choices={choices} choose={choose}>
     <IssueProvider gateway={issueGateway}><MessageProvider gateway={messageGateway}>
-      <UtilitiesProvider gateway={utilitiesGateway}>{children}</UtilitiesProvider>
+      <UtilitiesProvider gateway={utilitiesGateway}><OnboardingProvider userId={userId}>{children}</OnboardingProvider></UtilitiesProvider>
     </MessageProvider></IssueProvider>
   </HouseSelectionProvider>;
 }

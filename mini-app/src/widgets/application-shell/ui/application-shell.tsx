@@ -1,4 +1,6 @@
+"use client";
 import type { ReactNode } from "react";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { ThemeToggle } from "@/features/toggle-theme";
 import { BottomNavigation } from "./bottom-navigation";
@@ -6,6 +8,7 @@ import styles from "./shell.module.css";
 import { Icon } from "@/shared/ui/icon";
 
 export function ApplicationShell({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
   return (
     <>
       <a className={styles.skip} href="#main">Перейти к содержимому</a>
@@ -14,7 +17,7 @@ export function ApplicationShell({ children }: { children: ReactNode }) {
         <ThemeToggle />
       </header>
       <BottomNavigation />
-      <main id="main" className={styles.main} tabIndex={-1}>{children}</main>
+      <main id="main" data-page-path={pathname} className={styles.main} tabIndex={-1}><div key={pathname} className={styles.pageTransition}>{children}</div></main>
     </>
   );
 }

@@ -46,7 +46,7 @@ services:
       LOCAL_LOGIN_ENABLED: "false"
       MEDIA_ROOT: /srv/data/media
     volumes:
-      - media:/srv/data/media:ro
+      - media:/srv/data/media
     ports:
       - "127.0.0.1:${API_PORT:-8000}:8000"
     depends_on:

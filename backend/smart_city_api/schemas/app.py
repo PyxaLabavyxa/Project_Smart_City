@@ -60,6 +60,7 @@ class IssueResponse(BaseModel):
     address: str
     place: Location | None
     history: list[IssueHistory]
+    photo_ids: list[int] = Field(default_factory=list)
 
 
 class IssuePage(BaseModel):

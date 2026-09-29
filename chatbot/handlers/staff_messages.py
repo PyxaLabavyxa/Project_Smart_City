@@ -6,6 +6,7 @@ from maxapi.types import CallbackButton, MessageCallback, MessageCreated
 from maxapi.utils.inline_keyboard import InlineKeyboardBuilder
 
 from app.database.session import session_factory
+from chatbot.keyboards.inline import inl_mini_app, mini_app_button
 from chatbot.services.staff_messages import reply_issue, save_reply
 from chatbot.states.states import FSMStaffReply
 
@@ -16,6 +17,7 @@ logger = logging.getLogger(__name__)
 def cancel_keyboard():
     builder = InlineKeyboardBuilder()
     builder.add(CallbackButton(text="↩️ Отменить ответ", payload="staff_reply_cancel"))
+    builder.row(mini_app_button())
     return builder.as_markup()
 
 
@@ -29,7 +31,7 @@ async def restore_context(context: MemoryContext, data: dict) -> None:
 async def cancel_reply(event: MessageCallback, context: MemoryContext):
     await restore_context(context, await context.get_data())
     await event.message.edit(
-        text="Ответ отменён. Можно продолжить предыдущий диалог.", attachments=[]
+        text="Ответ отменён. Можно продолжить предыдущий диалог.", attachments=[inl_mini_app()]
     )
 
 
@@ -40,7 +42,8 @@ async def start_reply(event: MessageCallback, context: MemoryContext):
         issue = await reply_issue(session, event.callback.user.user_id, issue_id)
         if issue is None:
             await event.message.answer(
-                "Обращение недоступно. Выберите уведомление по своей заявке."
+                "Обращение недоступно. Выберите уведомление по своей заявке.",
+                attachments=[inl_mini_app()],
             )
             return
         title = issue.title
@@ -93,4 +96,5 @@ async def receive_reply(event: MessageCreated, context: MemoryContext):
     await event.message.answer(
         f"✅ Ответ по обращению №{data['staff_issue_id']} передан в кабинет сотрудника.\n"
         "Можно продолжить предыдущий диалог.",
+        attachments=[inl_mini_app()],
     )

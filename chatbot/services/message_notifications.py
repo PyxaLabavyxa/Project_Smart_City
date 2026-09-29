@@ -16,6 +16,8 @@ from app.database.session import session_factory
 from maxapi.types.errors import Error
 from sqlalchemy import select
 
+from chatbot.keyboards.inline import inl_mini_app
+
 logger = logging.getLogger(__name__)
 
 
@@ -57,11 +59,12 @@ async def deliver_pending(bot, sessions=session_factory):
                     bot.send_message(
                         user_id=notification.max_user_id,
                         notify=True,
+                        attachments=[inl_mini_app()],
                         text=(
                             f"Новое сообщение от квартиры {sender.number}\n"
                             f"{house.address} · для квартиры {recipient.number}\n\n"
                             f"{message.text[:1500]}\n\n"
-                            "Откройте мини-приложение → Сообщения, чтобы ответить."
+                            "Нажмите «Открыть миниапп» ниже и перейдите в раздел «Сообщения», чтобы ответить."
                         ),
                     ),
                     timeout=15,

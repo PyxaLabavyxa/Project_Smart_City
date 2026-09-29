@@ -18,3 +18,20 @@
 @media (prefers-reduced-motion: no-preference) { .progress span { transition: width .2s; } }
 
 @media (max-height: 760px) { .card[data-compact] { height: min(220px, calc(100dvh - 24px)); } }
+.preparation { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; padding: 32px; background: var(--color-bg); text-align: center; }
+.preparationMark { display: grid; place-items: center; width: 84px; height: 84px; border-radius: 26px; background: var(--color-soft); color: var(--color-primary); }
+.preparation h2 { margin: 4px 0 0; font-size: 26px; letter-spacing: -.7px; }
+.preparation p { max-width: 340px; margin: 0; color: var(--color-muted); font-size: 14px; line-height: 1.7; }
+.preparation progress { appearance: none; width: min(280px, 100%); height: 5px; border: 0; border-radius: 6px; overflow: hidden; background: var(--color-line); accent-color: var(--color-primary); }
+.preparation progress::-webkit-progress-bar { background: var(--color-line); }
+.preparation progress::-webkit-progress-value { background: var(--color-primary); border-radius: 6px; transition: width .25s ease; }
+.preparation progress::-moz-progress-bar { background: var(--color-primary); }
+.preparation > span { font-size: 12px; color: var(--color-muted); font-variant-numeric: tabular-nums; }
+.next:disabled { opacity: .55; cursor: wait; }
+@media (prefers-reduced-motion: no-preference) {
+  .preparationMark { animation: breathe 1.8s ease-in-out infinite alternate; }
+  .spot { transition: top .22s ease, left .22s ease, width .22s ease, height .22s ease; }
+  .card { transition: top .22s ease, left .22s ease; }
+  @keyframes breathe { from { transform: scale(.96); opacity: .65; } to { transform: scale(1); opacity: 1; } }
+}
+@media (prefers-reduced-motion: reduce) { .preparation progress::-webkit-progress-value { transition: none; } }
