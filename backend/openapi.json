@@ -1295,6 +1295,163 @@
           }
         }
       }
+    },
+    "/api/v1/staff/registrations": {
+      "get": {
+        "tags": [
+          "Staff"
+        ],
+        "summary": "Registrations",
+        "operationId": "registrations_api_v1_staff_registrations_get",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/staff/registrations/{application_id}/{decision}": {
+      "post": {
+        "tags": [
+          "Staff"
+        ],
+        "summary": "Decide Application",
+        "operationId": "decide_application_api_v1_staff_registrations__application_id___decision__post",
+        "parameters": [
+          {
+            "name": "application_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Application Id"
+            }
+          },
+          {
+            "name": "decision",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Decision"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/registration": {
+      "get": {
+        "tags": [
+          "registration"
+        ],
+        "summary": "State",
+        "operationId": "state_api_v1_registration_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "MAXLaunchData": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "registration"
+        ],
+        "summary": "Submit",
+        "operationId": "submit_api_v1_registration_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegistrationInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "MAXLaunchData": []
+          }
+        ]
+      }
     }
   },
   "components": {
@@ -2551,6 +2708,44 @@
           "period"
         ],
         "title": "ReadingInput"
+      },
+      "RegistrationInput": {
+        "properties": {
+          "full_name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 2,
+            "title": "Full Name"
+          },
+          "company_id": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Company Id"
+          },
+          "house_id": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "House Id"
+          },
+          "apartment_number": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Apartment Number"
+          },
+          "additional": {
+            "type": "boolean",
+            "title": "Additional",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "full_name",
+          "company_id",
+          "house_id",
+          "apartment_number"
+        ],
+        "title": "RegistrationInput"
       },
       "SendMessage": {
         "properties": {

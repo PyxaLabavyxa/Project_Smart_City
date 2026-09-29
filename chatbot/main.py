@@ -10,7 +10,7 @@ from maxapi.types.errors import Error
 from app.config_data.config import Config, load_config
 from app.database.session import create_tables, engine
 from chatbot.max_client import MaxBot
-from chatbot.handlers import user_handlers, other_handlers, staff_messages
+from chatbot.handlers import user_handlers, other_handlers, staff_messages, registration
 from chatbot.keyboards.main_menu import set_main_menu
 from app.ai.client import create_ai_client, create_report_model
 from chatbot.middlewares.ai import AIMiddleware
@@ -32,6 +32,7 @@ async def main() -> None:
 
     dp.include_routers(
         user_handlers.router,
+        registration.router,
         staff_messages.router,
         other_handlers.router
     )
@@ -40,6 +41,11 @@ async def main() -> None:
     staff_notifications = None
     try:
         await create_tables()
+        if registration.test_mode():
+            from app.database.registration_demo import seed_registration_demo
+            from app.database.session import session_factory
+            async with session_factory.begin() as session:
+                await seed_registration_demo(session)
         # await set_main_menu(bot)
 
         subscriptions = await bot.get_subscriptions()

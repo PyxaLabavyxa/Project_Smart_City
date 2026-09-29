@@ -16,7 +16,8 @@ from chatbot.lexicon.lexicon import LEXICON
 from chatbot.keyboards.inline import inl_menu, inl_confirm, inl_houses, inl_back_to_menu, inl_mini_app
 from chatbot.states.states import FSMReport, FSMViewingReports
 from chatbot.filters.message_filters import has_photo_or_text
-from app.database.requests import create_user_if_exist, get_user_houses
+from app.database.requests import get_user_houses
+from chatbot.handlers.registration import initial_prompt
 from chatbot.services.issue_information import get_issue_information
 from app.database.session import session_factory
 from app.services.issues import submit_issue
@@ -29,39 +30,15 @@ logger = logging.getLogger(__name__)
 
 @router.bot_started()
 async def process_bot_start(event: BotStarted):
-    from_user = event.from_user
-
-    async with session_factory.begin() as session:
-        await create_user_if_exist(
-            session=session,
-            max_user_id=from_user.user_id,
-            name=from_user.full_name
-        )
-
-    await event.bot.send_message(
-        chat_id=event.chat_id,
-        text=LEXICON["bot_start"],
-        attachments=[inl_menu()]
-    )
+    text, buttons = await initial_prompt(event.from_user.user_id, event.from_user.full_name)
+    await event.bot.send_message(chat_id=event.chat_id, text=text, attachments=[buttons])
 
 
 @router.message_created(CommandStart())
 async def process_command_start(event: MessageCreated, context: MemoryContext):
-    from_user = event.from_user
-
-    async with session_factory.begin() as session:
-        await create_user_if_exist(
-            session=session,
-            max_user_id=from_user.user_id,
-            name=from_user.full_name
-        )
-
-    await event.message.answer(
-        text=LEXICON["bot_start"],
-        attachments=[inl_menu()]
-    )
-
     await context.clear()
+    text, buttons = await initial_prompt(event.from_user.user_id, event.from_user.full_name)
+    await event.message.answer(text=text, attachments=[buttons])
 
 
 @router.message_callback(F.callback.payload == "back_to_menu")

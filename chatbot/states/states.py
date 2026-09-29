@@ -15,3 +15,8 @@ class FSMViewingReports(StatesGroup):
 
 class FSMStaffReply(StatesGroup):
     waiting = State()
+
+
+class FSMRegistration(StatesGroup):
+    name = State()
+    apartment = State()

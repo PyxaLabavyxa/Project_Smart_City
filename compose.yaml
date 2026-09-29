@@ -44,6 +44,7 @@ services:
       FORWARDED_ALLOW_IPS: ${FORWARDED_ALLOW_IPS:-127.0.0.1}
       CORS_ORIGINS: ${CORS_ORIGINS:-["http://localhost:3000","http://127.0.0.1:3000"]}
       LOCAL_LOGIN_ENABLED: "false"
+      ONBOARDING_TEST_MODE: ${ONBOARDING_TEST_MODE:-true}
       MEDIA_ROOT: /srv/data/media
     volumes:
       - media:/srv/data/media
@@ -93,6 +94,7 @@ services:
       YANDEX_API_KEY: ${YANDEX_API_KEY:-}
       MINI_APP_BOT_USERNAME: ${MINI_APP_BOT_USERNAME:-t282_hakaton_max_bot}
       YANDEX_FOLDER_ID: ${YANDEX_FOLDER_ID:-}
+      ONBOARDING_TEST_MODE: ${ONBOARDING_TEST_MODE:-true}
       MEDIA_ROOT: /srv/data/media
     volumes:
       - media:/srv/data/media

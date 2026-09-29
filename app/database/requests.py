@@ -1,7 +1,6 @@
-import os
-
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 
 from app.database.repositories.repositories import UserRepository, IssueRepository
 from app.database.enums import IssueCategory, IssuePriority
@@ -13,14 +12,14 @@ async def create_user_if_exist(session: AsyncSession, max_user_id: int, name: st
     users = UserRepository(session)
 
     if not await users.user_exist(max_user_id):
-        await users.create_user(max_user_id, name)
-        await session.flush()
+        try:
+            async with session.begin_nested():
+                await users.create_user(max_user_id, name)
+                await session.flush()
+        except IntegrityError:
+            if not await users.user_exist(max_user_id):
+                raise
 
-    if os.environ.get("SAMPLE_DATA_ENABLED", "false").lower() == "true":
-        from app.database.sample_data import provision_sample_resident
-
-        user_id = await session.scalar(select(User.id).where(User.max_user_id == max_user_id))
-        await provision_sample_resident(session, user_id)
 
 
 async def create_issue(

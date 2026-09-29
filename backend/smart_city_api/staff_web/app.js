@@ -40,6 +40,7 @@ function showLogin() {
   state.profile = null; state.detail = null; state.listRequest++; state.detailRequest++;
   $("issue-dialog").close(); $("photo-dialog").close();
   $("full-photo").removeAttribute("src"); $("detail-content").replaceChildren();
+  $("registrations-body").replaceChildren();
   $("issues-body").replaceChildren(); $("workspace").hidden = true;
   $("login-screen").hidden = false; $("boot").hidden = true;
 }
@@ -71,6 +72,7 @@ async function enterWorkspace() {
   $("login-screen").hidden = true; $("workspace").hidden = false; $("boot").hidden = true;
   updateStatSelection();
   await loadList();
+  switchSection();
 }
 function updateStatSelection() {
   document.querySelectorAll(".stat").forEach((button) => {
@@ -230,7 +232,8 @@ $("close-photo").addEventListener("click", () => $("photo-dialog").close());
 $("photo-dialog").addEventListener("close", () => $("full-photo").removeAttribute("src"));
 setInterval(async () => {
   if (!state.profile || document.hidden || state.busy) return;
-  await loadList();
+  if (window.location.hash === "#registrations") await loadRegistrations();
+  else await loadList();
   const id = state.detail?.id;
   if (id && $("issue-dialog").open) {
     try { const detail = await api(`/issues/${id}`); if (state.detail?.id === id && !state.busy) renderConversation(detail); }
@@ -238,3 +241,55 @@ setInterval(async () => {
   }
 }, 20000);
 enterWorkspace().catch((error) => { showLogin(); if (error.status !== 401) showError("login-error", error.message); });
+
+
+let registrationPage = 1, registrationTotal = 0, registrationRequest = 0;
+function switchSection() {
+  const registrations = window.location.hash === "#registrations";
+  $("issues-section").hidden = registrations;
+  $("registrations-section").hidden = !registrations;
+  $("section-name").textContent = registrations ? "Заявки" : "Обращения";
+  for (const [id, active] of [["nav-issues", !registrations], ["nav-registrations", registrations]]) {
+    $(id).classList.toggle("active", active);
+    if (active) $(id).setAttribute("aria-current", "page"); else $(id).removeAttribute("aria-current");
+  }
+  if (registrations && state.profile) void loadRegistrations();
+}
+async function loadRegistrations() {
+  if (!state.profile) return;
+  const request = ++registrationRequest;
+  $("refresh-registrations").disabled = true;
+  try {
+    const data = await api(`/registrations?page=${registrationPage}`);
+    if (!state.profile || request !== registrationRequest) return;
+    registrationTotal = data.total;
+    showError("registrations-error", "");
+    $("registrations-body").innerHTML = data.items.map(item => `<tr>
+      <td><strong>${esc(item.full_name)}</strong><span class="row-meta">Заявка № ${item.id}</span></td>
+      <td>${esc(item.address)}, кв. ${item.apartment}<span class="row-meta">${esc(item.company)}</span></td>
+      <td>${item.source === "bot" ? "Чатбот" : "Мини-приложение"}</td>
+      <td>${esc({ pending: "Ожидает решения", approved: "Принята", rejected: "Отклонена" }[item.status])}${item.auto_approved ? '<span class="row-meta">Автоматически · тестовый режим</span>' : ""}</td>
+      <td>${esc(date(item.created_at, true))}</td>
+      <td>${item.status === "pending" ? `<button class="secondary" data-registration="${item.id}" data-decision="approve">Принять</button> <button class="text-button" data-registration="${item.id}" data-decision="reject">Отклонить</button>` : `<span class="muted">${item.auto_approved ? "Принято автоматически" : "Рассмотрено"}</span>`}</td></tr>`).join("");
+    $("registrations-empty").hidden = data.total !== 0;
+    $("registrations-page").textContent = data.total ? `Страница ${registrationPage} · всего заявок: ${data.total}` : "Нет заявок";
+    $("registrations-prev").disabled = registrationPage <= 1;
+    $("registrations-next").disabled = registrationPage * 25 >= data.total;
+  } catch (error) { if (request === registrationRequest) showError("registrations-error", error.message); }
+  finally { if (request === registrationRequest) $("refresh-registrations").disabled = false; }
+}
+window.addEventListener("hashchange", switchSection);
+$("refresh-registrations").addEventListener("click", loadRegistrations);
+$("registrations-prev").addEventListener("click", () => { if (registrationPage > 1) { registrationPage--; void loadRegistrations(); } });
+$("registrations-next").addEventListener("click", () => { if (registrationPage * 25 < registrationTotal) { registrationPage++; void loadRegistrations(); } });
+$("registrations-body").addEventListener("click", async event => {
+  const button = event.target.closest("[data-registration]");
+  if (!button || state.busy) return;
+  state.busy = true; button.disabled = true;
+  try {
+    await api(`/registrations/${Number(button.dataset.registration)}/${button.dataset.decision}`, { method: "POST" });
+    toast(button.dataset.decision === "approve" ? "Заявка принята. Квартира привязана." : "Заявка отклонена.");
+    await loadRegistrations();
+  } catch (error) { showError("registrations-error", error.message); }
+  finally { state.busy = false; button.disabled = false; }
+});

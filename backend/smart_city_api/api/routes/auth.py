@@ -1,8 +1,11 @@
+import json
 import time
 from datetime import UTC, datetime, timedelta
+from urllib.parse import parse_qsl
 from uuid import UUID
 
 from app.database.models import MiniAppPresence, User
+from app.database.requests import create_user_if_exist
 from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel, Field
 from sqlalchemy import delete, select
@@ -30,8 +33,13 @@ async def login(data: LaunchInput, request: Request, response: Response, session
         max_id = validate_launch_data(data.init_data, token, settings.max_auth_age_seconds)
     except InvalidLaunchData as error:
         raise HTTPException(401, "Сессия истекла. Откройте приложение заново из MAX") from error
-    if await session.scalar(select(User.id).where(User.max_user_id == max_id)) is None:
-        raise HTTPException(403, "Сначала зарегистрируйтесь в чатботе")
+    # Name is read only after the MAX payload signature has been verified.
+    profile = json.loads(dict(parse_qsl(data.init_data))["user"])
+    name = " ".join(
+        str(profile.get(key) or "").strip() for key in ("first_name", "last_name")
+    ).strip()
+    await create_user_if_exist(session, max_id, name[:200] or "Житель")
+    await session.commit()
     response.set_cookie(
         "dompulse_session",
         sign_session(max_id, token, int(time.time()) + 3600),

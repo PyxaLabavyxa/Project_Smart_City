@@ -9,6 +9,8 @@ pytest_plugins = ["tests.test_api"]
 def test_camera_provisioning_and_frame_rotation_are_authorized(api):
     client, _, _ = api
     client.app.state.settings.sample_data_enabled = True
+    from tests.test_sample_data import seed_explicitly
+    seed_explicitly(client, 4)
     profile = client.get("/api/v1/me", headers=headers(104)).json()
     house_id = profile["houses"][0]["id"]
     cameras = client.get(f"/api/v1/houses/{house_id}/cameras", headers=headers(104)).json()

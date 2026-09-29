@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     bot_token: SecretStr | None = None
     local_login_enabled: bool = False
     sample_data_enabled: bool = False
+    onboarding_test_mode: bool = False
     local_login_networks: list[IPvAnyNetwork] = ["127.0.0.0/8", "::1/128"]
     local_session_secret: SecretStr | None = None
     session_cookie_secure: bool = True

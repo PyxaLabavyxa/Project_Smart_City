@@ -147,3 +147,75 @@ async def photo(photo_id: int, request: Request, session: Session, employee: Sta
             "X-Content-Type-Options": "nosniff",
         },
     )
+
+
+@router.get("/registrations")
+async def registrations(session: Session, employee: Staff, page: Annotated[int, Query(ge=1)] = 1):
+    from app.database.models import Apartment, ManagementCompany, RegistrationRequest
+    from sqlalchemy import func
+
+    scope = Apartment.house_id.in_(service.house_scope(employee.id))
+    total = await session.scalar(
+        select(func.count())
+        .select_from(RegistrationRequest)
+        .join(Apartment, Apartment.id == RegistrationRequest.apartment_id)
+        .where(scope)
+    )
+    rows = (
+        await session.execute(
+            select(RegistrationRequest, Apartment, House, ManagementCompany)
+            .join(Apartment, Apartment.id == RegistrationRequest.apartment_id)
+            .join(House, House.id == Apartment.house_id)
+            .join(ManagementCompany, ManagementCompany.id == RegistrationRequest.company_id)
+            .where(scope)
+            .order_by(RegistrationRequest.id.desc())
+            .offset((page - 1) * 25)
+            .limit(25)
+        )
+    ).all()
+    return {
+        "total": total,
+        "items": [
+            {
+                "id": r.id,
+                "full_name": r.full_name,
+                "address": h.address,
+                "apartment": a.number,
+                "company": c.name,
+                "status": r.status,
+                "auto_approved": r.auto_approved,
+                "source": r.source,
+                "created_at": r.created_at,
+                "decided_at": r.decided_at,
+            }
+            for r, a, h, c in rows
+        ],
+    }
+
+
+@router.post("/registrations/{application_id}/{decision}")
+async def decide_application(application_id: int, decision: str, session: Session, employee: Staff):
+    from app.database.models import Apartment, RegistrationRequest
+    from app.services.registration import decide_registration
+
+    if decision not in ("approve", "reject"):
+        raise HTTPException(422, "Выберите принять или отклонить")
+    application = await session.scalar(
+        select(RegistrationRequest)
+        .join(Apartment, Apartment.id == RegistrationRequest.apartment_id)
+        .where(
+            RegistrationRequest.id == application_id,
+            Apartment.house_id.in_(service.house_scope(employee.id)),
+        )
+        .with_for_update(of=RegistrationRequest)
+    )
+    if application is None:
+        raise HTTPException(404, "Заявка не найдена")
+    try:
+        await decide_registration(
+            session, application, approve=decision == "approve", staff_id=employee.id
+        )
+    except ValueError as error:
+        raise HTTPException(409, str(error)) from error
+    await session.commit()
+    return {"status": application.status}

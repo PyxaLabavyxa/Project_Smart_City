@@ -344,3 +344,33 @@ class MiniAppPresence(Base):
     client_id: Mapped[str] = mapped_column(String(36), primary_key=True)
     sequence: Mapped[int] = mapped_column(Integer)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+
+
+class ManagementCompany(Base):
+    __tablename__ = "management_companies"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(200), unique=True)
+
+
+class CompanyHouse(Base):
+    __tablename__ = "company_houses"
+    house_id: Mapped[int] = mapped_column(ForeignKey("houses.id"), primary_key=True)
+    company_id: Mapped[int] = mapped_column(ForeignKey("management_companies.id"), index=True)
+
+
+class RegistrationRequest(Base):
+    __tablename__ = "registration_requests"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    company_id: Mapped[int] = mapped_column(ForeignKey("management_companies.id"))
+    apartment_id: Mapped[int] = mapped_column(ForeignKey("apartments.id"))
+    full_name: Mapped[str] = mapped_column(String(200))
+    source: Mapped[str] = mapped_column(String(20))
+    status: Mapped[str] = mapped_column(String(20), default="pending")
+    auto_approved: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    decided_by: Mapped[int | None] = mapped_column(ForeignKey("staff_users.id"))
+    __table_args__ = (
+        CheckConstraint("status IN ('pending', 'approved', 'rejected')", name="ck_registration_status"),
+    )

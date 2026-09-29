@@ -15,7 +15,6 @@ from smart_city_api.schemas.resident import ApartmentPage, ApartmentResponse, Ho
 from smart_city_api.services.access import own_apartment_ids, require_house
 from smart_city_api.services.issues import create_issue, get_issue, issue_response, visible_issues
 from smart_city_api.services.photos import MAX_BYTES, MAX_PHOTOS, photo_path, save_photo
-from smart_city_api.services.sample_data import ensure_sample_data
 
 router = APIRouter(prefix="/api/v1", tags=["resident"])
 Limit = Annotated[int, Query(ge=1, le=100)]
@@ -24,8 +23,6 @@ Cursor = Annotated[int, Query(ge=0)]
 
 @router.get("/me", response_model=Profile)
 async def me(request: Request, session: Session, user: Resident):
-    if request.app.state.settings.sample_data_enabled:
-        await ensure_sample_data(session, user.id)
     apartments = (
         await session.scalars(
             select(Apartment)

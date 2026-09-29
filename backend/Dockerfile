@@ -8,7 +8,9 @@ RUN pip install --no-cache-dir -r requirements.txt && useradd --uid 10001 --crea
 COPY app/__init__.py ./app/__init__.py
 COPY app/paths.py ./app/paths.py
 COPY app/database/models.py app/database/enums.py app/database/runtime.py app/database/__init__.py ./app/database/
-COPY app/database/sample_data.py app/database/camera_data.py ./app/database/
+COPY app/database/sample_data.py app/database/camera_data.py app/database/registration_demo.py app/database/demo_issues.py app/database/demo_services.py app/database/requests.py ./app/database/
+COPY app/database/repositories ./app/database/repositories
+COPY app/services/registration.py app/services/__init__.py ./app/services/
 COPY backend/smart_city_api ./smart_city_api
 COPY backend/migrations ./migrations
 COPY backend/alembic.ini ./alembic.ini

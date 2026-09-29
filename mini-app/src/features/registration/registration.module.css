@@ -1,0 +1,27 @@
+.screen { min-height: 100dvh; padding: max(24px, env(safe-area-inset-top)) 16px max(32px, env(safe-area-inset-bottom)); background: #f5f4f0; color: #272b30; }
+.brand { max-width: 460px; margin: 0 auto 28px; display: flex; align-items: center; gap: 10px; font-size: 21px; font-weight: 600; }
+.brand span { background: #3155d9; color: white; border-radius: 12px; padding: 5px 12px; }
+.card { max-width: 460px; margin: auto; padding: 26px; border-radius: 24px; background: white; box-shadow: 0 12px 45px #25334d08; overflow-wrap: anywhere; }
+.eyebrow { font-size: 10px; letter-spacing: .12em; color: #747c86; font-weight: 600; }
+.card h1 { font-size: clamp(25px, 7vw, 34px); line-height: 1.13; letter-spacing: -.04em; margin: 16px 0 20px; }
+.card p { font-size: 14px; line-height: 1.6; }
+.card .notice { background: #eef5f3; color: #316d60; border-radius: 10px; padding: 12px 14px; font-size: 12px; }
+.empty { margin: 22px 0; padding-left: 14px; border-left: 3px solid #3155d9; }
+.empty strong { font-size: 15px; }
+.empty p { color: #68727e; }
+.card label { display: block; font-size: 13px; font-weight: 600; margin: 20px 0 9px; }
+.card input, .card select { display: block; width: 100%; min-width: 0; box-sizing: border-box; border: 1px solid #d9dde3; border-radius: 10px; padding: 13px 12px; font: inherit; font-size: 16px; color: inherit; background: white; }
+.card input:focus-visible, .card select:focus-visible, .card button:focus-visible { outline: 3px solid #8da6ff; outline-offset: 3px; }
+.card .hint { font-size: 12px; color: #747c86; }
+.primary, .secondary { width: 100%; min-height: 46px; font: inherit; font-size: 14px; border: 0; border-radius: 11px; cursor: pointer; }
+.primary { background: #3155d9; color: white; padding: 14px; margin-top: 18px; }
+.primary span { margin-left: 10px; }
+.secondary { background: transparent; color: #68727e; padding: 12px 4px; margin-top: 6px; }
+.card button:disabled { opacity: .55; cursor: default; }
+.error { color: #b13838; }
+@media (max-width: 360px) { .card { padding: 20px; } .screen { padding-inline: 12px; } }
+
+.embedded { color: var(--color-ink); }
+.embedded .card { padding: 0; border-radius: 0; box-shadow: none; background: transparent; }
+.embedded .card h1 { font-size: 24px; }
+.embedded .card input, .embedded .card select { background: var(--color-surface); color: var(--color-ink); }

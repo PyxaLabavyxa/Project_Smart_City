@@ -18,8 +18,10 @@ export function OnboardingProvider({ userId, children }: { userId: number; child
   const router = useRouter();
   const pathname = usePathname();
   const [step, setStep] = useState<number | null>(null);
-  const [preparation, setPreparation] = useState<{ done: number; total: number; error?: string } | null>(null);
+  const [preparation, setPreparation] = useState<{ done: number; total: number; error?: string } | null>({ done: 0, total: 11 });
   const preparationRun = useRef<AbortController | null>(null);
+  const prepared = useRef(false);
+  const guideAfterPreparation = useRef(true);
   const issues = useIssues();
   const messages = useMessages();
   const utilities = useUtilityAccount();
@@ -31,9 +33,10 @@ export function OnboardingProvider({ userId, children }: { userId: number; child
   const heading = useRef<HTMLHeadingElement>(null);
   const returnTo = useRef("/");
   const isOpen = step !== null || preparation !== null;
-  // Keep completion from the previous tour; the revised guide remains available in More.
-  const storageKey = `dompulse:onboarding:v1:${userId}`;
-  const start = useCallback(async () => {
+  // Show the restored guide once after an apartment becomes available, including bot registration.
+  const storageKey = `dompulse:onboarding:registration:v2:${userId}`;
+  const prepare = useCallback(async (showGuide: boolean) => {
+    guideAfterPreparation.current = showGuide;
     if (!preparationRun.current) returnTo.current = window.location.pathname + window.location.search;
     preparationRun.current?.abort();
     const controller = new AbortController();
@@ -42,16 +45,28 @@ export function OnboardingProvider({ userId, children }: { userId: number; child
     setPosition(null);
     setPreparation({ done: 0, total: 11 });
     try {
-      cameraPath.current = await prepareTour(router, controller.signal, (done, total) => setPreparation({ done, total }));
+      cameraPath.current = await prepareTour(router, controller.signal, (done, total) => setPreparation({ done, total }), showGuide ? "/" : returnTo.current);
       if (controller.signal.aborted) return;
+      prepared.current = true;
+      preparationRun.current = null;
       setPreparation(null);
-      setDestination("/");
-      setStep(0);
-      try { localStorage.setItem(storageKey, "done"); } catch { /* Storage may be disabled. */ }
+      if (showGuide) {
+        setDestination("/");
+        setStep(0);
+        try { localStorage.setItem(storageKey, "done"); } catch { /* Storage may be disabled. */ }
+      }
     } catch (error) {
       if (!controller.signal.aborted) setPreparation(previous => ({ done: previous?.done ?? 0, total: previous?.total ?? 11, error: error instanceof Error ? error.message : "Не удалось подготовить разделы" }));
     }
   }, [router, storageKey]);
+  const start = useCallback(() => {
+    if (!prepared.current) { void prepare(true); return; }
+    returnTo.current = window.location.pathname + window.location.search;
+    setPosition(null);
+    setDestination("/");
+    setStep(0);
+    router.replace("/", { scroll: false });
+  }, [prepare, router]);
   useEffect(() => () => preparationRun.current?.abort(), []);
   function finish() {
     preparationRun.current?.abort();
@@ -63,14 +78,15 @@ export function OnboardingProvider({ userId, children }: { userId: number; child
     router.replace(returnTo.current, { scroll: true });
   }
   useEffect(() => {
-    try { if (localStorage.getItem(storageKey) === "done") return; } catch { /* Still allow the tour. */ }
+    let showGuide = true;
+    try { showGuide = localStorage.getItem(storageKey) !== "done"; } catch { /* Storage may be disabled. */ }
     const timer = window.setInterval(() => {
       if (!document.querySelector('nav[aria-label="Основная навигация"]')) return;
       window.clearInterval(timer);
-      void start();
-    }, 250);
+      void prepare(showGuide);
+    }, 60);
     return () => window.clearInterval(timer);
-  }, [storageKey, start]);
+  }, [storageKey, prepare]);
   useEffect(() => {
     const element = dialog.current;
     if (!isOpen || !element) return;
@@ -167,8 +183,8 @@ export function OnboardingProvider({ userId, children }: { userId: number; child
       <h2 id="preparation-title">Готовим ваш ДомПульс</h2><p>{preparation.error ?? "Загружаем разделы и фотографии, чтобы знакомство с домом прошло плавно."}</p>
       <progress max={preparation.total} value={preparation.done} aria-label="Подготовка разделов" />
       <span role="status">{preparation.error ? "Подготовка прервана" : `Готово разделов: ${preparation.done} из ${preparation.total}`}</span>
-      {preparation.error && <button type="button" className={styles.next} onClick={() => void start()}>Попробовать снова</button>}
-      <button type="button" className={styles.back} onClick={finish}>Продолжить без обучения</button>
+      {preparation.error && <button type="button" className={styles.next} onClick={() => void prepare(guideAfterPreparation.current)}>Попробовать снова</button>}
+      {preparation.error && <button type="button" className={styles.back} onClick={finish}>Открыть приложение без подготовки</button>}
     </section> : current && <>
     {position ? <div aria-hidden="true" className={styles.spot} data-tour-spot={current.target} style={position.spot} /> : <div className={styles.shade} />}
     <section ref={card} data-compact={current.target === "plan-selection" || current.target === "plan-map" || undefined} className={styles.card} style={position?.card}>

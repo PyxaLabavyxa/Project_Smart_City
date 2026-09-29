@@ -32,13 +32,14 @@
 
   <div id="workspace" class="workspace" hidden>
     <aside class="sidebar"><a class="brand light" href="/staff/"><span class="brand-mark">д.</span>домпульс</a><span class="sidebar-label">УПРАВЛЯЮЩАЯ КОМПАНИЯ</span>
-      <a class="nav-item active" href="/staff/" aria-current="page"><span aria-hidden="true">▤</span> Обращения <span id="nav-count" class="nav-count">0</span></a>
+      <a id="nav-issues" class="nav-item active" href="#issues" aria-current="page"><span aria-hidden="true">▤</span> Обращения <span id="nav-count" class="nav-count">0</span></a>
+      <a id="nav-registrations" class="nav-item" href="#registrations"><span aria-hidden="true">♙</span> Заявки</a>
       <div class="sidebar-note"><span class="note-icon" aria-hidden="true">↗</span><strong>Ближе к жителям</strong><p>Статусы и ваши сообщения приходят автору обращения прямо в MAX.</p></div>
       <div class="employee"><span id="avatar" class="avatar">УК</span><div><strong id="staff-name"></strong><small>Сотрудник УК</small></div><button id="logout" class="logout" title="Выйти" aria-label="Выйти из кабинета">⇥</button></div>
     </aside>
     <main class="main">
-      <header class="topbar"><span>Рабочее пространство <span class="slash">/</span> <strong>Обращения</strong></span><span class="live-indicator"><span class="pulse-dot"></span><span id="sync-label">Обновляем данные</span></span></header>
-      <div class="content">
+      <header class="topbar"><span>Рабочее пространство <span class="slash">/</span> <strong id="section-name">Обращения</strong></span><span class="live-indicator"><span class="pulse-dot"></span><span id="sync-label">Обновляем данные</span></span></header>
+      <div id="issues-section" class="content">
         <div class="page-heading"><div><span class="eyebrow">ЗАБОТА О ДОМЕ</span><h1>Обращения жителей<span class="heading-dot">.</span></h1><p class="muted">Замечать проблемы. Быть на связи. Доводить до решения.</p></div><button id="refresh" class="secondary"><span aria-hidden="true">↻</span> Обновить</button></div>
         <div id="no-houses" class="notice" hidden>Пока вам не назначены дома. Попросите администратора добавить доступ.</div>
         <section class="stats" aria-label="Статистика обращений">
@@ -56,6 +57,16 @@
           <footer class="pagination"><span id="page-label">Загружаем обращения…</span><div><button id="prev-page" class="icon-button" aria-label="Предыдущая страница" disabled>←</button><button id="next-page" class="icon-button" aria-label="Следующая страница" disabled>→</button></div></footer>
         </section>
         <footer class="workspace-footer"><span>ДомПульс · кабинет сотрудника</span><span>Данные обновляются каждые 20 секунд</span></footer>
+      </div>
+      <div id="registrations-section" class="content" hidden>
+        <div class="page-heading"><div><span class="eyebrow">НОВЫЕ СОСЕДИ</span><h1>Заявки на привязку квартиры<span class="heading-dot">.</span></h1><p class="muted">ФИО, адрес и результат регистрации жителей.</p></div><button id="refresh-registrations" class="secondary">↻ Обновить</button></div>
+        <div class="notice">В тестовом режиме заявки принимаются автоматически. Для ожидающих заявок доступны принятие и отклонение.</div>
+        <section class="inbox" aria-label="Заявки жителей">
+          <p id="registrations-error" class="error list-error" role="alert" hidden></p>
+          <div class="table-scroll"><table><thead><tr><th>Житель</th><th>Адрес</th><th>Источник</th><th>Статус</th><th>Получено</th><th>Решение</th></tr></thead><tbody id="registrations-body"></tbody></table></div>
+          <p id="registrations-empty" class="empty" hidden>Заявок пока нет. Новые регистрации появятся здесь автоматически.</p>
+          <footer class="pagination"><span id="registrations-page" role="status">Загружаем заявки…</span><div><button id="registrations-prev" class="icon-button" aria-label="Предыдущая страница заявок">←</button><button id="registrations-next" class="icon-button" aria-label="Следующая страница заявок">→</button></div></footer>
+        </section>
       </div>
     </main>
   </div>

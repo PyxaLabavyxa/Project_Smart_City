@@ -39,7 +39,7 @@ def event():
 
 
 class ReportFlowTests(unittest.IsolatedAsyncioTestCase):
-    async def test_registration_allocates_distinct_pairs_once(self):
+    async def test_registration_never_allocates_random_apartments(self):
         from sqlalchemy import select
         from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
         from app.database.models import Base, Apartment, UserApartment
@@ -56,15 +56,7 @@ class ReportFlowTests(unittest.IsolatedAsyncioTestCase):
                         await create_user_if_exist(session, user_id, "Resident")
             async with sessions() as session:
                 links = list(await session.scalars(select(UserApartment)))
-                self.assertEqual(len(links), 4)
-                self.assertEqual(len({link.apartment_id for link in links}), 4)
-                homes = list(await session.scalars(select(Apartment.house_id).where(
-                    Apartment.id.in_([link.apartment_id for link in links]))))
-                self.assertEqual(len(set(homes)), 1)
-                for resident in {link.user_id for link in links}:
-                    ids = [link.apartment_id for link in links if link.user_id == resident]
-                    entrances = set(await session.scalars(select(Apartment.entrance).where(Apartment.id.in_(ids))))
-                    self.assertEqual(entrances, {1, 2})
+                self.assertEqual(links, [])
         finally:
             await engine.dispose()
 
