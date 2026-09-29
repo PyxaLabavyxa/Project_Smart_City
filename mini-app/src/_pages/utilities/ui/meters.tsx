@@ -24,7 +24,7 @@ function MeterReading({ meter, onSave }: { meter: Meter; onSave: (value: string)
     <div className={styles.row}><h3>{meterLabels[meter.kind]}</h3><span className={styles.unit}>{unit}</span></div>
     <p className={styles.muted}>№ {meter.serial}</p>
     <p className={styles.previous}>Предыдущее показание <strong>{meter.previous.toLocaleString("ru-RU")} {unit}</strong></p>
-    <label className={styles.field} htmlFor={meter.id}>Текущее показание
+    <label data-tour="meter-reading" className={styles.field} htmlFor={meter.id}>Текущее показание
       <input id={meter.id} disabled={saving} inputMode="decimal" maxLength={11} value={value} placeholder="Введите показание" aria-invalid={!!error} aria-describedby={error ? `${meter.id}-error` : undefined} onChange={event => { setValue(event.target.value); setSaved(false); setError(undefined); }} />
     </label>
     {error && <p id={`${meter.id}-error`} role="alert" className={styles.error}>{error}</p>}

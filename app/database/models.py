@@ -259,4 +259,13 @@ class MessageNotification(Base):
     attempts: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     available_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    suppressed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     __table_args__ = (UniqueConstraint("message_id", "max_user_id", name="uq_message_notification"),)
+
+
+class MiniAppPresence(Base):
+    __tablename__ = "mini_app_presence"
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True)
+    client_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    sequence: Mapped[int] = mapped_column(Integer)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)

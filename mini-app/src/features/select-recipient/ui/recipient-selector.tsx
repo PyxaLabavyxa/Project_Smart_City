@@ -41,7 +41,7 @@ export function RecipientSelector({ openSelected = false }: { openSelected?: boo
     <RequestState loading={loading} error={error} reload={reload} />
     <div className={styles.chatLayout} data-open={active !== null}>
       <section className={styles.inbox} aria-label="Список переписок">
-        <div className={styles.inboxHeading}><h2 ref={inboxHeading} tabIndex={-1}>Переписки</h2><button className={styles.chip} onClick={openPicker}>Написать</button></div>
+        <div className={styles.inboxHeading}><h2 ref={inboxHeading} tabIndex={-1}>Переписки</h2><button data-tour="new-message" className={styles.chip} onClick={openPicker}>Написать</button></div>
         <label className={styles.field}>Поиск по перепискам<input type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Квартира или сообщение" /></label>
         <ul className={styles.threadList}>{conversations.map(thread => {
           const exists = !!findApartment(house, thread.apartment);
@@ -55,8 +55,8 @@ export function RecipientSelector({ openSelected = false }: { openSelected?: boo
       </section>
       <section className={styles.chatThread} aria-label="Открытая переписка">
         {active !== null ? <>
-          <button className={styles.backToList} onClick={() => { setActive(null); requestAnimationFrame(() => inboxHeading.current?.focus()); }}>← Все переписки</button>
-          <div className={styles.recipient}><span className={styles.avatar}>{active}</span><div><h2 ref={threadHeading} tabIndex={-1}>Квартира {active}</h2><p>{recipient ? `Подъезд ${recipient.entrance} · ${recipient.floor} этаж` : "Нет в текущей структуре дома"}</p></div>{recipient && <PlaceLink place={recipient} className={styles.place}>На плане <Icon name="plan" size={17} /></PlaceLink>}</div>
+
+          <div className={styles.recipient}><button type="button" aria-label="Назад к перепискам" title="Назад" className={styles.backToList} onClick={() => { setActive(null); requestAnimationFrame(() => inboxHeading.current?.focus()); }}><Icon name="arrow" style={{ transform: "rotate(180deg)" }} /></button><span className={styles.avatar}>{active}</span><div><h2 ref={threadHeading} tabIndex={-1}>Квартира {active}</h2><p>{recipient ? `Подъезд ${recipient.entrance} · ${recipient.floor} этаж` : "Нет в текущей структуре дома"}</p></div>{recipient && <PlaceLink place={recipient} className={styles.place}>На плане <Icon name="plan" size={17} /></PlaceLink>}</div>
           <p className={styles.privacy}><Icon name="lock" size={16} />Автор указан по квартире. Телефоны и личные контакты скрыты.</p>
           {recipient?.zone === "apartment" ? <Conversation key={active} place={recipient} /> : <><p>Квартира удалена из структуры. Отправка недоступна.</p><ol className={styles.history}>{messages.filter(message => message.apartment === active).map(message => <li key={message.id} className={message.direction === "outgoing" ? styles.outgoing : styles.incoming}><small>{message.direction === "outgoing" ? "Вы" : `Квартира ${active}`}</small><p>{message.text}</p><time dateTime={message.createdAt}>{new Date(message.createdAt).toLocaleString("ru-RU", { timeZone: "Europe/Moscow" })}</time></li>)}</ol></>}
         </> : <div className={styles.startChat}><Icon name="messages" size={40} /><h2>Сообщения соседям</h2><p>Откройте переписку слева или выберите квартиру, чтобы начать разговор.</p><button className={styles.send} onClick={openPicker}>Написать соседу</button></div>}

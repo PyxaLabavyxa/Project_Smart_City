@@ -1,8 +1,8 @@
 .content { max-width: 720px; }
 .menu { list-style: none; margin: 0; padding: 0; }
 .menu li { border-bottom: 1px solid var(--color-line); }
-.menu a { display: flex; align-items: center; gap: 18px; min-height: 86px; padding: 16px 0; }
-.menu a > span:nth-child(2) { min-width: 0; flex: 1; }
+.menu :is(a, button) { display: flex; align-items: center; gap: 18px; min-height: 86px; padding: 16px 0; }
+.menu :is(a, button) > span:nth-child(2) { min-width: 0; flex: 1; }
 .menu strong { font-size: 17px; font-weight: 400; }
 .menu small { display: block; margin-top: 4px; font-size: 13px; color: var(--color-muted); }
 .menu svg { flex-shrink: 0; }
@@ -11,4 +11,6 @@
 .help h2 { margin: 0 0 10px; font-size: 17px; }
 .help p { color: var(--color-muted); font-size: 14px; }
 .help a { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; color: var(--color-primary); font-size: 14px; }
-@media (max-width: 360px) { .menu a { gap: 12px; } .menu strong { font-size: 16px; } }
+@media (max-width: 360px) { .menu :is(a, button) { gap: 12px; } .menu strong { font-size: 16px; } }
+
+.tutorial { width: 100%; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }

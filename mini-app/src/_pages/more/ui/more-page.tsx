@@ -3,6 +3,7 @@ import { SectionPage } from "@/shared/ui/navigation";
 import Link from "next/link";
 import { Icon } from "@/shared/ui/icon";
 import { useHouseSelection } from "@/entities/house";
+import { useOnboarding } from "@/features/onboarding/onboarding";
 import styles from "./more-page.module.css";
 
 const items = [
@@ -15,11 +16,12 @@ const items = [
 ] as const;
 
 export function MorePage() {
+  const { start } = useOnboarding();
   const { house } = useHouseSelection();
   return <SectionPage title="Ещё" description={`Мой дом · квартира ${house.residentApartment}`} backHref="/" backLabel="На главную">
     <div className={styles.content}><nav aria-label="Дополнительные разделы"><ul className={styles.menu}>{items.map(item => <li key={item.href}>
       <Link href={item.href}><span className={styles.icon}><Icon name={item.icon} /></span><span><strong>{item.title}</strong><small>{item.description}</small></span><Icon name="arrow" size={16} /></Link>
-    </li>)}</ul></nav>
+    </li>)}<li><button data-tour="replay-tour" type="button" className={styles.tutorial} onClick={start}><span className={styles.icon}><Icon name="play" /></span><span><strong>Как это работает</strong><small>Пройти короткое обучение ещё раз</small></span><Icon name="arrow" size={16} /></button></li></ul></nav>
     <section className={styles.help}><h2>Вопрос по дому?</h2><p>Создайте обращение, чтобы описать проблему и следить за её решением.</p><Link href="/issues/new">Сообщить о проблеме <Icon name="arrow" size={16} /></Link></section></div>
   </SectionPage>;
 }

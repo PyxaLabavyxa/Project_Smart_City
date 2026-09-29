@@ -17,7 +17,7 @@ export function CamerasPage() {
     <ul className={styles.list} aria-label="Камеры общих зон">{state.data?.map(camera => <li key={camera.id}>
       <Link href={`/cameras/${camera.id}`} className={styles.camera}>
         <CameraPreview camera={camera} compact />
-        <div className={styles.cardBody}><div className={styles.row}><h2>{camera.name}</h2><CameraStatus status={camera.status} /></div><p>{camera.note}</p></div>
+        <div className={styles.cardBody}><div className={styles.row}><h2 data-tour="camera-card">{camera.name}</h2><CameraStatus status={camera.status} /></div><p>{camera.note}</p></div>
       </Link>
     </li>)}</ul>
     {!state.loading && !state.error && !state.data?.length && <p>Камеры этого дома пока не подключены.</p>}
@@ -31,7 +31,7 @@ export function CameraDetailsPage({ id }: { id: string }) {
   const camera = state.data?.find(item => item.id === id);
   return <SectionPage title={camera?.name ?? "Камера"} description={house.address} backHref="/cameras" backLabel="Все камеры">
     <RequestState {...state} />
-    {camera && <div className={styles.detail}><CameraPreview key={camera.id} camera={camera} /><aside className={styles.about}><h2>Об этой зоне</h2><p>{camera.note}</p><Link href={`/issues/new?from=camera&camera=${encodeURIComponent(camera.id)}`} onNavigate={() => {
+    {camera && <div className={styles.detail}><CameraPreview key={camera.id} camera={camera} /><aside className={styles.about}><h2>Об этой зоне</h2><p>{camera.note}</p><Link data-tour="camera-report" href={`/issues/new?from=camera&camera=${encodeURIComponent(camera.id)}`} onNavigate={() => {
       const context = cameraIssueContext(camera, house);
       if (context) {
         select(context.place);

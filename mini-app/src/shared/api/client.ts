@@ -5,7 +5,7 @@ export class ApiError extends Error {
 export type ApiClient = ReturnType<typeof createApiClient>;
 export function createApiClient() {
   const base = (process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api/v1").replace(/\/$/, "");
-  return async (path: string, options: { body?: unknown; signal?: AbortSignal } = {}): Promise<unknown> => {
+  return async (path: string, options: { body?: unknown; signal?: AbortSignal; keepalive?: boolean } = {}): Promise<unknown> => {
     const timeout = AbortSignal.timeout(15000);
     const signal = options.signal ? AbortSignal.any([options.signal, timeout]) : timeout;
     try {
@@ -14,7 +14,7 @@ export function createApiClient() {
         headers: options.body === undefined ? {} : { "Content-Type": "application/json" },
         credentials: "include",
         body: options.body === undefined ? undefined : JSON.stringify(options.body),
-        cache: "no-store", signal,
+        cache: "no-store", signal, keepalive: options.keepalive,
       });
       const text = await response.text();
       let data: unknown;
@@ -36,6 +36,7 @@ export const endpoints = {
   login: "/auth/max",
   localLogin: "/auth/local",
   logout: "/auth/logout",
+  presence: "/auth/presence",
   me: "/me",
   apartments: (house: string) => `/houses/${encodeURIComponent(house)}/apartments`,
   issues: (house: string) => `/houses/${encodeURIComponent(house)}/issues`,
