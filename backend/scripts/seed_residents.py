@@ -1,5 +1,3 @@
-"""Populate sample apartments and utility accounts for existing residents."""
-
 import asyncio
 
 from app.database.models import User

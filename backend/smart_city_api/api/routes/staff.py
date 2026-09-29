@@ -20,6 +20,7 @@ from smart_city_api.core.staff_auth import (
     require_same_origin,
     token_hash,
 )
+from smart_city_api.schemas.contacts import ContactsInput, ContactsOutput
 from smart_city_api.schemas.staff import (
     ActionOutput,
     HouseOutput,
@@ -31,9 +32,23 @@ from smart_city_api.schemas.staff import (
     StatusInput,
 )
 from smart_city_api.services import staff as service
+from smart_city_api.services.contacts import read_contacts, save_contacts, staff_house
 from smart_city_api.services.photos import photo_path
 
 router = APIRouter(prefix="/api/v1/staff", tags=["Staff"])
+
+
+@router.get("/houses/{house_id}/contacts", response_model=ContactsOutput)
+async def contacts(house_id: int, session: Session, employee: Staff):
+    await staff_house(session, employee.id, house_id)
+    return await read_contacts(session, house_id)
+
+
+@router.post("/houses/{house_id}/contacts", response_model=ContactsOutput)
+async def update_contacts(
+    house_id: int, body: ContactsInput, session: Session, employee: Staff
+):
+    return await save_contacts(session, employee.id, house_id, body)
 
 
 @router.post("/auth/login", status_code=204)

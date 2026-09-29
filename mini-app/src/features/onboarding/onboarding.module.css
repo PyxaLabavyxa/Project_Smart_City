@@ -22,16 +22,16 @@
 .preparationMark { display: grid; place-items: center; width: 84px; height: 84px; border-radius: 26px; background: var(--color-soft); color: var(--color-primary); }
 .preparation h2 { margin: 4px 0 0; font-size: 26px; letter-spacing: -.7px; }
 .preparation p { max-width: 340px; margin: 0; color: var(--color-muted); font-size: 14px; line-height: 1.7; }
-.preparation progress { appearance: none; width: min(280px, 100%); height: 5px; border: 0; border-radius: 6px; overflow: hidden; background: var(--color-line); accent-color: var(--color-primary); }
-.preparation progress::-webkit-progress-bar { background: var(--color-line); }
-.preparation progress::-webkit-progress-value { background: var(--color-primary); border-radius: 6px; transition: width .25s ease; }
-.preparation progress::-moz-progress-bar { background: var(--color-primary); }
+.preparationProgress { width: min(280px, 100%); height: 5px; border-radius: 6px; overflow: hidden; background: var(--color-line); }
+.preparationProgress span { display: block; width: 100%; height: 100%; background: var(--color-primary); border-radius: inherit; transform-origin: left; }
 .preparation > span { font-size: 12px; color: var(--color-muted); font-variant-numeric: tabular-nums; }
 .next:disabled { opacity: .55; cursor: wait; }
 @media (prefers-reduced-motion: no-preference) {
+  .preparationProgress span { transition: transform .3s ease-out; }
+  .preparation[data-complete] { animation: preparation-finish .18s ease-out .32s both; }
   .preparationMark { animation: breathe 1.8s ease-in-out infinite alternate; }
   .spot { transition: top .22s ease, left .22s ease, width .22s ease, height .22s ease; }
   .card { transition: top .22s ease, left .22s ease; }
   @keyframes breathe { from { transform: scale(.96); opacity: .65; } to { transform: scale(1); opacity: 1; } }
+  @keyframes preparation-finish { to { opacity: 0; } }
 }
-@media (prefers-reduced-motion: reduce) { .preparation progress::-webkit-progress-value { transition: none; } }

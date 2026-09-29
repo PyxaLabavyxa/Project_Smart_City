@@ -1,5 +1,3 @@
-"""Validate MAX launch data; never trust initDataUnsafe or a client user ID."""
-
 import hashlib
 import hmac
 import json

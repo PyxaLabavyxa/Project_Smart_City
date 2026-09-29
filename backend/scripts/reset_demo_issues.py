@@ -1,5 +1,3 @@
-"""Replace ALL issue records with two demo incidents per house, after an external backup."""
-
 import argparse
 import asyncio
 

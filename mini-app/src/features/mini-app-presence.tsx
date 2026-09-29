@@ -11,7 +11,7 @@ export function MiniAppPresence() {
     const update = (active: boolean) => {
       void api(endpoints.presence, {
         body: { client_id: clientId, sequence: ++sequence, active }, keepalive: true,
-      }).catch(() => { /* A short server-side lease expires if the app loses connection. */ });
+      }).catch(() => {   });
     };
     const visibility = () => update(!document.hidden);
     const leave = () => update(false);

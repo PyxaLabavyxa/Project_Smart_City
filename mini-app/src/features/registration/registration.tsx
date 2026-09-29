@@ -14,7 +14,6 @@ export function RegistrationScreen({ onComplete, onApproved, additional = false 
   useEffect(() => { complete.current = onComplete; }, [onComplete]);
   const load = useCallback(async (signal: AbortSignal) => parseRegistration(await api(endpoints.registration, { signal })), [api]);
   const state = useRemote(load);
-  // A completed bot flow unlocks an already-open mini-app without losing an unfinished form.
   useEffect(() => {
     if (additional) return;
     const controller = new AbortController();
@@ -23,7 +22,7 @@ export function RegistrationScreen({ onComplete, onApproved, additional = false 
       try {
         const fresh = parseRegistration(await api(endpoints.registration, { signal: controller.signal }));
         if (fresh.complete && !controller.signal.aborted) complete.current();
-      } catch { /* Explicit refresh below exposes errors and provides a retry path. */ }
+      } catch {}
     };
     const timer = window.setInterval(() => void check(), 10000);
     window.addEventListener("focus", check);

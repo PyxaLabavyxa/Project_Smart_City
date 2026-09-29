@@ -33,7 +33,6 @@ async def login(data: LaunchInput, request: Request, response: Response, session
         max_id = validate_launch_data(data.init_data, token, settings.max_auth_age_seconds)
     except InvalidLaunchData as error:
         raise HTTPException(401, "Сессия истекла. Откройте приложение заново из MAX") from error
-    # Name is read only after the MAX payload signature has been verified.
     profile = json.loads(dict(parse_qsl(data.init_data))["user"])
     name = " ".join(
         str(profile.get(key) or "").strip() for key in ("first_name", "last_name")
@@ -96,7 +95,6 @@ class PresenceInput(BaseModel):
 
 @router.post("/presence", status_code=204)
 async def presence(data: PresenceInput, session: Session, user: Resident):
-    # Serialize updates for each resident; old heartbeat requests cannot reopen a closed tab.
     await session.scalar(select(User.id).where(User.id == user.id).with_for_update())
     now = datetime.now(UTC)
     await session.execute(

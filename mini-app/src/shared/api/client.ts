@@ -4,7 +4,6 @@ export class ApiError extends Error {
 
 export type ApiClient = ReturnType<typeof createApiClient>;
 export function createApiClient() {
-  // Cache only explicitly requested, read-only resources within this authenticated client.
   const cache = new Map<string, { data: unknown; expires: number }>();
   const base = (process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api/v1").replace(/\/$/, "");
   return async (path: string, options: { body?: unknown; signal?: AbortSignal; keepalive?: boolean; cacheFor?: number } = {}): Promise<unknown> => {
@@ -56,6 +55,7 @@ export const endpoints = {
   cameras: (house: string) => `/houses/${encodeURIComponent(house)}/cameras`,
   preview: (camera: string) => `/cameras/${encodeURIComponent(camera)}/preview`,
   works: (house: string) => `/houses/${encodeURIComponent(house)}/works`,
+  contacts: (house: string) => `/houses/${encodeURIComponent(house)}/contacts`,
 };
 
 export function maxLaunchData(): string {

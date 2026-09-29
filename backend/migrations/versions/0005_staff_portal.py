@@ -1,5 +1,3 @@
-"""Staff accounts, scoped sessions, issue conversations and notification outbox."""
-
 import sqlalchemy as sa
 from alembic import op
 

@@ -1,31 +1,21 @@
 type Router = { replace: (href: string, options: { scroll: boolean }) => void; prefetch: (href: string) => void };
 const pages = ["/", "/issues", "/plan", "/messages", "/utilities", "/cameras", "/issues/new", "/health", "/info", "/more"];
 
-/** Mount each route behind the preparation screen: this warms code, data and image decodes. */
-export async function prepareTour(router: Router, signal: AbortSignal, progress: (done: number, total: number) => void, destination = "/") {
-  const routes = [...pages];
-  for (const href of routes) router.prefetch(href);
-  let camera = "/cameras";
-  for (let index = 0; index < routes.length; index++) {
+export async function prepareTour(router: Router, signal: AbortSignal, progress: (percent: number) => void, destination = "/") {
+  for (const href of pages) router.prefetch(href);
+  progress(0);
+  for (let index = 0; index < pages.length; index++) {
     signal.throwIfAborted();
-    const href = routes[index];
-    progress(index, routes.length + 1);
+    const href = pages[index];
     router.replace(href, { scroll: false });
     await waitForPage(href, signal);
-    if (href === "/cameras") {
-      const links = [...document.querySelectorAll<HTMLAnchorElement>('[data-tour="camera-card"]')];
-      for (const link of links) {
-        if (!/^\/cameras\/[1-9][0-9]*$/.test(link.pathname) || routes.includes(link.pathname)) continue;
-        if (camera === "/cameras") camera = link.pathname;
-        routes.push(link.pathname);
-        router.prefetch(link.pathname);
-      }
-    }
+    progress((index + 1) / pages.length * 90);
   }
+  signal.throwIfAborted();
   router.replace(destination, { scroll: false });
   await waitForPage(destination.split("?")[0], signal);
-  progress(routes.length + 1, routes.length + 1);
-  return camera;
+  progress(100);
+  return "/cameras";
 }
 
 function waitForPage(path: string, signal: AbortSignal) {

@@ -2,7 +2,7 @@
 import { useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useIssues, issueCategories, similarIssues, IssueCategoryIcon } from "@/entities/issue";
+import { useIssues, categoriesForFloor, similarIssues, IssueCategoryIcon } from "@/entities/issue";
 import { LocationSelector, formatLocation, validLocation, useHouseSelection } from "@/entities/house";
 import styles from "./report-issue.module.css";
 import { PhotoPicker } from "./photo-picker";
@@ -20,6 +20,7 @@ export function ReportIssueForm({ cancelHref = "/issues" }: { cancelHref?: strin
   const saving = creating || navigating;
   const [failure, setFailure] = useState("");
   const matches = similarIssues(issues, draft.place, draft.category);
+  const categories = categoriesForFloor(draft.place.floor);
   function goToStep(step: number) {
     updateDraft({ step });
     setErrors({});
@@ -32,7 +33,7 @@ export function ReportIssueForm({ cancelHref = "/issues" }: { cancelHref?: strin
     if (!validLocation(house, draft.place)) next.place = "Выберите место в доме";
     const place = draft.place;
     if (place.zone === "apartment" && !choices.some(choice => choice.houseId === house.id && choice.apartment === place.apartment)) next.place = "Обращение внутри квартиры доступно только её жильцам. Выберите свою квартиру или общую зону.";
-    if (draft.step >= 1 && !issueCategories.some(category => category === draft.category)) next.category = "Выберите категорию";
+    if (draft.step >= 1 && !categories.some(category => category === draft.category)) next.category = "Выберите категорию для этого этажа";
     if (draft.step >= 2 && !draft.title.trim()) next.title = "Укажите, что случилось";
     if (draft.step >= 2 && !draft.description.trim()) next.description = "Добавьте описание проблемы";
     setErrors(next);
@@ -67,7 +68,7 @@ export function ReportIssueForm({ cancelHref = "/issues" }: { cancelHref?: strin
       {draft.step > 0 && <p className={styles.context}>{draft.step > 1 && `${draft.category} · `}{formatLocation(draft.place)} <button type="button" onClick={() => goToStep(0)}>Изменить место</button></p>}
       {draft.step === 0 && <><LocationSelector value={draft.place} onChange={place => updateDraft({ place })} problemPlaces={issues.filter(issue => issue.status !== "completed").flatMap(issue => issue.place ? [issue.place] : [])} />{error("place")}</>}
       {draft.step === 1 && <><div className={styles.categories} role="radiogroup" aria-label="Категория" tabIndex={-1} aria-invalid={!!errors.category} aria-describedby={errors.category ? "category-error" : undefined}>
-        {issueCategories.map(category => <label key={category} className={styles.category}>
+        {categories.map(category => <label key={category} className={styles.category}>
           <input type="radio" name="category" value={category} checked={draft.category === category} onChange={() => { updateDraft({ category }); setErrors({}); }} />
           <IssueCategoryIcon category={category} /><span>{category}</span>
         </label>)}

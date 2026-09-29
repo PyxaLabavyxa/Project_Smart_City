@@ -1,5 +1,3 @@
-"""Integration checks against the bot's real ORM schema in isolated SQLite files."""
-
 import asyncio
 import importlib
 from contextlib import asynccontextmanager
@@ -18,7 +16,6 @@ from smart_city_api.services.resident import HouseNotFound, ResidentNotFound, Re
 @pytest.fixture
 def resident_database(tmp_path, monkeypatch):
     bot_root = Path(__file__).resolve().parents[2]
-    # Test-only import: the runtime API does not import bot config/session or require bot secrets.
     monkeypatch.syspath_prepend(str(bot_root))
     models = importlib.import_module("app.database.models")
     path = tmp_path / "resident.db"

@@ -17,7 +17,9 @@ export function ApplicationShell({ children }: { children: ReactNode }) {
         <ThemeToggle />
       </header>
       <BottomNavigation />
-      <main id="main" data-page-path={pathname} className={styles.main} tabIndex={-1}><div key={pathname} className={styles.pageTransition}>{children}</div></main>
+      <main id="main" data-page-path={pathname} className={styles.main} tabIndex={-1}>
+        <div key={pathname} className={styles.pageTransition}>{children}</div>
+      </main>
     </>
   );
 }

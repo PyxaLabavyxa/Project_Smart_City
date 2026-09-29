@@ -1,5 +1,3 @@
-"""Resident registration, backed by the same database service as the mini-app."""
-
 import logging
 
 from app.config_data.config import read_environment
@@ -50,7 +48,6 @@ async def show_prompt(event, context, text, attachments=None):
         except Exception as error:
             logger.warning("Registration prompt could not be edited: %s", type(error).__name__)
     sent = await event.message.answer(text, attachments=attachments or [])
-    # SDK versions may return Message directly or a response containing Message.
     body = getattr(sent, "body", None) or getattr(getattr(sent, "message", None), "body", None)
     if body is not None and isinstance(getattr(body, "mid", None), str):
         await context.update_data(registration_message_id=body.mid)
@@ -184,7 +181,6 @@ async def registration_callback(event: MessageCallback, context: MemoryContext):
             if company is None:
                 raise ValueError("УК не найдена. Нажмите /start")
             await context.update_data(company_id=company_id)
-            # Five short address rows keep the selection compact on a mobile screen.
             await show_prompt(
                 event,
                 context,

@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import Image from "next/image";
 import { money } from "@/entities/utilities";
 import { Icon } from "@/shared/ui/icon";
@@ -32,16 +32,39 @@ function CardPlaceholder() {
 
 export function Payment({ amount, apartment, period }: { amount: number; apartment: number; period: string }) {
   const dialog = useRef<HTMLDialogElement>(null);
+  const closing = useRef<Animation | null>(null);
   const [method, setMethod] = useState<"qr" | "card">("qr");
   const [open, setOpen] = useState(false);
   const [notice, setNotice] = useState("");
+  useEffect(() => () => { closing.current?.cancel(); closing.current = null; }, []);
+  function closePayment() {
+    const element = dialog.current;
+    if (!element?.open || closing.current) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || !element.animate) { element.close(); return; }
+    const appearance = getComputedStyle(element);
+    const from = { opacity: appearance.opacity, transform: appearance.transform };
+    element.style.setProperty("--backdrop-opacity", getComputedStyle(element, "::backdrop").opacity);
+    element.dataset.closing = "true";
+    const animation = element.animate(
+      [from, { opacity: 0, transform: "translateY(12px) scale(.97)" }],
+      { duration: 180, easing: "ease-in", fill: "forwards" },
+    );
+    closing.current = animation;
+    void animation.finished.then(() => {
+      if (closing.current !== animation) return;
+      element.close();
+      animation.cancel();
+      closing.current = null;
+      delete element.dataset.closing;
+    }, () => {   });
+  }
   return <>
     <button className={styles.primary} onClick={() => { setOpen(true); setMethod("qr"); setNotice(""); dialog.current?.showModal(); }}>Выбрать способ оплаты <Icon name="arrow" size={16} /></button>
-    <dialog ref={dialog} className={styles.dialog} aria-labelledby="payment-title" onClose={() => setOpen(false)}>
-      <div className={styles.row}><h2 id="payment-title">Оплата ЖКХ</h2><button className={styles.close} aria-label="Закрыть оплату" onClick={() => dialog.current?.close()}><Icon name="close" /></button></div>
+    <dialog ref={dialog} className={styles.dialog} aria-labelledby="payment-title" onClose={() => setOpen(false)} onCancel={event => { event.preventDefault(); closePayment(); }}>
+      <div className={styles.row}><h2 id="payment-title">Оплата ЖКХ</h2><button className={styles.close} aria-label="Закрыть оплату" onClick={closePayment}><Icon name="close" /></button></div>
       {open && <><p className={styles.muted}>Квартира {apartment} · {period.toLowerCase()}</p><p className={styles.paymentAmount}>{money(amount)}</p>
         <div className={styles.tabs} role="group" aria-label="Способ оплаты"><button aria-pressed={method === "qr"} onClick={() => { setMethod("qr"); setNotice(""); }}>По QR-коду</button><button aria-pressed={method === "card"} onClick={() => setMethod("card")}>Банковской картой</button></div>
-        {method === "qr" ? <div className={styles.qr}><Image src="/images/payment-placeholder.svg" width={210} height={210} alt="QR-код без платёжных реквизитов" unoptimized /><h3>QR-код</h3><p className={styles.muted}>Код содержит только текст. Банковских реквизитов и ссылки на оплату в нём нет.</p><button className={styles.secondary} onClick={() => setNotice("Проверка оплаты недоступна: платёжный сервис ещё не подключён.")}>Проверить оплату</button><p role="status" className={styles.notice}>{notice || "Оплата пока недоступна. Деньги не спишутся."}</p></div> : <CardPlaceholder />}
+        <div key={method} className={styles.methodContent}>{method === "qr" ? <div className={styles.qr}><Image src="/images/payment-placeholder.svg" width={210} height={210} alt="QR-код без платёжных реквизитов" unoptimized /><h3>QR-код</h3><p className={styles.muted}>Код содержит только текст. Банковских реквизитов и ссылки на оплату в нём нет.</p><button className={styles.secondary} onClick={() => setNotice("Проверка оплаты недоступна: платёжный сервис ещё не подключён.")}>Проверить оплату</button><p role="status" className={styles.notice}>{notice || "Оплата пока недоступна. Деньги не спишутся."}</p></div> : <CardPlaceholder />}</div>
       </>}
     </dialog>
   </>;

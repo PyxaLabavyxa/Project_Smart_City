@@ -1,5 +1,3 @@
-"""Consolidate previously generated houses, retaining apartment IDs and dependent data."""
-
 import asyncio
 import math
 

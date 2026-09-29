@@ -1,5 +1,3 @@
-"""Opt-in sample records in PostgreSQL; never replace resident data."""
-
 from datetime import datetime, timedelta
 from uuid import NAMESPACE_URL, uuid5
 from zoneinfo import ZoneInfo
@@ -23,7 +21,6 @@ SAMPLE_HOUSE_ADDRESS = "ул. Садовая, 18"
 
 
 async def provision_sample_resident(session: AsyncSession, user_id: int) -> None:
-    # One allocation lock prevents assigning the same apartment to two residents.
     if session.bind.dialect.name == "postgresql":
         await session.execute(text("SELECT pg_advisory_xact_lock(71842026)"))
     await session.scalar(select(User).where(User.id == user_id).with_for_update())

@@ -1,5 +1,3 @@
-"""0001: Bot baseline."""
-
 import sqlalchemy as sa
 from alembic import op
 

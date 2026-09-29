@@ -260,7 +260,6 @@ async def perform_action(
             raise HTTPException(409, "Статус уже изменён другим сотрудником. Обновите обращение")
         if body.status == issue.status:
             return ActionOutput(notification_id=None, changed=False)
-        # Compare-and-swap also protects concurrent updates on SQLite (FOR UPDATE is ignored there).
         changed = await session.execute(
             update(Issue)
             .where(

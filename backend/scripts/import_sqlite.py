@@ -1,5 +1,3 @@
-"""Copy the chatbot's existing SQLite records into an empty migrated PostgreSQL DB."""
-
 import argparse
 import asyncio
 from datetime import UTC, datetime

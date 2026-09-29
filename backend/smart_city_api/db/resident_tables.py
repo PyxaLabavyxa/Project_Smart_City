@@ -1,5 +1,3 @@
-"""Read the bot's existing schema; no duplicate ORM classes or DDL."""
-
 import asyncio
 
 from sqlalchemy import MetaData, Table

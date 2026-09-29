@@ -1,5 +1,3 @@
-"""At-least-once delivery: commit a short lease before calling MAX, then retry failures."""
-
 import asyncio
 import logging
 from datetime import UTC, datetime, timedelta
@@ -27,7 +25,6 @@ def reply_keyboard(issue_id: int):
 async def claim_next(sessions):
     now = datetime.now(UTC)
     async with sessions.begin() as session:
-        # Keep per-issue ordering: a later message must not overtake an undelivered status.
         previous = StaffNotification.__table__.alias("previous")
         candidate = await session.scalar(
             select(StaffNotification.id)
@@ -82,7 +79,6 @@ async def deliver_pending(bot, sessions=session_factory, limit: int = 20) -> int
         row, lease = claim
         success = False
         try:
-            # The outer timeout also bounds custom SDK/network behavior below the lease length.
             async with asyncio.timeout(25):
                 result = await bot.send_message(
                     user_id=row.max_user_id,

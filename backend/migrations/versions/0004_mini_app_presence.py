@@ -1,5 +1,3 @@
-"""Avoid bot message notifications while the recipient is using the mini-app."""
-
 import sqlalchemy as sa
 from alembic import op
 

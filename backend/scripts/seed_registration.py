@@ -1,5 +1,3 @@
-"""Seed the test catalogue and grant its houses to explicitly named staff accounts."""
-
 import argparse
 import asyncio
 

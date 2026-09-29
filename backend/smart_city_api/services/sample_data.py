@@ -1,4 +1,3 @@
-"""API transaction boundary for optional sample provisioning."""
 from app.database.sample_data import provision_sample_resident
 from sqlalchemy.ext.asyncio import AsyncSession
 

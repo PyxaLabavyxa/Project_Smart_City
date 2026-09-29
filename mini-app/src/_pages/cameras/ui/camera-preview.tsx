@@ -36,7 +36,6 @@ export function CameraPreview({ camera, gateway: providedGateway, compact = fals
   function retry() { if (busy.current) return; busy.current = true; setState({ kind: "loading" }); setAttempt(value => value + 1); }
   return <section className={styles.previewSection} aria-label="Просмотр камеры">
     {state.kind === "ready" ? <figure className={styles.preview}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={state.frame.src} alt="Изображение общей зоны дома" width={960} height={540} onError={() => setState({ kind: "error", message: "Не удалось загрузить кадр. Повторите подключение." })} />
       <figcaption>Обновлено {new Date(state.frame.capturedAt).toLocaleString("ru-RU", { timeZone: "Europe/Moscow" })}</figcaption>
     </figure> : <div className={styles.previewPlaceholder} aria-busy={state.kind === "loading"} data-maintenance={camera.status === "maintenance" || undefined} role={state.kind === "error" ? "alert" : "status"}>

@@ -2,15 +2,15 @@ from enum import StrEnum, IntEnum
 
 
 class IssueCategory(StrEnum):
-    WATER = "water" # Водоснабжение
-    HEATING = "heating" # Отопление
-    ELECTRICITY = "electricity" # Электричество
-    ELEVATOR = "elevator" # Лифт
-    ENTRANCE = "entrance" # Подъезд
-    YARD = "yard" # Двор
-    GARBAGE = "garbage" # Мусор
-    SECURITY = "security" # Безопасность
-    OTHER = "other" # Другое
+    WATER = "water"
+    HEATING = "heating"
+    ELECTRICITY = "electricity"
+    ELEVATOR = "elevator"
+    ENTRANCE = "entrance"
+    YARD = "yard"
+    GARBAGE = "garbage"
+    SECURITY = "security"
+    OTHER = "other"
 
 
 class IssuePriority(IntEnum):

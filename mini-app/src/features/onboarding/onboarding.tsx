@@ -10,7 +10,7 @@ import { useIssues } from "@/entities/issue";
 import { useMessages } from "@/entities/message";
 import { useUtilityAccount } from "@/entities/utilities";
 
-const Context = createContext<{ start: () => void; activeTarget: string | null }>({ start: () => {}, activeTarget: null });
+const Context = createContext<{ start: () => void; activeTarget: string | null; preparing: boolean }>({ start: () => {}, activeTarget: null, preparing: false });
 export const useOnboarding = () => useContext(Context);
 type Position = { spot: TourRect; card: { left: number; top: number }; missing: boolean };
 
@@ -18,7 +18,7 @@ export function OnboardingProvider({ userId, children }: { userId: number; child
   const router = useRouter();
   const pathname = usePathname();
   const [step, setStep] = useState<number | null>(null);
-  const [preparation, setPreparation] = useState<{ done: number; total: number; error?: string } | null>({ done: 0, total: 11 });
+  const [preparation, setPreparation] = useState<{ percent: number; error?: string } | null>({ percent: 0 });
   const preparationRun = useRef<AbortController | null>(null);
   const prepared = useRef(false);
   const guideAfterPreparation = useRef(true);
@@ -33,7 +33,6 @@ export function OnboardingProvider({ userId, children }: { userId: number; child
   const heading = useRef<HTMLHeadingElement>(null);
   const returnTo = useRef("/");
   const isOpen = step !== null || preparation !== null;
-  // Show the restored guide once after an apartment becomes available, including bot registration.
   const storageKey = `dompulse:onboarding:registration:v2:${userId}`;
   const prepare = useCallback(async (showGuide: boolean) => {
     guideAfterPreparation.current = showGuide;
@@ -43,9 +42,10 @@ export function OnboardingProvider({ userId, children }: { userId: number; child
     preparationRun.current = controller;
     setStep(null);
     setPosition(null);
-    setPreparation({ done: 0, total: 11 });
+    setPreparation({ percent: 0 });
     try {
-      cameraPath.current = await prepareTour(router, controller.signal, (done, total) => setPreparation({ done, total }), showGuide ? "/" : returnTo.current);
+      cameraPath.current = await prepareTour(router, controller.signal, percent => setPreparation({ percent }), showGuide ? "/" : returnTo.current);
+      await finishPreparation(controller.signal);
       if (controller.signal.aborted) return;
       prepared.current = true;
       preparationRun.current = null;
@@ -53,10 +53,10 @@ export function OnboardingProvider({ userId, children }: { userId: number; child
       if (showGuide) {
         setDestination("/");
         setStep(0);
-        try { localStorage.setItem(storageKey, "done"); } catch { /* Storage may be disabled. */ }
+        try { localStorage.setItem(storageKey, "done"); } catch {}
       }
     } catch (error) {
-      if (!controller.signal.aborted) setPreparation(previous => ({ done: previous?.done ?? 0, total: previous?.total ?? 11, error: error instanceof Error ? error.message : "Не удалось подготовить разделы" }));
+      if (!controller.signal.aborted) setPreparation(previous => ({ percent: previous?.percent ?? 0, error: error instanceof Error ? error.message : "Не удалось подготовить разделы" }));
     }
   }, [router, storageKey]);
   const start = useCallback(() => {
@@ -72,14 +72,14 @@ export function OnboardingProvider({ userId, children }: { userId: number; child
     preparationRun.current?.abort();
     preparationRun.current = null;
     setPreparation(null);
-    try { localStorage.setItem(storageKey, "done"); } catch { /* Some webviews disable storage. */ }
+    try { localStorage.setItem(storageKey, "done"); } catch {}
     setStep(null);
     setPosition(null);
     router.replace(returnTo.current, { scroll: true });
   }
   useEffect(() => {
     let showGuide = true;
-    try { showGuide = localStorage.getItem(storageKey) !== "done"; } catch { /* Storage may be disabled. */ }
+    try { showGuide = localStorage.getItem(storageKey) !== "done"; } catch {}
     const timer = window.setInterval(() => {
       if (!document.querySelector('nav[aria-label="Основная навигация"]')) return;
       window.clearInterval(timer);
@@ -93,7 +93,6 @@ export function OnboardingProvider({ userId, children }: { userId: number; child
     element.showModal();
     const overflow = document.body.style.overflow;
     const paddingBottom = document.body.style.paddingBottom;
-    // Short pages also need enough scroll room to lift a full card above the guide.
     document.body.style.paddingBottom = `${parseFloat(getComputedStyle(document.body).paddingBottom) + 308}px`;
     document.body.style.overflow = "hidden";
     return () => { element.close(); document.body.style.overflow = overflow; document.body.style.paddingBottom = paddingBottom; };
@@ -120,7 +119,6 @@ export function OnboardingProvider({ userId, children }: { userId: number; child
       const candidates = [...document.querySelectorAll<HTMLElement>(`[data-tour="${steps[step].target}"]`)];
       let found = candidates.find(element => element.getBoundingClientRect().width > 0 && element.getBoundingClientRect().height > 0) ?? null;
       const missing = !found;
-      // Allow remote data to arrive before explaining an unavailable feature.
       if (!found && Date.now() - started < 3000) return;
       if (!found) found = document.querySelector<HTMLElement>("#main h1, #main h2");
       if (!found) return;
@@ -135,8 +133,6 @@ export function OnboardingProvider({ userId, children }: { userId: number; child
         originalWidth = found.style.width;
         const natural = found.getBoundingClientRect();
         const available = Math.max(120, viewport.height - cardRect.height - 48);
-        // Fit long overviews in the available space while keeping their screen width.
-        // Restore the original page sizing as soon as this step ends.
         if (steps[step].target === "issue-controls" && natural.height > available) {
           const scale = available / natural.height;
           found.style.zoom = String(scale);
@@ -157,7 +153,6 @@ export function OnboardingProvider({ userId, children }: { userId: number; child
       setPosition(previous => JSON.stringify(previous) === JSON.stringify(next) ? previous : next);
     };
     const schedule = () => { cancelAnimationFrame(frame); frame = requestAnimationFrame(update); };
-    // Poll only during the guide: targets can arrive after navigation or data loading.
     const timer = window.setInterval(update, 150);
     window.addEventListener("scroll", schedule, true);
     window.addEventListener("resize", schedule);
@@ -177,18 +172,20 @@ export function OnboardingProvider({ userId, children }: { userId: number; child
   const description = current && position?.missing
     ? "missing" in current ? current.missing : "Этот элемент пока недоступен. " + current.text
     : current?.text;
-  return <Context value={{ start, activeTarget: current?.target ?? null }}><span hidden data-app-loading={issues.loading || messages.loading || utilities.loading} />{children}{isOpen && <dialog ref={dialog} className={styles.overlay} aria-labelledby={preparation ? "preparation-title" : "tour-title"} aria-describedby={preparation ? undefined : "tour-description"} onCancel={event => { event.preventDefault(); finish(); }}>
-    {preparation ? <section className={styles.preparation}>
+  return <Context value={{ start, activeTarget: current?.target ?? null, preparing: preparation !== null }}><span hidden data-app-loading={issues.loading || messages.loading || utilities.loading} />{children}{isOpen && <dialog ref={dialog} className={styles.overlay} aria-labelledby={preparation ? "preparation-title" : "tour-title"} aria-describedby={preparation ? undefined : "tour-description"} onCancel={event => { event.preventDefault(); finish(); }}>
+    {preparation ? <section className={styles.preparation} data-complete={preparation.percent === 100 && !preparation.error || undefined}>
       <div className={styles.preparationMark} aria-hidden="true"><Icon name="home" size={36} /></div>
       <h2 id="preparation-title">Готовим ваш ДомПульс</h2><p>{preparation.error ?? "Загружаем разделы и фотографии, чтобы знакомство с домом прошло плавно."}</p>
-      <progress max={preparation.total} value={preparation.done} aria-label="Подготовка разделов" />
-      <span role="status">{preparation.error ? "Подготовка прервана" : `Готово разделов: ${preparation.done} из ${preparation.total}`}</span>
+      <div className={styles.preparationProgress} role="progressbar" aria-label="Подготовка приложения" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(preparation.percent)}>
+        <span style={{ transform: `scaleX(${preparation.percent / 100})` }} />
+      </div>
+      <span role="status">{preparation.error ? "Подготовка прервана" : preparation.percent === 100 ? "Всё готово" : `Загрузка · ${Math.round(preparation.percent)}%`}</span>
       {preparation.error && <button type="button" className={styles.next} onClick={() => void prepare(guideAfterPreparation.current)}>Попробовать снова</button>}
       {preparation.error && <button type="button" className={styles.back} onClick={finish}>Открыть приложение без подготовки</button>}
     </section> : current && <>
     {position ? <div aria-hidden="true" className={styles.spot} data-tour-spot={current.target} style={position.spot} /> : <div className={styles.shade} />}
     <section ref={card} data-compact={current.target === "plan-selection" || current.target === "plan-map" || undefined} className={styles.card} style={position?.card}>
-      <div className={styles.top}><span>{step! + 1} из {steps.length} · {position ? "Коротко о главном" : "Открываем нужное место…"}</span><button type="button" onClick={finish} aria-label="Закрыть обучение" title="Пропустить обучение"><Icon name="close" size={17} /></button></div>
+      <div className={styles.top}><span>Подсказка {step! + 1} из {steps.length} · {position ? "Коротко о главном" : "Открываем нужное место…"}</span><button type="button" onClick={finish} aria-label="Закрыть обучение" title="Пропустить обучение"><Icon name="close" size={17} /></button></div>
       <h2 id="tour-title" tabIndex={-1} ref={heading}>{current.title}</h2>
       <p id="tour-description">{description}</p>
       <footer><button type="button" className={styles.back} onClick={finish}>Пропустить</button><div>{step! > 0 && <button type="button" className={styles.back} onClick={() => move(step! - 1)} aria-label="Предыдущая подсказка"><Icon name="arrow" size={16} style={{ transform: "rotate(180deg)" }} /></button>}<button type="button" disabled={!position} className={styles.next} onClick={() => step === steps.length - 1 ? finish() : move(step! + 1)}>{step === steps.length - 1 ? "Готово" : "Далее"}<Icon name="arrow" size={15} /></button></div></footer>
@@ -196,4 +193,14 @@ export function OnboardingProvider({ userId, children }: { userId: number; child
     </section>
     </>}
   </dialog>}</Context>;
+}
+
+function finishPreparation(signal: AbortSignal) {
+  signal.throwIfAborted();
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return Promise.resolve();
+  return new Promise<void>((resolve, reject) => {
+    const abort = () => { window.clearTimeout(timer); reject(new DOMException("Подготовка отменена", "AbortError")); };
+    const timer = window.setTimeout(() => { signal.removeEventListener("abort", abort); resolve(); }, 500);
+    signal.addEventListener("abort", abort, { once: true });
+  });
 }

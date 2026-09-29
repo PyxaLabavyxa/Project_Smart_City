@@ -70,7 +70,6 @@ export function findApartment(house: House, apartment: number): HouseLocation | 
   return null;
 }
 
-// Apartment numbers identify recipients; obsolete common zones remain unbound.
 export function resolveLocation(house: House, place: HouseLocation | undefined): HouseLocation | undefined {
   if (!place || place.houseId !== house.id) return undefined;
   if (place.zone === "apartment") return findApartment(house, place.apartment) ?? undefined;

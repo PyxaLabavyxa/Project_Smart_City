@@ -1,4 +1,3 @@
-"""Regression checks without sending messages to MAX or calling external AI."""
 import unittest
 import os
 from types import SimpleNamespace

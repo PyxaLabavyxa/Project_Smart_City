@@ -5,7 +5,6 @@ export function tourLayout(target: TourRect, viewport: { width: number; height: 
   const margin = 12;
   const width = Math.min(card.width, viewport.width - margin * 2);
   const height = Math.min(card.height, viewport.height - margin * 2);
-  // Keep the controls in one place across steps, navigation and data loading.
   const left = viewport.width <= 760 ? (viewport.width - width) / 2 : viewport.width - width - margin;
   const top = viewport.height - height - margin;
   const x = clamp(target.left - 8, 4, viewport.width - 4);

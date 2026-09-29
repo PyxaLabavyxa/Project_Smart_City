@@ -17,7 +17,6 @@ session_factory = async_sessionmaker(
 
 async def create_tables() -> None:
     if engine.dialect.name == "postgresql":
-        # Shared schema is managed explicitly by backend Alembic migrations.
         return
     if engine.dialect.name == "sqlite":
         database_path = engine.url.database

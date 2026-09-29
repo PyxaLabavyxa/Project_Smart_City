@@ -1,5 +1,3 @@
-"""Export the running API contract without connecting to the database."""
-
 import json
 from pathlib import Path
 

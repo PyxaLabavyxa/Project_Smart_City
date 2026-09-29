@@ -1,5 +1,3 @@
-"""Populate camera stills and remove old fixture labels, preserving resident text."""
-
 import asyncio
 import os
 

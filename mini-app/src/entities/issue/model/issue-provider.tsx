@@ -3,6 +3,7 @@ import { createContext, useContext, useRef, useState, useEffect, type ReactNode 
 import { type IssueRecord } from "./issue";
 import { useHouseSelection, fallbackLocation, resolveLocation, formatLocation, type HouseLocation } from "@/entities/house";
 import { emptyDraft, type IssueDraft } from "./issue-draft";
+import { categoriesForFloor } from "./issue-filters";
 import type { CreateIssueInput, IssueGateway } from "./issue-gateway";
 
 type IssueState = {
@@ -69,7 +70,8 @@ export function IssueProvider({ children, gateway }: { children: ReactNode; gate
     const place = resolveLocation(house, issue.place);
     return { ...issue, place, location: place ? formatLocation(place) : issue.location };
   });
-  const currentDraft = { ...draft, place: fallbackLocation(house, draft.place) };
+  const draftPlace = fallbackLocation(house, draft.place);
+  const currentDraft = { ...draft, place: draftPlace, category: categoriesForFloor(draftPlace.floor).some(category => category === draft.category) ? draft.category : "" };
   return <IssueContext.Provider value={{ loading, error, reload, issues: locatedIssues, draft: currentDraft, creating, createdIssueId, dismissCreationNotice: () => setCreatedIssueId(null), updateDraft: patch => setDraft(current => ({ ...current, place: fallbackLocation(house, current.place), ...patch })), startAt: place => setDraft(current => ({ ...current, place, step: 0 })), resetDraft, addIssue, respondToResolution }}>{children}</IssueContext.Provider>;
 }
 export function useIssues() {

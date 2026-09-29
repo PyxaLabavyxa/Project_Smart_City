@@ -1,6 +1,6 @@
 import hashlib
 
-from app.database.enums import IssuePriority, IssueStatus
+from app.database.enums import IssueCategory, IssuePriority, IssueStatus
 from app.database.models import Apartment, House, Issue, IssueEvent, IssuePhoto
 from fastapi import HTTPException
 from sqlalchemy import or_, select
@@ -90,6 +90,8 @@ async def create_issue(
         raise HTTPException(422, "Общая территория должна быть привязана к дому")
     if place.zone == "entrance" and place.floor != 1:
         raise HTTPException(422, "Входная группа находится на первом этаже")
+    if place.floor > 1 and data.category in (IssueCategory.ENTRANCE, IssueCategory.YARD):
+        raise HTTPException(422, "Категории «Подъезд» и «Двор» доступны только на первом этаже")
     if place.apartment_id:
         apartment = await session.scalar(
             select(Apartment).where(

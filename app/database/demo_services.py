@@ -1,5 +1,3 @@
-"""Opt-in demo services for selected houses; preserve configured accounts and cameras."""
-
 import calendar
 from datetime import datetime, timedelta
 from decimal import Decimal
@@ -19,7 +17,7 @@ async def provision_demo_utilities(session, apartments):
             select(UtilityAccount).where(UtilityAccount.apartment_id == apartment.id)
         )
         if account is not None:
-            continue  # Existing balances, readings and accounts are never overwritten.
+            continue
         area = Decimal("54.20") if index == 0 else Decimal("38.60")
         account = UtilityAccount(
             apartment_id=apartment.id,

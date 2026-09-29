@@ -11,14 +11,22 @@ from starlette.datastructures import UploadFile
 
 from smart_city_api.api.dependencies import Resident, Session
 from smart_city_api.schemas.app import CreateIssue, IssuePage, IssueResponse, Profile
+from smart_city_api.schemas.contacts import ContactsOutput
 from smart_city_api.schemas.resident import ApartmentPage, ApartmentResponse, HouseResponse
 from smart_city_api.services.access import own_apartment_ids, require_house
+from smart_city_api.services.contacts import read_contacts
 from smart_city_api.services.issues import create_issue, get_issue, issue_response, visible_issues
 from smart_city_api.services.photos import MAX_BYTES, MAX_PHOTOS, photo_path, save_photo
 
 router = APIRouter(prefix="/api/v1", tags=["resident"])
 Limit = Annotated[int, Query(ge=1, le=100)]
 Cursor = Annotated[int, Query(ge=0)]
+
+
+@router.get("/houses/{house_id}/contacts", response_model=ContactsOutput)
+async def contacts(house_id: int, session: Session, user: Resident):
+    await require_house(session, user.id, house_id)
+    return await read_contacts(session, house_id)
 
 
 @router.get("/me", response_model=Profile)
@@ -154,7 +162,6 @@ async def report_with_photos(house_id: int, request: Request, session: Session, 
             return await create_issue(session, user.id, house_id, data, photos)
     finally:
         if photos:
-            # A fresh session also handles retries and failures after the issue was committed.
             async with request.app.state.database.sessions() as cleanup:
                 retained = set(
                     await cleanup.scalars(

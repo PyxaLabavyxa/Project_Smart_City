@@ -1,5 +1,3 @@
-"""Create an explicit local-development resident, house and apartments once."""
-
 import asyncio
 
 from app.database.models import Apartment, House, User, UserApartment

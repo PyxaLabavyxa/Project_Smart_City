@@ -41,13 +41,12 @@ def test_worker_lease_retry_order_and_no_redelivery(staff_api):
             assert await deliver_pending(bot, database.sessions) == 0
             assert (
                 bot.send_message.await_count == 1
-            )  # the later clarification stays behind the status
+            )
             with Session(engine) as session:
                 row = session.scalar(select(StaffNotification).order_by(StaffNotification.id))
                 assert row.attempts == 1 and row.sent_at is None and row.lease_token is None
                 row.available_at = datetime.now(UTC) - timedelta(seconds=1)
                 session.commit()
-            # A crashed worker's unexpired lease is not taken by another worker.
             claim = await claim_next(database.sessions)
             assert claim is not None
             assert await claim_next(database.sessions) is None
@@ -57,14 +56,11 @@ def test_worker_lease_retry_order_and_no_redelivery(staff_api):
                 session.commit()
 
             async def sent(**kwargs):
-                # Enforce the real SDK signature: permissive AsyncMock used to hide
-                # unsupported arguments such as timeout from this delivery test.
                 import inspect
 
                 from maxapi import Bot
 
                 inspect.signature(Bot.send_message).bind(None, **kwargs)
-                # The lease is visible outside the worker's session before network IO starts.
                 with Session(engine) as session:
                     assert (
                         session.scalar(
@@ -156,7 +152,7 @@ def test_reply_handler_preserves_report_draft_on_reply_and_cancel(staff_api):
                 await context.update_data(**draft)
                 await handler.start_reply(event, context)
                 assert await context.get_state() == FSMStaffReply.waiting
-                await handler.start_reply(event, context)  # double click must not nest saved drafts
+                await handler.start_reply(event, context)
                 await handler.receive_reply(event, context)
                 assert await context.get_state() == FSMReport.confirm
                 assert await context.get_data() == draft

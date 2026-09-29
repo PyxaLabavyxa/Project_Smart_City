@@ -46,7 +46,6 @@ async def main() -> None:
             from app.database.session import session_factory
             async with session_factory.begin() as session:
                 await seed_registration_demo(session)
-        # await set_main_menu(bot)
 
         subscriptions = await bot.get_subscriptions()
 

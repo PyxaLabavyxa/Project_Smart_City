@@ -34,6 +34,7 @@
     <aside class="sidebar"><a class="brand light" href="/staff/"><span class="brand-mark">д.</span>домпульс</a><span class="sidebar-label">УПРАВЛЯЮЩАЯ КОМПАНИЯ</span>
       <a id="nav-issues" class="nav-item active" href="#issues" aria-current="page"><span aria-hidden="true">▤</span> Обращения <span id="nav-count" class="nav-count">0</span></a>
       <a id="nav-registrations" class="nav-item" href="#registrations"><span aria-hidden="true">♙</span> Заявки</a>
+      <a id="nav-contacts" class="nav-item" href="#contacts"><span aria-hidden="true">☎</span> Контакты</a>
       <div class="sidebar-note"><span class="note-icon" aria-hidden="true">↗</span><strong>Ближе к жителям</strong><p>Статусы и ваши сообщения приходят автору обращения прямо в MAX.</p></div>
       <div class="employee"><span id="avatar" class="avatar">УК</span><div><strong id="staff-name"></strong><small>Сотрудник УК</small></div><button id="logout" class="logout" title="Выйти" aria-label="Выйти из кабинета">⇥</button></div>
     </aside>
@@ -66,6 +67,24 @@
           <div class="table-scroll"><table><thead><tr><th>Житель</th><th>Адрес</th><th>Источник</th><th>Статус</th><th>Получено</th><th>Решение</th></tr></thead><tbody id="registrations-body"></tbody></table></div>
           <p id="registrations-empty" class="empty" hidden>Заявок пока нет. Новые регистрации появятся здесь автоматически.</p>
           <footer class="pagination"><span id="registrations-page" role="status">Загружаем заявки…</span><div><button id="registrations-prev" class="icon-button" aria-label="Предыдущая страница заявок">←</button><button id="registrations-next" class="icon-button" aria-label="Следующая страница заявок">→</button></div></footer>
+        </section>
+      </div>
+      <div id="contacts-section" class="content" hidden>
+        <div class="page-heading"><div><span class="eyebrow">НА СВЯЗИ С ЖИТЕЛЯМИ</span><h1>Контакты УК<span class="heading-dot">.</span></h1><p class="muted">Жители увидят эти контакты в разделе «Ещё» своего дома.</p></div><button id="refresh-contacts" class="secondary"><span aria-hidden="true">↻</span> Обновить</button></div>
+        <section class="inbox contacts-panel" aria-label="Редактор контактов">
+          <label class="contact-house-label" for="contact-house">Дом</label><select id="contact-house"></select>
+          <p id="contact-company" class="muted"></p>
+          <p id="contacts-status" role="status"></p>
+          <p id="contacts-error" class="error" role="alert" hidden></p>
+          <form id="contacts-form" hidden>
+            <fieldset id="contacts-fields"><legend class="sr-only">Контакты для жителей</legend>
+              <div id="contact-rows" class="contact-rows"></div>
+              <p id="contacts-empty" class="muted" hidden>Контактов пока нет. Добавьте телефон диспетчерской, почту или адрес приёмной.</p>
+              <button id="add-contact" type="button" class="secondary">＋ Добавить контакт</button>
+              <p class="form-help">Можно добавить до 12 контактов. В примечании укажите часы работы или пояснение. Чтобы убрать контакт из приложения, удалите строку и сохраните изменения.</p>
+              <button id="save-contacts" type="submit" class="primary">Сохранить контакты</button>
+            </fieldset>
+          </form>
         </section>
       </div>
     </main>

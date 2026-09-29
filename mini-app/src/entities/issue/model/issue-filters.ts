@@ -1,6 +1,5 @@
 import type { IssueRecord, IssueStateStatus } from "./issue";
 
-// Labels match the existing frontend model. Extra workflow statuses are UI-only.
 export const issueStatusLabels: Record<IssueStateStatus, string> = {
   new: "Новое", accepted: "Принято", assigned: "Назначен исполнитель",
   "in-progress": "В работе", "awaiting-confirmation": "Ожидает подтверждения", completed: "Выполнено",
@@ -10,6 +9,10 @@ export const issueCategories = [
   "Водоснабжение", "Отопление", "Электричество", "Лифт", "Подъезд",
   "Двор", "Мусор", "Безопасность", "Другое",
 ] as const;
+
+export function categoriesForFloor(floor: number) {
+  return issueCategories.filter(category => floor === 1 || (category !== "Подъезд" && category !== "Двор"));
+}
 
 export type IssueFilters = {
   status: "all" | "active" | IssueStateStatus;

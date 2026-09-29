@@ -1,5 +1,3 @@
-"""Isolated manual UI check: disposable SQLite, synthetic data, loopback only, no MAX worker."""
-
 import secrets
 import tempfile
 from datetime import UTC, datetime, timedelta
@@ -27,7 +25,6 @@ from smart_city_api.main import create_app
 
 
 def main():
-    # No .env is read and no existing database or photo file is modified.
     with tempfile.TemporaryDirectory(prefix="dompulse-staff-ui-") as directory:
         root = Path(directory)
         path = root / "preview.db"
@@ -144,7 +141,6 @@ def main():
                             issue_id=i, status=status.value, created_at=created + timedelta(hours=1)
                         )
                     )
-            # A real PNG fixture, generated locally; never a public media directory.
             import base64
 
             photo_directory = root / "media" / "issues"

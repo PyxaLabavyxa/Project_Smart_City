@@ -1,5 +1,3 @@
-"""Durable delivery queue for private message notifications."""
-
 import sqlalchemy as sa
 from alembic import op
 

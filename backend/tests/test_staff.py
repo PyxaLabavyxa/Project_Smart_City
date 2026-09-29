@@ -185,7 +185,7 @@ def test_scope_filters_pagination_and_authenticated_photos(staff_api):
     assert client.get(ROOT + "/issues?status=resolved").json()["items"][0]["id"] == 2
     assert client.get(ROOT + "/issues?priority=1").json()["items"][0]["id"] == 1
     assert client.get(ROOT + "/issues?q=%231").json()["total"] == 1
-    assert client.get(ROOT + "/issues?q=%25").json()["total"] == 0  # literal %, no wildcard
+    assert client.get(ROOT + "/issues?q=%25").json()["total"] == 0
     assert client.get(ROOT + "/issues?page_size=0").status_code == 422
     assert client.get(ROOT + "/issues/3").status_code == 404
     assert (

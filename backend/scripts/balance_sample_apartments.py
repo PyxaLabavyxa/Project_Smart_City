@@ -1,5 +1,3 @@
-"""Balance sample residents across entrances without replacing apartment identities."""
-
 import asyncio
 
 from app.database.models import Apartment, House, Issue, UserApartment

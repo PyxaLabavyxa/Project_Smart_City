@@ -9,8 +9,15 @@ import { useCameras } from "../model/api";
 import { CameraStatus } from "./camera-status";
 import styles from "./cameras.module.css";
 import { CameraPreview } from "./camera-preview";
+import { useOnboarding } from "@/features/onboarding/onboarding";
 
 export function CamerasPage() {
+  const { preparing } = useOnboarding();
+  if (preparing) return <SectionPage title="Камеры" description="Общие зоны вашего дома" backHref="/" backLabel="На главную" />;
+  return <LoadedCamerasPage />;
+}
+
+function LoadedCamerasPage() {
   const state = useCameras();
   return <SectionPage title="Камеры" description="Общие зоны вашего дома" backHref="/" backLabel="На главную">
     <RequestState {...state} />
@@ -25,6 +32,13 @@ export function CamerasPage() {
 }
 
 export function CameraDetailsPage({ id }: { id: string }) {
+  const { preparing } = useOnboarding();
+  const { house } = useHouseSelection();
+  if (preparing) return <SectionPage title="Камера" description={house.address} backHref="/cameras" backLabel="Все камеры" />;
+  return <LoadedCameraDetailsPage id={id} />;
+}
+
+function LoadedCameraDetailsPage({ id }: { id: string }) {
   const state = useCameras();
   const { house, select } = useHouseSelection();
   const { updateDraft } = useIssues();

@@ -44,7 +44,7 @@ async def process_command_start(event: MessageCreated, context: MemoryContext):
 @router.message_callback(F.callback.payload == "back_to_menu")
 async def process_main_menu(event: MessageCreated, context: MemoryContext):
     await context.clear()
-    
+
     await event.message.edit(
         text=LEXICON["bot_start"],
         attachments=[inl_menu()]
@@ -56,7 +56,6 @@ async def process_command_help(event: MessageCreated):
     await event.message.answer(text=LEXICON["help"], attachments=[inl_menu()])
 
 
-# начало реализации отправки жалобы
 @router.message_callback(F.callback.payload == "send_report")
 async def process_start_report(event: MessageCallback, context: MemoryContext):
     await context.clear()
@@ -75,7 +74,7 @@ async def process_start_report(event: MessageCallback, context: MemoryContext):
 
     if len(houses) == 1:
         await context.update_data(house_id=houses[0][0])
-        
+
         await event.message.edit(
             text=LEXICON["send_report"],
             attachments=[inl_back_to_menu()]
@@ -123,7 +122,6 @@ async def process_get_report(event: MessageCreated, context: MemoryContext):
         try:
             await event.bot.edit_message(message_id=data["message_id"], attachments=[])
         except Exception as exc:
-            # A stale/deleted prompt must not prevent saving the resident's draft.
             logger.warning("Could not remove report prompt keyboard: %s", type(exc).__name__)
 
     if not new_data["description"]:
@@ -134,7 +132,7 @@ async def process_get_report(event: MessageCreated, context: MemoryContext):
         await context.set_state(FSMReport.get_description)
     else:
         await context.set_state(FSMReport.confirm)
-       
+
         await event.message.answer(
             text=LEXICON["confirm_report"],
             attachments=[inl_confirm()]
@@ -208,11 +206,11 @@ async def process_confirm_report(
             photo_storage=photo_storage,
             photo_urls=[photo["url"] for photo in data.get("photos", [])],
         )
-    
+
     except PhotoError as exc:
         await event.message.answer(str(exc))
         return
-    
+
     except Exception as exc:
         logger.error("Issue submission failed: %s", type(exc).__name__)
         await event.message.answer(LEXICON["report_save_error"])
@@ -226,7 +224,6 @@ async def process_confirm_report(
     )
 
 
-# начало реализации просмотра жалоб
 @router.message_callback(F.callback.payload == "my_issues")
 async def process_my_issues(event: MessageCallback, context: MemoryContext):
     await context.clear()

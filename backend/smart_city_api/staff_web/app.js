@@ -11,9 +11,9 @@ const categories = {
 };
 const zones = { apartment: "Квартира", corridor: "Коридор", elevator: "Лифт", stairs: "Лестница", entrance: "Подъезд", yard: "Двор", roof: "Крыша", basement: "Подвал" };
 const state = { profile: null, status: "", page: 1, total: 0, detail: null, listRequest: 0, detailRequest: 0, busy: false };
+const contactState = { request: 0, house: "", loaded: false, dirty: false, loading: false, saving: false };
 let searchTimer, toastTimer, messageAction, statusAction;
 
-// Only escaped text is interpolated into templates; resident messages are never HTML.
 function escapeHtml(value) {
   return String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
 }
@@ -41,6 +41,8 @@ function showLogin() {
   $("issue-dialog").close(); $("photo-dialog").close();
   $("full-photo").removeAttribute("src"); $("detail-content").replaceChildren();
   $("registrations-body").replaceChildren();
+  contactState.request++; contactState.house = ""; contactState.loaded = false; contactState.dirty = false; contactState.loading = false;
+  $("contact-rows").replaceChildren(); $("contacts-form").hidden = true;
   $("issues-body").replaceChildren(); $("workspace").hidden = true;
   $("login-screen").hidden = false; $("boot").hidden = true;
 }
@@ -67,6 +69,7 @@ async function enterWorkspace() {
   $("staff-name").textContent = state.profile.name;
   $("avatar").textContent = state.profile.name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
   $("house-filter").innerHTML = '<option value="">Все мои дома</option>' + state.profile.houses.map((house) => `<option value="${house.id}">${esc(house.address)}</option>`).join("");
+  $("contact-house").innerHTML = state.profile.houses.map((house) => `<option value="${house.id}">${esc(house.address)}</option>`).join("");
   $("priority-filter").value = ""; $("search").value = "";
   $("no-houses").hidden = state.profile.houses.length > 0;
   $("login-screen").hidden = true; $("workspace").hidden = false; $("boot").hidden = true;
@@ -233,7 +236,7 @@ $("photo-dialog").addEventListener("close", () => $("full-photo").removeAttribut
 setInterval(async () => {
   if (!state.profile || document.hidden || state.busy) return;
   if (window.location.hash === "#registrations") await loadRegistrations();
-  else await loadList();
+  else if (window.location.hash !== "#contacts") await loadList();
   const id = state.detail?.id;
   if (id && $("issue-dialog").open) {
     try { const detail = await api(`/issues/${id}`); if (state.detail?.id === id && !state.busy) renderConversation(detail); }
@@ -246,14 +249,17 @@ enterWorkspace().catch((error) => { showLogin(); if (error.status !== 401) showE
 let registrationPage = 1, registrationTotal = 0, registrationRequest = 0;
 function switchSection() {
   const registrations = window.location.hash === "#registrations";
-  $("issues-section").hidden = registrations;
+  const contacts = window.location.hash === "#contacts";
+  $("issues-section").hidden = registrations || contacts;
   $("registrations-section").hidden = !registrations;
-  $("section-name").textContent = registrations ? "Заявки" : "Обращения";
-  for (const [id, active] of [["nav-issues", !registrations], ["nav-registrations", registrations]]) {
+  $("contacts-section").hidden = !contacts;
+  $("section-name").textContent = contacts ? "Контакты" : registrations ? "Заявки" : "Обращения";
+  for (const [id, active] of [["nav-issues", !registrations && !contacts], ["nav-registrations", registrations], ["nav-contacts", contacts]]) {
     $(id).classList.toggle("active", active);
     if (active) $(id).setAttribute("aria-current", "page"); else $(id).removeAttribute("aria-current");
   }
   if (registrations && state.profile) void loadRegistrations();
+  if (contacts && state.profile && !contactState.loaded && !contactState.loading) void loadContacts();
 }
 async function loadRegistrations() {
   if (!state.profile) return;
@@ -292,4 +298,99 @@ $("registrations-body").addEventListener("click", async event => {
     await loadRegistrations();
   } catch (error) { showError("registrations-error", error.message); }
   finally { state.busy = false; button.disabled = false; }
+});
+
+const contactKinds = { phone: "Телефон", email: "Электронная почта", address: "Адрес", website: "Сайт" };
+function contactValueAttributes(kind) {
+  if (kind === "email") return 'type="email" placeholder="info@example.ru"';
+  if (kind === "website") return 'type="url" placeholder="https://example.ru"';
+  if (kind === "phone") return 'type="tel" placeholder="+7 (000) 000-00-00"';
+  return 'type="text" placeholder="Адрес приёмной"';
+}
+function renderContactRows(items) {
+  $("contact-rows").innerHTML = items.map((item, index) => `<fieldset class="contact-row" data-contact-row>
+    <legend>Контакт ${index + 1}</legend>
+    <label>Название<input data-contact-field="label" value="${esc(item.label)}" maxlength="100" required placeholder="Например, диспетчерская"></label>
+    <label>Тип<select data-contact-field="kind">${Object.entries(contactKinds).map(([kind, label]) => `<option value="${kind}"${kind === item.kind ? " selected" : ""}>${label}</option>`).join("")}</select></label>
+    <label class="contact-value">Контакт<input data-contact-field="value" ${contactValueAttributes(item.kind)} value="${esc(item.value)}" maxlength="300" required></label>
+    <label class="contact-note">Примечание<input data-contact-field="note" value="${esc(item.note)}" maxlength="200" placeholder="Часы работы или пояснение"></label>
+    <button type="button" class="secondary remove-contact" data-remove-contact="${index}" aria-label="Удалить контакт ${index + 1}">Удалить</button>
+  </fieldset>`).join("");
+  $("contacts-empty").hidden = items.length > 0;
+  $("add-contact").disabled = items.length >= 12;
+}
+function readContactDraft() {
+  return [...$("contact-rows").querySelectorAll("[data-contact-row]")].map(row => Object.fromEntries(
+    [...row.querySelectorAll("[data-contact-field]")].map(input => [input.dataset.contactField, input.value.trim()])
+  ));
+}
+function contactBusy(busy) {
+  $("contacts-fields").disabled = busy;
+  $("contact-house").disabled = busy || !state.profile?.houses.length;
+  $("refresh-contacts").disabled = busy;
+  $("contacts-form").setAttribute("aria-busy", String(busy));
+}
+async function loadContacts() {
+  if (!state.profile || contactState.saving) return;
+  const house = $("contact-house").value;
+  const request = ++contactState.request;
+  contactState.house = house; contactState.loaded = false; contactState.loading = true; contactState.dirty = false;
+  $("contacts-form").hidden = true; $("contact-rows").replaceChildren(); $("contact-company").textContent = "";
+  showError("contacts-error", ""); contactBusy(true);
+  $("contacts-status").textContent = house ? "Загружаем контакты…" : "Пока вам не назначены дома. Попросите администратора добавить доступ.";
+  try {
+    if (!house) return;
+    const data = await api(`/houses/${encodeURIComponent(house)}/contacts`);
+    if (request !== contactState.request || !state.profile) return;
+    $("contact-company").textContent = data.company_name;
+    renderContactRows(data.items); contactState.loaded = true;
+    $("contacts-form").hidden = false; $("contacts-status").textContent = "";
+  } catch (error) {
+    if (request === contactState.request && state.profile) { showError("contacts-error", error.message); $("contacts-status").textContent = "Нажмите «Обновить», чтобы повторить загрузку."; }
+  } finally {
+    if (request === contactState.request) { contactState.loading = false; contactBusy(false); }
+  }
+}
+function canDiscardContacts() {
+  return !contactState.dirty || window.confirm("Есть несохранённые контакты. Отменить изменения и загрузить данные с сервера?");
+}
+$("refresh-contacts").addEventListener("click", () => { if (canDiscardContacts()) void loadContacts(); });
+$("contact-house").addEventListener("change", () => {
+  if (canDiscardContacts()) void loadContacts(); else $("contact-house").value = contactState.house;
+});
+$("contact-rows").addEventListener("input", () => { contactState.dirty = true; $("contacts-status").textContent = "Есть несохранённые изменения."; });
+$("contact-rows").addEventListener("change", event => {
+  contactState.dirty = true;
+  if (event.target.dataset.contactField === "kind") {
+    const input = event.target.closest("[data-contact-row]").querySelector('[data-contact-field="value"]');
+    const temporary = document.createElement("div"); temporary.innerHTML = `<input ${contactValueAttributes(event.target.value)}>`;
+    input.type = temporary.firstChild.type; input.placeholder = temporary.firstChild.placeholder;
+  }
+});
+$("add-contact").addEventListener("click", () => {
+  const items = readContactDraft(); if (items.length >= 12) return;
+  items.push({ label: "", kind: "phone", value: "", note: "" });
+  renderContactRows(items); contactState.dirty = true;
+  $("contact-rows").lastElementChild.querySelector("input").focus();
+});
+$("contact-rows").addEventListener("click", event => {
+  const button = event.target.closest("[data-remove-contact]"); if (!button) return;
+  const items = readContactDraft(); items.splice(Number(button.dataset.removeContact), 1);
+  renderContactRows(items); contactState.dirty = true; $("add-contact").focus();
+});
+$("contacts-form").addEventListener("submit", async event => {
+  event.preventDefault(); if (!contactState.loaded || contactState.saving || contactState.loading) return;
+  const house = contactState.house, request = contactState.request;
+  const items = readContactDraft();
+  contactState.saving = true; contactBusy(true); showError("contacts-error", "");
+  $("contacts-status").textContent = "Сохраняем контакты…";
+  try {
+    const data = await api(`/houses/${encodeURIComponent(house)}/contacts`, { method: "POST", body: JSON.stringify({ items }) });
+    if (request !== contactState.request || !state.profile) return;
+    renderContactRows(data.items); contactState.dirty = false;
+    $("contacts-status").textContent = "Контакты сохранены и доступны жителям этого дома.";
+    toast("Контакты сохранены");
+  } catch (error) {
+    if (request === contactState.request && state.profile) { showError("contacts-error", error.message); $("contacts-status").textContent = "Данные остались в форме. Попробуйте ещё раз."; }
+  } finally { contactState.saving = false; contactBusy(contactState.loading); }
 });

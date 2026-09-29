@@ -1,5 +1,3 @@
-"""One transactional onboarding flow shared by the MAX bot and HTTP API."""
-
 from datetime import UTC, datetime
 
 from sqlalchemy import select
@@ -87,7 +85,6 @@ async def submit_registration(
     auto_approve=False,
     additional=False,
 ):
-    # Lock the same identity in both channels: double taps and retries cannot add another request.
     user = await session.scalar(select(User).where(User.id == user_id).with_for_update())
     state = await registration_state(session, user_id)
     if not additional and (state["complete"] or state["status"] == "pending"):
@@ -103,7 +100,6 @@ async def submit_registration(
     )
     if apartment is None:
         raise ValueError("Такой квартиры в выбранном доме нет. Проверьте номер")
-    # A family can share an apartment; only the SAME user's duplicate link is prevented.
     linked = await session.scalar(
         select(UserApartment.id).where(
             UserApartment.user_id == user_id, UserApartment.apartment_id == apartment.id

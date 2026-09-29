@@ -25,7 +25,6 @@ class PhotoError(ValueError):
 
 
 class PublicResolver(AbstractResolver):
-    """Не позволяет URL вложения обратиться к локальной сети сервера."""
 
     def __init__(self):
         self.resolver = aiohttp.resolver.ThreadedResolver()
@@ -58,7 +57,6 @@ def validate_url(raw: str) -> URL:
 
 
 def inspect_image(path: Path) -> str:
-    """Декодер проверяет файл; выполняется в потоке, не в event loop."""
     try:
         with warnings.catch_warnings():
             warnings.simplefilter("error", Image.DecompressionBombWarning)

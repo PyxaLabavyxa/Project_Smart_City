@@ -1,5 +1,3 @@
-"""0002: Resident API storage."""
-
 import sqlalchemy as sa
 from alembic import op
 

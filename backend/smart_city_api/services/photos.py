@@ -1,5 +1,3 @@
-"""Validated resident uploads, stored in the same private volume as bot photos."""
-
 import hashlib
 import re
 import warnings
@@ -36,7 +34,6 @@ def save_photo(root: Path, content: bytes) -> tuple[str, str]:
                 if original.width * original.height > 25_000_000:
                     raise HTTPException(422, "Фотография должна быть не больше 25 мегапикселей")
                 original.load()
-                # Apply orientation and discard metadata, including GPS coordinates.
                 photo = ImageOps.exif_transpose(original).convert("RGB")
                 photo.info.clear()
     except (

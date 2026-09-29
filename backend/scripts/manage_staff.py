@@ -1,5 +1,3 @@
-"""Provision staff locally; passwords are prompted, never accepted in command-line arguments."""
-
 import argparse
 import asyncio
 import getpass
@@ -53,7 +51,6 @@ async def manage(session, command, login, *, name=None, houses=None, password=No
         employee.active = command == "enable"
     elif command != "create":
         raise ValueError("Неизвестная команда")
-    # Revocation is immediate across API workers, including changed house assignments.
     await session.execute(delete(StaffSession).where(StaffSession.staff_id == employee.id))
 
 

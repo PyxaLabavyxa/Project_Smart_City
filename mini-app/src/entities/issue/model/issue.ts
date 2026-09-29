@@ -1,6 +1,5 @@
 import type { HouseLocation } from "@/entities/house";
 
-// accepted/assigned/awaiting-confirmation are UI-only workflow states.
 export type IssueStateStatus = "new" | "accepted" | "assigned" | "in-progress" | "awaiting-confirmation" | "completed";
 
 export type IssueRecord = {
@@ -9,7 +8,6 @@ export type IssueRecord = {
   category: string;
   address: string;
   location: string;
-  // Structured location; older reports can have no location.
   place?: HouseLocation;
   createdAt: string;
   status: IssueStateStatus;

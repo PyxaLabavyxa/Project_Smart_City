@@ -14,3 +14,15 @@
 @media (max-width: 360px) { .menu :is(a, button) { gap: 12px; } .menu strong { font-size: 16px; } }
 
 .tutorial { width: 100%; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.contacts { margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--color-line); }
+.contactsHeading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px; }
+.contactsHeading h2 { margin: 0; font-size: 17px; }
+.contactsHeading button { min-height: 44px; padding: 8px 0; border: 0; background: transparent; color: var(--color-primary); font-size: 12px; }
+.company { margin: 4px 0 20px; color: var(--color-muted); font-size: 14px; overflow-wrap: anywhere; }
+.contactList { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 32px; margin: 0; padding: 0; list-style: none; }
+.contactList li { display: grid; align-content: start; gap: 3px; min-width: 0; overflow-wrap: anywhere; }
+.contactList span, .contactList small, .emptyContacts { font-size: 13px; color: var(--color-muted); }
+.contactList :is(a, strong) { font-size: 15px; font-weight: 400; }
+.contactList a { display: flex; align-items: center; min-height: 44px; color: var(--color-primary); }
+.contactList small { font-size: 12px; }
+@media (max-width: 480px) { .contactList { grid-template-columns: minmax(0, 1fr); gap: 18px; } }

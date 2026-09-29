@@ -65,7 +65,6 @@ def database_config(env: Env) -> DatabaseConfig:
 
 
 def load_database_config(path: str | Path | None = None) -> DatabaseConfig:
-    # Работа с БД не требует токена MAX и ключа Яндекса.
     return database_config(read_environment(path))
 
 

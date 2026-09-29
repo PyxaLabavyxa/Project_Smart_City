@@ -1,5 +1,3 @@
-"""Shared resident onboarding and management-company applications."""
-
 import sqlalchemy as sa
 from alembic import op
 

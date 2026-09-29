@@ -1,7 +1,8 @@
 @font-face { font-family: Onest; src: url('/fonts/onest-regular.ttf') format('truetype'); font-weight: 400; font-style: normal; font-display: swap; }
 @font-face { font-family: Onest; src: url('/fonts/onest-semibold.ttf') format('truetype'); font-weight: 600; font-style: normal; font-display: swap; }
 * { box-sizing: border-box; }
-html { scroll-padding-bottom: 96px; }
+html { scroll-padding-bottom: 96px; scrollbar-width: none; }
+html::-webkit-scrollbar { display: none; }
 body { margin: 0; background: var(--color-bg); color: var(--color-ink); font: var(--font-body)/1.55 Onest, 'Segoe UI', sans-serif; }
 h1, h2, h3 { font-weight: 600; overflow-wrap: anywhere; }
 h1 { margin: 0; font-size: var(--font-page-title); line-height: 1.15; letter-spacing: -1.3px; }

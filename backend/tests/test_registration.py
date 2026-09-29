@@ -193,7 +193,6 @@ def test_additional_apartment_shared_by_family_and_no_duplicate_links(api):
     install_catalog(engine)
     client.app.state.settings.onboarding_test_mode = True
     body = BODY | {"additional": True}
-    # Residents 102 and 104 can both join apartment 7 already occupied by resident 101.
     for user in (102, 104, 102):
         result = client.post("/api/v1/registration", headers=headers(user), json=body)
         assert result.status_code == 200, result.text
@@ -218,7 +217,7 @@ def test_additional_pending_is_not_reported_as_approved(api):
         result = client.post(
             "/api/v1/registration", headers=headers(102), json=BODY | {"additional": True}
         )
-        assert result.json()["complete"] is True  # Existing apartment remains accessible.
+        assert result.json()["complete"] is True
         assert result.json()["application_status"] == "pending"
     assert len(client.get("/api/v1/me", headers=headers(102)).json()["apartments"]) == 1
     with Session(engine) as session:

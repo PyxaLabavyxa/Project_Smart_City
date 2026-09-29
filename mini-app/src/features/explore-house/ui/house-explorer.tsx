@@ -48,7 +48,7 @@ export function HouseExplorer({ initialPlace }: { initialPlace?: HouseLocation }
       </div>
       </div>
       <FloorPlan tourTarget="plan-map" house={house} selected={selected} onSelect={chooseRoom} problemPlaces={problemPlaces} resolvedPlaces={resolvedPlaces} />
-      <div className={styles.otherZones}><nav data-tour="plan-zones" className={styles.zoneButtons} aria-label="Другие зоны дома">{([{ zone:"house", label:"Дом" },{ zone:"courtyard", label:"Двор" },{ zone:"parking", label:"Парковка" }] as const).map(item => <button key={item.zone} type="button" aria-pressed={selected.zone === item.zone} onClick={() => chooseRoom({ houseId:house.id,entrance:1,floor:1,zone:item.zone })}>{item.label}</button>)}</nav></div>
+      <div className={styles.otherZones}><nav data-tour="plan-zones" className={styles.zoneButtons} aria-label="Другие зоны дома">{([{ zone:"house", label:"Дом" },{ zone:"courtyard", label:"Двор" },{ zone:"parking", label:"Парковка" }] as const).filter(item => item.zone !== "courtyard" || selected.floor === 1).map(item => <button key={item.zone} type="button" aria-pressed={selected.zone === item.zone} onClick={() => chooseRoom({ houseId:house.id,entrance:1,floor:1,zone:item.zone })}>{item.label}</button>)}</nav></div>
     </section>
     <aside className={styles.sidebar}>
       <header className={styles.floorHeading}><p>Подъезд {String(selected.entrance).padStart(2, "0")}</p><h2>Этаж {selected.floor}</h2><p>Квартир: {apartments.length} · обращений: {floorIssues.length}</p></header>

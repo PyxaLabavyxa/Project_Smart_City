@@ -45,7 +45,7 @@
 @media (prefers-reduced-motion: no-preference) {
   .fields { animation: step-enter .22s ease-out both; }
   .steps li { transition: color .2s, border-color .2s; }
-  .category { transition: background .15s, border-color .15s, transform .15s; }
-  .category:active { transform: scale(.97); }
-  @keyframes step-enter { from { opacity: 0; transform: translateX(8px); } to { opacity: 1; transform: translateX(0); } }
+  .category { transition: background-color .15s, border-color .15s; }
+  .category:active { background: var(--color-soft); }
+  @keyframes step-enter { from { opacity: .5; } to { opacity: 1; } }
 }

@@ -1,5 +1,3 @@
-"""Explicit test-mode catalogue. Idempotent; never changes existing resident links."""
-
 from sqlalchemy import select, text
 
 from app.database.demo_issues import populate_house_examples

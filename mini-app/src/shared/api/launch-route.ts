@@ -5,7 +5,6 @@ const routes: Record<string, string> = {
   messages: "/messages",
 };
 
-// Launch data chooses only a known page; it never supplies an arbitrary URL.
 export function launchRoute(initData: string, unsafeStartParam?: unknown): string | undefined {
   const values = new URLSearchParams(initData).getAll("start_param");
   if (values.length > 1) return undefined;

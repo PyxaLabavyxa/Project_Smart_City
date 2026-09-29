@@ -11,7 +11,6 @@ function Thumbnail({ photo }: { photo: DraftPhoto }) {
     if (image.current) image.current.src = url;
     return () => URL.revokeObjectURL(url);
   }, [photo.file]);
-  // eslint-disable-next-line @next/next/no-img-element
   return <img ref={image} alt={photo.file.name} width={160} height={160} />;
 }
 

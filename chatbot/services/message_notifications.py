@@ -1,5 +1,3 @@
-"""Deliver committed messages independently of API requests, retrying MAX outages."""
-
 import asyncio
 import logging
 from datetime import UTC, datetime, timedelta

@@ -1,5 +1,3 @@
-"""Independent, revocable employee sessions. No MAX/resident cookie grants staff access."""
-
 import asyncio
 import hashlib
 import hmac
@@ -42,7 +40,6 @@ def verify_password(password: str, encoded: str) -> bool:
         return False
 
 
-# The nonexistent-account path still performs the same expensive password check.
 DUMMY_HASH = f"pbkdf2_sha256${PASSWORD_ITERATIONS}${'00' * 16}${'00' * 32}"
 
 
@@ -56,8 +53,6 @@ def csrf_token(token: str) -> str:
 
 def require_same_origin(request: Request) -> None:
     origin = request.headers.get("origin", "")
-    # A TLS-terminating proxy may reach Uvicorn over HTTP. Accept its public HTTPS
-    # origin only when explicitly configured AND the preserved Host matches it.
     try:
         configured_proxy_origin = (
             origin in request.app.state.settings.cors_origins
@@ -77,7 +72,6 @@ async def check_login_limit(session: Session, login: str, address: str) -> None:
     await session.execute(delete(StaffLoginThrottle).where(StaffLoginThrottle.expires_at <= now))
     insert = pg_insert if session.bind.dialect.name == "postgresql" else sqlite_insert
     over_limit = False
-    # Atomic counters shared between API workers, including attempts for unknown accounts.
     for scope, limit in ((f"login:{login}", 10), (f"ip:{address}", 40)):
         stmt = insert(StaffLoginThrottle).values(
             key_hash=token_hash(f"{window}:{scope}"), attempts=1, expires_at=expires

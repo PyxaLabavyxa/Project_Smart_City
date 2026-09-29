@@ -1,5 +1,3 @@
-"""Provision still-image cameras without replacing configured camera feeds."""
-
 from datetime import UTC, datetime
 
 from sqlalchemy import select, text

@@ -27,13 +27,13 @@ export function HomePage() {
       <Link href="/utilities" className={styles.service}><span className={styles.serviceIcon}><Icon name="receipt" /></span><span><strong>ЖКХ</strong><b>{account && resident ? money(totalCharges(account.charges)) : loading ? "Загружаем счёт…" : "Лицевой счёт"}</b><small>{account && resident ? `К оплате до ${account.due}` : error ? "Открыть и повторить загрузку" : "Квитанции и показания"}</small></span><Icon name="arrow" size={16} /></Link>
       <Link href="/messages" className={styles.service}><span className={styles.serviceIcon}><Icon name="messages" /></span><span><strong>Сообщения</strong><b>Переписки с соседями</b><small>{threads.length ? `Диалогов: ${threads.length}` : "Начать разговор"}</small></span><Icon name="arrow" size={16} /></Link>
     </nav>
-    <div className={styles.layout}>
+    <div data-reveal="1" className={styles.layout}>
       <section className={styles.issues} aria-labelledby="active-issues"><div className={styles.sectionHead}><h2 id="active-issues">Актуальные обращения <span>{active.length}</span></h2><Link href="/issues">Все обращения ↗</Link></div>{issuesLoading || issuesError ? <RequestState loading={issuesLoading} error={issuesError} reload={reload} /> : active.length ? <IssueList issues={active.slice(0, 3)} /> : <p className={styles.muted}>Активных обращений нет.</p>}</section>
       <aside className={styles.side}>
         <HousePreview />
       </aside>
     </div>
-    <div className={styles.secondaryGrid}>
+    <div data-reveal="2" className={styles.secondaryGrid}>
         <HouseWorks />
     </div>
   </>;

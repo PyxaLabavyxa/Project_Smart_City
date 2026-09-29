@@ -203,7 +203,6 @@ class Invoice(Base):
     number: Mapped[str] = mapped_column(String(100))
     period: Mapped[str] = mapped_column(String(7))
     due: Mapped[date] = mapped_column(Date)
-    # Immutable billing lines supplied by the billing system; amounts are integer kopecks.
     charges: Mapped[list[dict]] = mapped_column(JSON)
     __table_args__ = (UniqueConstraint("account_id", "period", name="uq_invoice_period"),)
 
@@ -236,7 +235,6 @@ class HouseCamera(Base):
     name: Mapped[str] = mapped_column(String(200))
     status: Mapped[str] = mapped_column(String(20))
     note: Mapped[str] = mapped_column(Text)
-    # Public or short-lived HTTPS frame URL, never a camera credential.
     preview_url: Mapped[str | None] = mapped_column(String(2000))
     captured_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
@@ -316,7 +314,6 @@ class IssueMessage(Base):
 
 
 class StaffNotification(Base):
-    """Журнал действий сотрудника и очередь доставки в MAX, в одной транзакции с заявкой."""
     __tablename__ = "staff_notifications"
     id: Mapped[int] = mapped_column(primary_key=True)
     issue_id: Mapped[int] = mapped_column(ForeignKey("issues.id"), index=True)
@@ -356,6 +353,21 @@ class CompanyHouse(Base):
     __tablename__ = "company_houses"
     house_id: Mapped[int] = mapped_column(ForeignKey("houses.id"), primary_key=True)
     company_id: Mapped[int] = mapped_column(ForeignKey("management_companies.id"), index=True)
+
+
+class HouseContact(Base):
+    __tablename__ = "house_contacts"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    house_id: Mapped[int] = mapped_column(ForeignKey("houses.id"), index=True)
+    position: Mapped[int] = mapped_column(SmallInteger)
+    label: Mapped[str] = mapped_column(String(100))
+    kind: Mapped[str] = mapped_column(String(20))
+    value: Mapped[str] = mapped_column(String(300))
+    note: Mapped[str] = mapped_column(String(200), default="", server_default="")
+    __table_args__ = (
+        CheckConstraint("kind IN ('phone', 'email', 'address', 'website')", name="ck_contact_kind"),
+        UniqueConstraint("house_id", "position", name="uq_house_contact_position"),
+    )
 
 
 class RegistrationRequest(Base):

@@ -17,7 +17,6 @@ async def get_session(request: Request) -> AsyncIterator[AsyncSession]:
     if database is None:
         raise HTTPException(status_code=503, detail="Database is not configured")
     async with database.sessions() as session:
-        # Services explicitly commit successful mutations; unfinished work rolls back.
         yield session
 
 

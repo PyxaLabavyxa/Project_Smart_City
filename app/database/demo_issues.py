@@ -1,5 +1,3 @@
-"""Two explicit demo incidents per house; destructive reset is only an admin operation."""
-
 from sqlalchemy import delete, select
 
 from app.database.enums import IssueCategory, IssuePriority, IssueStatus
@@ -119,7 +117,6 @@ async def populate_house_examples(session, houses):
 
 
 async def reset_demo_issues(session):
-    # Caller must take a database backup before this explicit destructive operation.
     for model in (StaffNotification, IssueMessage, IssuePhoto, IssueEvent, Issue):
         await session.execute(delete(model))
     houses = list(await session.scalars(select(House).order_by(House.id)))
