@@ -91,6 +91,7 @@ services:
       <<: *database
       BOT_TOKEN: ${BOT_TOKEN:-}
       YANDEX_API_KEY: ${YANDEX_API_KEY:-}
+      MINI_APP_BOT_USERNAME: ${MINI_APP_BOT_USERNAME:-t282_hakaton_max_bot}
       YANDEX_FOLDER_ID: ${YANDEX_FOLDER_ID:-}
       MEDIA_ROOT: /srv/data/media
     volumes:

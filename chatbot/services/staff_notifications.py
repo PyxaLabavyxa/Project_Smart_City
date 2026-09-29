@@ -89,7 +89,6 @@ async def deliver_pending(bot, sessions=session_factory, limit: int = 20) -> int
                     text=row.text,
                     notify=True,
                     attachments=[reply_keyboard(row.issue_id)],
-                    timeout=20,
                 )
             if result is None or isinstance(result, Error):
                 raise RuntimeError("MAX did not confirm sending")

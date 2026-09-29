@@ -2,10 +2,14 @@ from maxapi.utils.inline_keyboard import InlineKeyboardBuilder, AttachmentType
 from maxapi.types import CallbackButton, OpenAppButton
 
 from chatbot.lexicon.lexicon import LEXICON_INLINE_MENU, LEXICON
+from app.config_data.config import read_environment
 
 
 def mini_app_button() -> OpenAppButton:
-    return OpenAppButton(text="🏙️ Открыть миниапп")
+    username = read_environment().str("MINI_APP_BOT_USERNAME", "t282_hakaton_max_bot").strip().lstrip("@")
+    if not username:
+        raise ValueError("MINI_APP_BOT_USERNAME не должен быть пустым")
+    return OpenAppButton(text="🏙️ Открыть миниапп", web_app=username)
 
 
 def inl_mini_app():

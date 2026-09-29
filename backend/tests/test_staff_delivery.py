@@ -57,6 +57,13 @@ def test_worker_lease_retry_order_and_no_redelivery(staff_api):
                 session.commit()
 
             async def sent(**kwargs):
+                # Enforce the real SDK signature: permissive AsyncMock used to hide
+                # unsupported arguments such as timeout from this delivery test.
+                import inspect
+
+                from maxapi import Bot
+
+                inspect.signature(Bot.send_message).bind(None, **kwargs)
                 # The lease is visible outside the worker's session before network IO starts.
                 with Session(engine) as session:
                     assert (
@@ -70,6 +77,7 @@ def test_worker_lease_retry_order_and_no_redelivery(staff_api):
                 assert await claim_next(database.sessions) is None
                 assert kwargs["user_id"] == 101
                 assert kwargs["attachments"][0].payload.buttons[0][0].payload == "staff_reply_1"
+                assert kwargs["attachments"][0].payload.buttons[1][0].web_app
                 return object()
 
             bot.send_message.side_effect = sent
