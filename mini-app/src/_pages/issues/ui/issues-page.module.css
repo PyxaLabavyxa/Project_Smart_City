@@ -24,3 +24,15 @@
 
 @media (max-width: 760px) { .heading { align-items: stretch; flex-direction: column; gap: 20px; } }
 .filters button { border: 0; border-radius: var(--radius-button); background: var(--color-neutral); font-weight: 600; }
+
+.actions { display: flex; align-items: center; gap: 12px; }
+.refresh { display: grid; place-items: center; flex: 0 0 44px; width: 44px; height: 44px; border: 1px solid var(--color-line); border-radius: 14px; background: var(--color-surface); color: var(--color-primary); cursor: pointer; transition: background .2s, transform .2s; }
+.refresh:hover { background: var(--color-soft); }
+.refresh:active { transform: rotate(30deg); }
+.refresh:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; }
+.tabs { padding: 5px; border-radius: 14px; background: var(--color-surface); width: fit-content; }
+.tabs button[aria-pressed="true"] { border-radius: 10px; }
+
+.statusRow { display: flex; align-items: center; gap: 8px; margin-bottom: 24px; }
+.statusRow .tabs { min-width: 0; flex-wrap: nowrap; margin-bottom: 0; overflow-x: auto; }
+.statusRow .tabs button { flex-shrink: 0; }

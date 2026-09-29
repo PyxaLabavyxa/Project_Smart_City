@@ -9,6 +9,7 @@ from zoneinfo import ZoneInfo
 from sqlalchemy import case, func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.database.camera_data import provision_cameras
 from app.database.enums import IssueCategory, IssuePriority, IssueStatus
 from app.database.models import (
     Apartment,
@@ -90,6 +91,8 @@ async def provision_sample_resident(session: AsyncSession, user_id: int) -> None
                 session.add(UserApartment(user_id=user_id, apartment_id=apartment.id))
                 apartments.append(apartment)
             await session.flush()
+    for house_id in {apartment.house_id for apartment in apartments}:
+        await provision_cameras(session, await session.get(House, house_id))
     today = datetime.now(ZoneInfo("Europe/Moscow")).date()
     period = today.strftime("%Y-%m")
     for index, apartment in enumerate(apartments[:2]):
@@ -101,7 +104,7 @@ async def provision_sample_resident(session: AsyncSession, user_id: int) -> None
         area = Decimal("54.20") if index == 0 else Decimal("38.60")
         account = UtilityAccount(
             apartment_id=apartment.id,
-            number=f"TEST-{apartment.id:06d}",
+            number=f"LS-{apartment.id:06d}",
             area=area,
             residents=2 if index == 0 else 1,
             reading_period=period,
@@ -115,7 +118,7 @@ async def provision_sample_resident(session: AsyncSession, user_id: int) -> None
                 Meter(
                     account_id=account.id,
                     kind=kind,
-                    serial=f"TEST-{apartment.id}-{kind}",
+                    serial=f"LS-{apartment.id}-{kind}",
                     previous=Decimal(previous),
                 )
             )
@@ -152,7 +155,7 @@ async def provision_sample_resident(session: AsyncSession, user_id: int) -> None
         session.add(
             Invoice(
                 account_id=account.id,
-                number=f"ТЕСТ-{apartment.id}-{period} · не к оплате",
+                number=f"КВ-{apartment.id}-{period}",
                 period=period,
                 due=next_month,
                 charges=charges,
@@ -170,8 +173,7 @@ async def provision_sample_resident(session: AsyncSession, user_id: int) -> None
             user_id=user_id,
             house_id=apartment.house_id,
             title="Не горит свет на этаже" if index == 0 else "Протекает кран",
-            description="Тестовое обращение для проверки приложения. "
-            + ("Лампа в коридоре не включается." if index == 0 else "В ванной подтекает кран."),
+            description=("Лампа в коридоре не включается." if index == 0 else "В ванной подтекает кран."),
             category=IssueCategory.ELECTRICITY if index == 0 else IssueCategory.WATER,
             priority=IssuePriority.MEDIUM,
             status=status,

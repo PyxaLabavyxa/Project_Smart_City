@@ -32,3 +32,7 @@
 .planLink { display:flex; align-items:center; min-height:48px; color:var(--color-primary); font-size:14px; }
 @media(max-width:760px) { .detail { grid-template-columns:1fr; gap:32px; } .list { gap:16px; } }
 @media(max-width:540px) { .list { grid-template-columns:1fr; } .cardBody { padding:16px; } .previewPlaceholder { padding:20px 16px; } }
+
+.camera .preview { position: relative; }
+.camera .preview img { aspect-ratio: 16 / 9; object-fit: cover; border-radius: 0; }
+.camera .preview figcaption { position: absolute; left: 12px; bottom: 12px; margin: 0; padding: 6px 9px; border-radius: 8px; color: white; background: rgb(0 0 0 / 55%); font-size: 11px; }

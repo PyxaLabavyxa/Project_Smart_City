@@ -21,7 +21,7 @@ export function createCameraGateway(api: ApiClient): CameraGateway {
   return { async preview(camera) {
     const frame = record(await api(endpoints.preview(camera.id)));
     const src = string(frame.src);
-    if (new URL(src).protocol !== "https:") throw new Error("Недопустимый адрес изображения");
+    if (!/^\/images\/cameras\/(entrance-[12]|yard)-[12]\.png$/.test(src) && new URL(src).protocol !== "https:") throw new Error("Недопустимый адрес изображения");
     return { src, capturedAt: string(frame.capturedAt) };
   } };
 }

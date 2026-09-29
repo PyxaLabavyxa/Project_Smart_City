@@ -38,7 +38,7 @@ def test_sample_data_is_repeatable_and_preserves_existing_billing(api):
     account = client.get(f"/api/v1/apartments/{new_id}/utilities", headers=headers()).json()
     assert len(account["meters"]) == 3
     assert len(account["charges"]) == 7
-    assert account["invoiceNumber"].startswith("ТЕСТ-")
+    assert account["invoiceNumber"].startswith("КВ-")
     assert sum(c["amount"] for c in account["charges"]) > 0
     assert (
         client.get(f"/api/v1/apartments/{new_id}/utilities", headers=headers(102)).status_code

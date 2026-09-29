@@ -1,4 +1,6 @@
 import asyncio
+from contextlib import suppress
+from chatbot.services.message_notifications import run_message_notifications
 from app.database.runtime import loop_factory
 
 from maxapi import Dispatcher
@@ -32,6 +34,7 @@ async def main() -> None:
         other_handlers.router
     )
 
+    notifications = None
     try:
         await create_tables()
         # await set_main_menu(bot)
@@ -48,9 +51,14 @@ async def main() -> None:
             )
 
         await bot.delete_webhook()
+        notifications = asyncio.create_task(run_message_notifications(bot))
         await dp.start_polling(bot)
 
     finally:
+        if notifications is not None:
+            notifications.cancel()
+            with suppress(asyncio.CancelledError):
+                await notifications
         try:
             await bot.close_session()
         finally:

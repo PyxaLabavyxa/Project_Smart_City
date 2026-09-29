@@ -39,7 +39,6 @@ export function RecipientSelector({ openSelected = false }: { openSelected?: boo
   }
   return <>
     <RequestState loading={loading} error={error} reload={reload} />
-    <button type="button" className={styles.chip} disabled={loading} onClick={reload}>Обновить сообщения</button>
     <div className={styles.chatLayout} data-open={active !== null}>
       <section className={styles.inbox} aria-label="Список переписок">
         <div className={styles.inboxHeading}><h2 ref={inboxHeading} tabIndex={-1}>Переписки</h2><button className={styles.chip} onClick={openPicker}>Написать</button></div>

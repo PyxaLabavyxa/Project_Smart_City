@@ -1,4 +1,10 @@
-from app.database.models import Apartment, ApartmentMessage
+from app.database.models import (
+    Apartment,
+    ApartmentMessage,
+    MessageNotification,
+    User,
+    UserApartment,
+)
 from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -55,6 +61,23 @@ async def send_message(
     )
     try:
         session.add(message)
+        await session.flush()
+        recipients = await session.scalars(
+            select(User.max_user_id)
+            .join(UserApartment)
+            .where(
+                UserApartment.apartment_id == recipient.id,
+                User.id != user_id,
+                User.max_user_id > 0,
+            )
+            .distinct()
+        )
+        session.add_all(
+            [
+                MessageNotification(message_id=message.id, max_user_id=max_id)
+                for max_id in recipients
+            ]
+        )
         await session.commit()
     except IntegrityError:
         await session.rollback()

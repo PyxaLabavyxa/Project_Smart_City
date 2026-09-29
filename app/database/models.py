@@ -249,3 +249,14 @@ class HouseWork(Base):
     starts_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     ends_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     location: Mapped[str] = mapped_column(String(300))
+
+
+class MessageNotification(Base):
+    __tablename__ = "message_notifications"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    message_id: Mapped[int] = mapped_column(ForeignKey("apartment_messages.id"))
+    max_user_id: Mapped[int] = mapped_column(BigInteger)
+    attempts: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    available_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    __table_args__ = (UniqueConstraint("message_id", "max_user_id", name="uq_message_notification"),)

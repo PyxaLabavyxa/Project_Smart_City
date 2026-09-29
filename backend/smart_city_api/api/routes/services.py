@@ -1,3 +1,5 @@
+import re
+from datetime import UTC, datetime
 from urllib.parse import urlsplit
 
 from app.database.models import ApartmentMessage, HouseCamera, HouseWork
@@ -86,6 +88,12 @@ async def preview(camera_id: int, session: Session, user: Resident):
     await require_house(session, user.id, camera.house_id)
     if camera.status != "online" or not camera.preview_url or not camera.captured_at:
         raise HTTPException(503, "Изображение камеры пока недоступно")
+    if re.fullmatch(r"/images/cameras/(entrance-[12]|yard)-1\.png", camera.preview_url):
+        now = datetime.now(UTC)
+        frame = int(now.timestamp() // 5) % 2 + 1
+        return CameraFrame(
+            src=camera.preview_url.replace("-1.png", f"-{frame}.png"), capturedAt=now
+        )
     url = urlsplit(camera.preview_url)
     if url.scheme != "https" or not url.hostname or url.username or url.password:
         raise HTTPException(503, "Изображение камеры пока недоступно")

@@ -15,13 +15,35 @@ export function MessageProvider({ children, gateway, initialMessages = [] }: { c
   const [attempt, setAttempt] = useState(0);
   function reload() { setLoading(true); setError(""); setAttempt(value => value + 1); }
   useEffect(() => {
-    const controller = new AbortController();
-    (gateway.list?.(controller.signal) ?? Promise.resolve([])).then(items => {
-      if (!controller.signal.aborted) setMessages(current => [...items, ...current.filter(item => !items.some(row => row.id === item.id))]);
-    }).catch((error: unknown) => {
-      if (!controller.signal.aborted) setError(error instanceof Error ? error.message : "Не удалось загрузить сообщения");
-    }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
-    return () => controller.abort();
+    let controller: AbortController | undefined;
+    let stopped = false;
+    async function poll() {
+      if (document.hidden || controller || stopped) return;
+      controller = new AbortController();
+      const signal = controller.signal;
+      try {
+        const items = await (gateway.list?.(signal) ?? Promise.resolve([]));
+        if (!signal.aborted) {
+          setMessages(current => [...items, ...current.filter(item => !items.some(row => row.id === item.id))]);
+          setError("");
+        }
+      } catch (error) {
+        if (!signal.aborted) setError(error instanceof Error ? error.message : "Не удалось загрузить сообщения");
+      } finally {
+        if (!signal.aborted) setLoading(false);
+        controller = undefined;
+      }
+    }
+    void poll();
+    const timer = window.setInterval(() => void poll(), 5000);
+    const resume = () => { if (!document.hidden) void poll(); };
+    document.addEventListener("visibilitychange", resume);
+    return () => {
+      stopped = true;
+      controller?.abort();
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", resume);
+    };
   }, [gateway, attempt]);
   function send(place: HouseLocation, text: string) {
     if (place.zone !== "apartment") return Promise.reject(new Error("Выберите квартиру"));

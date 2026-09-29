@@ -5,6 +5,7 @@ import { money, totalCharges, useUtilityAccount } from "@/entities/utilities";
 
 import { SectionPage } from "@/shared/ui/navigation";
 import { Icon } from "@/shared/ui/icon";
+import { Payment } from "./payment";
 import { Meters } from "./meters";
 import styles from "./utilities.module.css";
 
@@ -27,7 +28,7 @@ export function UtilitiesPage() {
           <p className={styles.amount}>{money(total)}</p>
           {account.due && <p>Оплатить до {account.due}</p>}
           <p className={styles.muted}>Сумма по строкам квитанции</p>
-          <button type="button" className={styles.secondary} disabled>Оплата пока недоступна</button><p className={styles.muted}>Приём платежей ещё не подключён.</p>
+          {account.invoiceNumber && total > 0 && <Payment amount={total} apartment={house.residentApartment} period={account.period} />}
         </section>
         <aside className={styles.account}><span className={styles.accountIcon}><Icon name="home" size={28} /></span><h2>Квартира {house.residentApartment}</h2><p>{house.address}</p><p className={styles.muted}>Подъезд {apartment.entrance} · этаж {apartment.floor}</p><dl className={styles.totals}><div><dt>Лицевой счёт</dt><dd>{account.number}</dd></div><div><dt>Площадь</dt><dd>{account.area} м²</dd></div><div><dt>Проживающих</dt><dd>{account.residents}</dd></div></dl></aside>
       </div>
