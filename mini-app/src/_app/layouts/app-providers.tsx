@@ -13,6 +13,7 @@ import { createApiClient, endpoints, maxLaunchData } from "@/shared/api/client";
 import { readPages } from "@/shared/api/pagination";
 import { useRemote } from "@/shared/api/use-remote";
 import { MiniAppPresence } from "@/features/mini-app-presence";
+import { LaunchNavigation } from "@/features/launch-navigation";
 import { OnboardingProvider } from "@/features/onboarding/onboarding";
 import { RequestState } from "@/shared/ui/navigation/request-state";
 
@@ -55,7 +56,7 @@ function AuthenticatedApp({ children, mode }: { children: ReactNode; mode: "loca
   }, [mode]);
   const state = useRemote(load);
   if (!state.data) return <main className="connection-screen"><h1>ДомПульс</h1><RequestState {...state} /></main>;
-  return <ApiContext value={state.data.api}><MiniAppPresence /><ResidentHomes profile={state.data.profile}>{children}</ResidentHomes></ApiContext>;
+  return <ApiContext value={state.data.api}>{mode === "max" && <LaunchNavigation />}<MiniAppPresence /><ResidentHomes profile={state.data.profile}>{children}</ResidentHomes></ApiContext>;
 }
 
 function ResidentHomes({ profile, children }: { profile: ResidentProfile; children: ReactNode }) {

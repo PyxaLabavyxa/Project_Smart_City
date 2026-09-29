@@ -64,7 +64,7 @@ async def deliver_pending(bot, sessions=session_factory):
                             f"Новое сообщение от квартиры {sender.number}\n"
                             f"{house.address} · для квартиры {recipient.number}\n\n"
                             f"{message.text[:1500]}\n\n"
-                            "Нажмите «Открыть миниапп» ниже и перейдите в раздел «Сообщения», чтобы ответить."
+                            "Нажмите «Мой ДомПульс» ниже и перейдите в раздел «Сообщения», чтобы ответить."
                         ),
                     ),
                     timeout=15,

@@ -112,7 +112,8 @@ LEXICON: dict[str, str] = {
     
     "yes": "✅ Отправить",
     "no": "↩️ Отменить",
-    "back_to_menu": "🏠 Главное меню"
+    "back_to_menu": "🏠 Главное меню",
+    "open_mini_app": "📲 Мой ДомПульс",
 }
 
 LEXICON_MAIN_MENU: dict[str, str] = {
@@ -123,4 +124,11 @@ LEXICON_MAIN_MENU: dict[str, str] = {
 LEXICON_INLINE_MENU: dict[str, str] = {
     "send_report": "📝 Сообщить о проблеме",
     "my_issues": "📋 Мои обращения"
+}
+
+LEXICON_APP_SECTIONS: dict[str, str] = {
+    "issues": "📑 Обращения дома",
+    "utilities": "💳 Счета и ЖКХ",
+    "cameras": "📹 Камеры дома",
+    "messages": "💬 Чаты с соседями",
 }
