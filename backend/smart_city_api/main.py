@@ -1,15 +1,18 @@
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.exc import SQLAlchemyError
 
 from smart_city_api.api.router import router
 from smart_city_api.api.routes.auth import router as auth_router
 from smart_city_api.api.routes.resident import router as resident_router
 from smart_city_api.api.routes.services import router as services_router
+from smart_city_api.api.routes.staff import router as staff_router
 from smart_city_api.core.config import Settings
 from smart_city_api.db.session import Database
 
@@ -37,6 +40,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         response = await call_next(request)
         if request.url.path.startswith("/api/"):
             response.headers["Cache-Control"] = "no-store"
+        if request.url.path.startswith(("/staff", "/api/v1/staff")):
+            response.headers["X-Content-Type-Options"] = "nosniff"
+            response.headers["Referrer-Policy"] = "same-origin"
+            response.headers["Content-Security-Policy"] = (
+                "default-src 'self'; script-src 'self'; style-src 'self'; "
+                "img-src 'self'; connect-src 'self'; frame-ancestors 'none'; "
+                "base-uri 'none'; form-action 'self'"
+            )
         return response
 
     @app.exception_handler(SQLAlchemyError)
@@ -57,6 +68,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(auth_router)
     app.include_router(resident_router)
     app.include_router(services_router)
+    app.include_router(staff_router)
+    app.mount(
+        "/staff",
+        StaticFiles(directory=Path(__file__).parent / "staff_web", html=True),
+        name="staff",
+    )
     return app
 
 

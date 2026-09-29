@@ -14,7 +14,7 @@ from sqlalchemy import (
     func,
     UniqueConstraint
 )
-from sqlalchemy import JSON, Numeric, Date
+from sqlalchemy import JSON, Numeric, Date, Boolean, CheckConstraint, true
 
 from app.database.enums import IssueCategory, IssuePriority, IssueStatus
 
@@ -260,3 +260,78 @@ class MessageNotification(Base):
     available_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     __table_args__ = (UniqueConstraint("message_id", "max_user_id", name="uq_message_notification"),)
+
+
+class StaffUser(Base):
+    __tablename__ = "staff_users"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    login: Mapped[str] = mapped_column(String(80), unique=True)
+    name: Mapped[str] = mapped_column(String(200))
+    password_hash: Mapped[str] = mapped_column(String(300))
+    active: Mapped[bool] = mapped_column(Boolean, default=True, server_default=true())
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class StaffHouse(Base):
+    __tablename__ = "staff_houses"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    staff_id: Mapped[int] = mapped_column(ForeignKey("staff_users.id"), index=True)
+    house_id: Mapped[int] = mapped_column(ForeignKey("houses.id"))
+    __table_args__ = (UniqueConstraint("staff_id", "house_id", name="uq_staff_house"),)
+
+
+class StaffSession(Base):
+    __tablename__ = "staff_sessions"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    staff_id: Mapped[int] = mapped_column(ForeignKey("staff_users.id"), index=True)
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+
+
+class StaffLoginThrottle(Base):
+    __tablename__ = "staff_login_throttle"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    key_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    attempts: Mapped[int] = mapped_column(Integer)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+
+
+class IssueMessage(Base):
+    __tablename__ = "issue_messages"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    issue_id: Mapped[int] = mapped_column(ForeignKey("issues.id"), index=True)
+    staff_id: Mapped[int | None] = mapped_column(ForeignKey("staff_users.id"))
+    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    text: Mapped[str] = mapped_column(Text)
+    request_id: Mapped[str] = mapped_column(String(200))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    __table_args__ = (
+        UniqueConstraint("issue_id", "request_id", name="uq_issue_message_request"),
+        CheckConstraint(
+            "(staff_id IS NOT NULL AND user_id IS NULL) OR "
+            "(staff_id IS NULL AND user_id IS NOT NULL)", name="ck_issue_message_sender"
+        ),
+    )
+
+
+class StaffNotification(Base):
+    """Журнал действий сотрудника и очередь доставки в MAX, в одной транзакции с заявкой."""
+    __tablename__ = "staff_notifications"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    issue_id: Mapped[int] = mapped_column(ForeignKey("issues.id"), index=True)
+    staff_id: Mapped[int] = mapped_column(ForeignKey("staff_users.id"))
+    max_user_id: Mapped[int] = mapped_column(BigInteger)
+    kind: Mapped[str] = mapped_column(String(20))
+    status: Mapped[str | None] = mapped_column(String(30))
+    message_id: Mapped[int | None] = mapped_column(ForeignKey("issue_messages.id"))
+    text: Mapped[str] = mapped_column(Text)
+    request_id: Mapped[str] = mapped_column(String(36))
+    request_hash: Mapped[str] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    attempts: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    available_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), index=True
+    )
+    lease_token: Mapped[str | None] = mapped_column(String(36))
+    sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    __table_args__ = (UniqueConstraint("staff_id", "request_id", name="uq_staff_action_request"),)

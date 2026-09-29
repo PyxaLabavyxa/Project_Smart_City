@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from pydantic import Field, IPvAnyNetwork, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -13,5 +15,7 @@ class Settings(BaseSettings):
     local_login_networks: list[IPvAnyNetwork] = ["127.0.0.0/8", "::1/128"]
     local_session_secret: SecretStr | None = None
     session_cookie_secure: bool = True
+    staff_session_hours: int = Field(default=8, ge=1, le=24)
+    media_root: Path = Path("data/media")
     max_auth_age_seconds: int = Field(default=3600, ge=60, le=86400)
     cors_origins: list[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]

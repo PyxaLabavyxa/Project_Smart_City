@@ -1,10 +1,10 @@
 from uuid import uuid4
 
+from app.database.models import MessageNotification, UserApartment
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from tests.test_api import headers
 
-from app.database.models import MessageNotification, UserApartment
+from tests.test_api import headers
 
 pytest_plugins = ["tests.test_api"]
 

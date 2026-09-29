@@ -11,3 +11,7 @@ class FSMReport(StatesGroup):
 class FSMViewingReports(StatesGroup):
     viewing = State()
     choose_house = State()
+
+
+class FSMStaffReply(StatesGroup):
+    waiting = State()

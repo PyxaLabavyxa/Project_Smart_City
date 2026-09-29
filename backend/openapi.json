@@ -765,6 +765,372 @@
           }
         }
       }
+    },
+    "/api/v1/staff/auth/login": {
+      "post": {
+        "tags": [
+          "Staff"
+        ],
+        "summary": "Login",
+        "operationId": "login_api_v1_staff_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/staff/auth/logout": {
+      "post": {
+        "tags": [
+          "Staff"
+        ],
+        "summary": "Logout",
+        "operationId": "logout_api_v1_staff_auth_logout_post",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        }
+      }
+    },
+    "/api/v1/staff/me": {
+      "get": {
+        "tags": [
+          "Staff"
+        ],
+        "summary": "Profile",
+        "operationId": "profile_api_v1_staff_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileOutput"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/staff/issues": {
+      "get": {
+        "tags": [
+          "Staff"
+        ],
+        "summary": "Issues",
+        "operationId": "issues_api_v1_staff_issues_get",
+        "parameters": [
+          {
+            "name": "house_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "House Id"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/IssueStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "priority",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/IssuePriority"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Priority"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 200,
+              "default": "",
+              "title": "Q"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100000,
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 25,
+              "title": "Page Size"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffIssuePage"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/staff/issues/{issue_id}": {
+      "get": {
+        "tags": [
+          "Staff"
+        ],
+        "summary": "Issue Detail",
+        "operationId": "issue_detail_api_v1_staff_issues__issue_id__get",
+        "parameters": [
+          {
+            "name": "issue_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Issue Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssueDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/staff/issues/{issue_id}/status": {
+      "post": {
+        "tags": [
+          "Staff"
+        ],
+        "summary": "Update Status",
+        "operationId": "update_status_api_v1_staff_issues__issue_id__status_post",
+        "parameters": [
+          {
+            "name": "issue_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Issue Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StatusInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionOutput"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/staff/issues/{issue_id}/messages": {
+      "post": {
+        "tags": [
+          "Staff"
+        ],
+        "summary": "Send Message",
+        "operationId": "send_message_api_v1_staff_issues__issue_id__messages_post",
+        "parameters": [
+          {
+            "name": "issue_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Issue Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MessageInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionOutput"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/staff/photos/{photo_id}": {
+      "get": {
+        "tags": [
+          "Staff"
+        ],
+        "summary": "Photo",
+        "operationId": "photo_api_v1_staff_photos__photo_id__get",
+        "parameters": [
+          {
+            "name": "photo_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Photo Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -850,6 +1216,31 @@
           "meters"
         ],
         "title": "AccountResponse"
+      },
+      "ActionOutput": {
+        "properties": {
+          "notification_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notification Id"
+          },
+          "changed": {
+            "type": "boolean",
+            "title": "Changed",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "notification_id"
+        ],
+        "title": "ActionOutput"
       },
       "ApartmentPage": {
         "properties": {
@@ -1029,6 +1420,88 @@
         ],
         "title": "CreateIssue"
       },
+      "DeliveryOutput": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "message_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message Id"
+          },
+          "author": {
+            "type": "string",
+            "title": "Author"
+          },
+          "delivery": {
+            "type": "string",
+            "enum": [
+              "sent",
+              "pending",
+              "retrying"
+            ],
+            "title": "Delivery"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "status",
+          "message_id",
+          "author",
+          "delivery",
+          "created_at"
+        ],
+        "title": "DeliveryOutput"
+      },
+      "EventOutput": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "created_at"
+        ],
+        "title": "EventOutput"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -1053,6 +1526,24 @@
         },
         "type": "object",
         "title": "HealthResponse"
+      },
+      "HouseOutput": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "address": {
+            "type": "string",
+            "title": "Address"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "address"
+        ],
+        "title": "HouseOutput"
       },
       "HouseResponse": {
         "properties": {
@@ -1102,6 +1593,147 @@
         ],
         "title": "IssueCategory"
       },
+      "IssueDetail": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "category": {
+            "$ref": "#/components/schemas/IssueCategory"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/IssuePriority"
+          },
+          "status": {
+            "$ref": "#/components/schemas/IssueStatus"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "house_id": {
+            "type": "integer",
+            "title": "House Id"
+          },
+          "address": {
+            "type": "string",
+            "title": "Address"
+          },
+          "author": {
+            "type": "string",
+            "title": "Author"
+          },
+          "entrance": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entrance"
+          },
+          "floor": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Floor"
+          },
+          "zone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zone"
+          },
+          "apartment": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Apartment"
+          },
+          "photo_count": {
+            "type": "integer",
+            "title": "Photo Count"
+          },
+          "photos": {
+            "items": {
+              "$ref": "#/components/schemas/PhotoOutput"
+            },
+            "type": "array",
+            "title": "Photos"
+          },
+          "history": {
+            "items": {
+              "$ref": "#/components/schemas/EventOutput"
+            },
+            "type": "array",
+            "title": "History"
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/MessageOutput"
+            },
+            "type": "array",
+            "title": "Messages"
+          },
+          "notifications": {
+            "items": {
+              "$ref": "#/components/schemas/DeliveryOutput"
+            },
+            "type": "array",
+            "title": "Notifications"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "description",
+          "category",
+          "priority",
+          "status",
+          "created_at",
+          "house_id",
+          "address",
+          "author",
+          "entrance",
+          "floor",
+          "zone",
+          "apartment",
+          "photo_count",
+          "photos",
+          "history",
+          "messages",
+          "notifications"
+        ],
+        "title": "IssueDetail"
+      },
       "IssueHistory": {
         "properties": {
           "status": {
@@ -1147,6 +1779,15 @@
           "next_cursor"
         ],
         "title": "IssuePage"
+      },
+      "IssuePriority": {
+        "type": "integer",
+        "enum": [
+          1,
+          2,
+          3
+        ],
+        "title": "IssuePriority"
       },
       "IssueResponse": {
         "properties": {
@@ -1224,6 +1865,115 @@
         ],
         "title": "IssueResponse"
       },
+      "IssueRow": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "category": {
+            "$ref": "#/components/schemas/IssueCategory"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/IssuePriority"
+          },
+          "status": {
+            "$ref": "#/components/schemas/IssueStatus"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "house_id": {
+            "type": "integer",
+            "title": "House Id"
+          },
+          "address": {
+            "type": "string",
+            "title": "Address"
+          },
+          "author": {
+            "type": "string",
+            "title": "Author"
+          },
+          "entrance": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entrance"
+          },
+          "floor": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Floor"
+          },
+          "zone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zone"
+          },
+          "apartment": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Apartment"
+          },
+          "photo_count": {
+            "type": "integer",
+            "title": "Photo Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "description",
+          "category",
+          "priority",
+          "status",
+          "created_at",
+          "house_id",
+          "address",
+          "author",
+          "entrance",
+          "floor",
+          "zone",
+          "apartment",
+          "photo_count"
+        ],
+        "title": "IssueRow"
+      },
       "IssueStatus": {
         "type": "string",
         "enum": [
@@ -1298,6 +2048,91 @@
           "zone"
         ],
         "title": "Location"
+      },
+      "LoginInput": {
+        "properties": {
+          "login": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Login"
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1,
+            "format": "password",
+            "title": "Password",
+            "writeOnly": true
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "login",
+          "password"
+        ],
+        "title": "LoginInput"
+      },
+      "MessageInput": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 1500,
+            "minLength": 1,
+            "title": "Text"
+          },
+          "request_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Request Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "text",
+          "request_id"
+        ],
+        "title": "MessageInput"
+      },
+      "MessageOutput": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "staff",
+              "resident"
+            ],
+            "title": "Direction"
+          },
+          "author": {
+            "type": "string",
+            "title": "Author"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "direction",
+          "author",
+          "text",
+          "created_at"
+        ],
+        "title": "MessageOutput"
       },
       "MessagePage": {
         "properties": {
@@ -1412,6 +2247,24 @@
         ],
         "title": "MeterResponse"
       },
+      "PhotoOutput": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "url"
+        ],
+        "title": "PhotoOutput"
+      },
       "Profile": {
         "properties": {
           "id": {
@@ -1445,6 +2298,32 @@
           "houses"
         ],
         "title": "Profile"
+      },
+      "ProfileOutput": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "houses": {
+            "items": {
+              "$ref": "#/components/schemas/HouseOutput"
+            },
+            "type": "array",
+            "title": "Houses"
+          },
+          "csrf_token": {
+            "type": "string",
+            "title": "Csrf Token"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "houses",
+          "csrf_token"
+        ],
+        "title": "ProfileOutput"
       },
       "ReadingInput": {
         "properties": {
@@ -1503,6 +2382,68 @@
           "request_id"
         ],
         "title": "SendMessage"
+      },
+      "StaffIssuePage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/IssueRow"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Counts"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size",
+          "counts"
+        ],
+        "title": "StaffIssuePage"
+      },
+      "StatusInput": {
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/IssueStatus"
+          },
+          "expected_status": {
+            "$ref": "#/components/schemas/IssueStatus"
+          },
+          "request_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Request Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "status",
+          "expected_status",
+          "request_id"
+        ],
+        "title": "StatusInput"
       },
       "ValidationError": {
         "properties": {

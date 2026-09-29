@@ -40,8 +40,13 @@ services:
       <<: *database
       BOT_TOKEN: ${BOT_TOKEN:-}
       SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
+      STAFF_SESSION_HOURS: ${STAFF_SESSION_HOURS:-8}
+      FORWARDED_ALLOW_IPS: ${FORWARDED_ALLOW_IPS:-127.0.0.1}
       CORS_ORIGINS: ${CORS_ORIGINS:-["http://localhost:3000","http://127.0.0.1:3000"]}
       LOCAL_LOGIN_ENABLED: "false"
+      MEDIA_ROOT: /srv/data/media
+    volumes:
+      - media:/srv/data/media:ro
     ports:
       - "127.0.0.1:${API_PORT:-8000}:8000"
     depends_on:
