@@ -64,3 +64,13 @@
 .backToList { composes:button from "@/shared/styles/controls.module.css"; margin-bottom:20px; font-size:12px; }
 .place { display:flex; align-items:center; gap:8px; color:var(--color-primary); font-size:12px; margin-left:auto; min-height:44px; }
 @media(max-width:760px) { .chatLayout { grid-template-columns:minmax(0,1fr); } .chatThread { display:none; padding:20px 16px; } .inbox { border-right:0; } .chatLayout[data-open=true] .inbox { display:none; } .chatLayout[data-open=true] .chatThread { display:block; } }
+
+.backToList { display: inline-grid; place-items: center; width: 44px; height: 44px; padding: 0; border-radius: 50%; }
+
+.recipient { flex-wrap: nowrap; gap: 10px; }
+.recipient .backToList { flex: 0 0 40px; width: 40px; height: 40px; margin: 0; }
+.recipient .avatar { flex-shrink: 0; width: 40px; height: 40px; }
+.recipient > div { min-width: 0; }
+.recipient h2 { font-size: 16px; }
+.recipient .place { flex-shrink: 0; gap: 4px; font-size: 11px; }
+@media (max-width: 360px) { .recipient { gap: 6px; } .recipient .avatar { width: 32px; height: 32px; font-size: 13px; } .recipient h2 { font-size: 14px; } .recipient p { font-size: 11px; } }

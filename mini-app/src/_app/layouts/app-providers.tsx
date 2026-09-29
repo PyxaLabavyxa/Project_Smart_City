@@ -12,6 +12,8 @@ import { ApiContext, useApi } from "@/shared/api/context";
 import { createApiClient, endpoints, maxLaunchData } from "@/shared/api/client";
 import { readPages } from "@/shared/api/pagination";
 import { useRemote } from "@/shared/api/use-remote";
+import { MiniAppPresence } from "@/features/mini-app-presence";
+import { OnboardingProvider } from "@/features/onboarding/onboarding";
 import { RequestState } from "@/shared/ui/navigation/request-state";
 
 export function AppProviders({ children }: { children: ReactNode }) {
@@ -53,7 +55,7 @@ function AuthenticatedApp({ children, mode }: { children: ReactNode; mode: "loca
   }, [mode]);
   const state = useRemote(load);
   if (!state.data) return <main className="connection-screen"><h1>ДомПульс</h1><RequestState {...state} /></main>;
-  return <ApiContext value={state.data.api}><ResidentHomes profile={state.data.profile}>{children}</ResidentHomes></ApiContext>;
+  return <ApiContext value={state.data.api}><MiniAppPresence /><OnboardingProvider userId={state.data.profile.id}><ResidentHomes profile={state.data.profile}>{children}</ResidentHomes></OnboardingProvider></ApiContext>;
 }
 
 function ResidentHomes({ profile, children }: { profile: ResidentProfile; children: ReactNode }) {

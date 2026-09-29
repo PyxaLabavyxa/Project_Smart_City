@@ -52,7 +52,7 @@ $env:PYTHONPATH = '.;backend'
 
 ## Docker
 
-Корневой Compose уже подключает общий volume `media`: бот пишет фото, API читает его в режиме read-only. Миграция `0004` создаёт таблицы сотрудников, сессий, переписки и уведомлений; существующие обращения сохраняются.
+Корневой Compose уже подключает общий volume `media`: бот пишет фото, API читает его в режиме read-only. Миграция `0005` создаёт таблицы сотрудников, сессий, переписки и уведомлений; существующие обращения сохраняются.
 
 После пересборки сервисов выполните из корня (для production добавьте те же `-f compose.yaml -f compose.production.yaml`, что использовали при запуске):
 
@@ -81,7 +81,7 @@ python -m scripts.manage_staff enable manager
 | Файл / каталог | Ответственность |
 | --- | --- |
 | `app/database/models.py` | Общие таблицы, в том числе `StaffUser`, `StaffHouse`, `StaffSession`, `IssueMessage`, `StaffNotification` |
-| `backend/migrations/versions/0004_staff_portal.py` | Изменение схемы через Alembic |
+| `backend/migrations/versions/0005_staff_portal.py` | Изменение схемы через Alembic |
 | `backend/smart_city_api/core/staff_auth.py` | Хеширование паролей, сессии, CSRF и ограничение попыток входа |
 | `backend/smart_city_api/api/routes/staff.py` | HTTP-маршруты кабинета и защищённая выдача фото |
 | `backend/smart_city_api/services/staff.py` | Запросы по назначенным домам, транзакции статусов и сообщений |

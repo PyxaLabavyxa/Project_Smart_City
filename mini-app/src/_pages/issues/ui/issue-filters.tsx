@@ -12,7 +12,7 @@ export function IssueFilters({ filters, categories, onChange, onReset }: {
   const statusOptions = { all: "Все статусы", active: "Активные", ...issueStatusLabels };
   const count = [filters.category, filters.entrance, filters.floor, filters.zone, filters.query, filters.onlyMine].filter(Boolean).length;
   return <details className={styles.filterPanel} open={count > 0 || undefined}>
-    <summary>Фильтры и поиск {count > 0 && <span>· {count}</span>}</summary>
+    <summary data-tour="issue-search">Фильтры и поиск {count > 0 && <span>· {count}</span>}</summary>
     <section aria-label="Фильтры обращений" className={styles.filters}>
     <label>Статус<select value={filters.status} onChange={event => onChange({ ...filters, status: event.target.value as Filters["status"] })}>
       {Object.entries(statusOptions).map(([value, label]) => <option key={value} value={value}>{label}</option>)}

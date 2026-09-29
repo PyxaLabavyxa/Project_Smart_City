@@ -112,6 +112,45 @@
         }
       }
     },
+    "/api/v1/auth/presence": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Presence",
+        "operationId": "presence_api_v1_auth_presence_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PresenceInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "MAXLaunchData": []
+          }
+        ]
+      }
+    },
     "/api/v1/me": {
       "get": {
         "tags": [
@@ -2264,6 +2303,32 @@
           "url"
         ],
         "title": "PhotoOutput"
+      },
+      "PresenceInput": {
+        "properties": {
+          "client_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Client Id"
+          },
+          "sequence": {
+            "type": "integer",
+            "maximum": 2147483647.0,
+            "minimum": 1.0,
+            "title": "Sequence"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "client_id",
+          "sequence",
+          "active"
+        ],
+        "title": "PresenceInput"
       },
       "Profile": {
         "properties": {

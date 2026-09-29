@@ -25,7 +25,7 @@ export function HouseExplorer({ initialPlace }: { initialPlace?: HouseLocation }
         <h2 id="selected-room" aria-live="polite">{zoneLabel(selected)}</h2><p>{formatLocation(selected)}</p>
         <span className={styles.state} data-attention={selectedIssues.some(issue => issue.status !== "completed") || undefined} data-planned={selected.zone === "technical" && !selectedIssues.length || undefined}>{selectedIssues.some(issue => issue.status !== "completed") ? "△ Есть активное обращение" : selectedIssues.length ? "✓ Недавно решено" : selected.zone === "technical" ? "◷ Плановые работы" : "✓ В порядке"}</span>
         <p>{selectedIssues.length ? `Обращений по этому помещению: ${selectedIssues.length}. Подробности — ниже.` : "Обращений по этому помещению нет."}</p>
-        <div className={styles.actions}>
+        <div data-tour="plan-actions" className={styles.actions}>
           <Link className={styles.action} href="/issues/new?from=plan" onClick={() => { closeSheet(); select(selected); startAt(selected); }}>＋ Сообщить о проблеме</Link>
           {selected.zone === "apartment" && selected.apartment !== house.residentApartment && <Link className={styles.action} href="/messages?from=plan" onClick={() => { closeSheet(); select(selected); }}>Написать в квартиру {selected.apartment}</Link>}
           {selected.zone !== "apartment" && <Link className={styles.action} onClick={closeSheet} href="/cameras">Камеры дома</Link>}
@@ -34,9 +34,9 @@ export function HouseExplorer({ initialPlace }: { initialPlace?: HouseLocation }
       </section>);
   return <div className={styles.layout}>
     <section className={styles.canvas} aria-label="План этажа">
-      <FloorControls expanded house={house} entrance={selected.entrance} floor={selected.floor} onChange={(entrance, floor) => setSelected({ houseId: house.id, entrance, floor, zone: "corridor" })} />
+      <div data-tour="plan-floors"><FloorControls expanded house={house} entrance={selected.entrance} floor={selected.floor} onChange={(entrance, floor) => setSelected({ houseId: house.id, entrance, floor, zone: "corridor" })} /></div>
       <div className={styles.searchRow}>
-        <form className={styles.search} onSubmit={event => {
+        <form data-tour="plan-search" className={styles.search} onSubmit={event => {
           event.preventDefault(); const place = findApartment(house, Number(apartment));
           if (place) { chooseRoom(place); setSearchError(""); } else setSearchError(`Введите номер от 1 до ${totalApartments(house)}`);
         }}>
@@ -47,7 +47,7 @@ export function HouseExplorer({ initialPlace }: { initialPlace?: HouseLocation }
         <p className={styles.range}>Квартиры <strong>{apartments[0]}–{apartments.at(-1)}</strong><small>на выбранном этаже</small></p>
       </div>
       <FloorPlan house={house} selected={selected} onSelect={chooseRoom} problemPlaces={problemPlaces} resolvedPlaces={resolvedPlaces} />
-      <nav className={styles.otherZones} aria-label="Другие зоны дома">{([{ zone:"house", label:"Дом" },{ zone:"courtyard", label:"Двор" },{ zone:"parking", label:"Парковка" }] as const).map(item => <button key={item.zone} type="button" aria-pressed={selected.zone === item.zone} onClick={() => chooseRoom({ houseId:house.id,entrance:1,floor:1,zone:item.zone })}>{item.label}</button>)}</nav>
+      <nav data-tour="plan-zones" className={styles.otherZones} aria-label="Другие зоны дома">{([{ zone:"house", label:"Дом" },{ zone:"courtyard", label:"Двор" },{ zone:"parking", label:"Парковка" }] as const).map(item => <button key={item.zone} type="button" aria-pressed={selected.zone === item.zone} onClick={() => chooseRoom({ houseId:house.id,entrance:1,floor:1,zone:item.zone })}>{item.label}</button>)}</nav>
     </section>
     <aside className={styles.sidebar}>
       <header className={styles.floorHeading}><p>Подъезд {String(selected.entrance).padStart(2, "0")}</p><h2>Этаж {selected.floor}</h2><p>Квартир: {apartments.length} · обращений: {floorIssues.length}</p></header>
