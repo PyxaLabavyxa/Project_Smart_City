@@ -34,7 +34,7 @@ export function HouseExplorer({ initialPlace }: { initialPlace?: HouseLocation }
       </section>);
   return <div className={styles.layout}>
     <section className={styles.canvas} aria-label="План этажа">
-      <div data-tour="plan-floors"><FloorControls expanded house={house} entrance={selected.entrance} floor={selected.floor} onChange={(entrance, floor) => setSelected({ houseId: house.id, entrance, floor, zone: "corridor" })} /></div>
+      <div data-tour="plan-selection"><div data-tour="plan-floors"><FloorControls expanded house={house} entrance={selected.entrance} floor={selected.floor} onChange={(entrance, floor) => setSelected({ houseId: house.id, entrance, floor, zone: "corridor" })} /></div>
       <div className={styles.searchRow}>
         <form data-tour="plan-search" className={styles.search} onSubmit={event => {
           event.preventDefault(); const place = findApartment(house, Number(apartment));
@@ -46,8 +46,9 @@ export function HouseExplorer({ initialPlace }: { initialPlace?: HouseLocation }
         </form>
         <p className={styles.range}>Квартиры <strong>{apartments[0]}–{apartments.at(-1)}</strong><small>на выбранном этаже</small></p>
       </div>
-      <FloorPlan house={house} selected={selected} onSelect={chooseRoom} problemPlaces={problemPlaces} resolvedPlaces={resolvedPlaces} />
-      <nav data-tour="plan-zones" className={styles.otherZones} aria-label="Другие зоны дома">{([{ zone:"house", label:"Дом" },{ zone:"courtyard", label:"Двор" },{ zone:"parking", label:"Парковка" }] as const).map(item => <button key={item.zone} type="button" aria-pressed={selected.zone === item.zone} onClick={() => chooseRoom({ houseId:house.id,entrance:1,floor:1,zone:item.zone })}>{item.label}</button>)}</nav>
+      </div>
+      <FloorPlan tourTarget="plan-map" house={house} selected={selected} onSelect={chooseRoom} problemPlaces={problemPlaces} resolvedPlaces={resolvedPlaces} />
+      <div className={styles.otherZones}><nav data-tour="plan-zones" className={styles.zoneButtons} aria-label="Другие зоны дома">{([{ zone:"house", label:"Дом" },{ zone:"courtyard", label:"Двор" },{ zone:"parking", label:"Парковка" }] as const).map(item => <button key={item.zone} type="button" aria-pressed={selected.zone === item.zone} onClick={() => chooseRoom({ houseId:house.id,entrance:1,floor:1,zone:item.zone })}>{item.label}</button>)}</nav></div>
     </section>
     <aside className={styles.sidebar}>
       <header className={styles.floorHeading}><p>Подъезд {String(selected.entrance).padStart(2, "0")}</p><h2>Этаж {selected.floor}</h2><p>Квартир: {apartments.length} · обращений: {floorIssues.length}</p></header>

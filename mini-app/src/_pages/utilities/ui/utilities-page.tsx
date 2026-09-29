@@ -22,10 +22,10 @@ export function UtilitiesPage() {
 
     {!apartment ? <section className={styles.panel}><h2>Квартира не найдена</h2><p>Проверьте структуру дома: квартира {house.residentApartment} в ней отсутствует. Начисления и счётчики недоступны.</p></section> : <>
       <div className={styles.layout}>
-        <section className={styles.panel} aria-labelledby="bill-title">
+        <section data-tour="utility-bill" className={styles.panel} aria-labelledby="bill-title">
           <div className={styles.row}><h2 id="bill-title">{account.period || "Квитанция пока не выставлена"}</h2></div>
           {account.invoiceNumber && <p className={styles.muted}>Квитанция № {account.invoiceNumber}</p>}
-          <p data-tour="utility-bill" className={styles.amount}>{money(total)}</p>
+          <p className={styles.amount}>{money(total)}</p>
           {account.due && <p>Оплатить до {account.due}</p>}
           <p className={styles.muted}>Сумма по строкам квитанции</p>
           {account.invoiceNumber && total > 0 && <Payment amount={total} apartment={house.residentApartment} period={account.period} />}

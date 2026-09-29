@@ -4,7 +4,8 @@ import { Icon } from "@/shared/ui/icon";
 import { floorApartments, sameLocation, zoneLabel, type House, type HouseLocation, type CommonZone } from "../model/house";
 import styles from "./floor-plan.module.css";
 
-export function FloorPlan({ house, selected, onSelect, problemPlaces = [], resolvedPlaces = [] }: {
+export function FloorPlan({ house, selected, onSelect, problemPlaces = [], resolvedPlaces = [], tourTarget }: {
+  tourTarget?: string;
   house: House; selected: HouseLocation; onSelect: (place: HouseLocation) => void;
   problemPlaces?: readonly HouseLocation[];
   resolvedPlaces?: readonly HouseLocation[];
@@ -33,7 +34,7 @@ export function FloorPlan({ house, selected, onSelect, problemPlaces = [], resol
   return <div className={styles.container}>
     {pages > 1 && <><div className={styles.pagination}><button type="button" disabled={page === 0} aria-label="Предыдущий участок" onClick={() => changePage(page - 1)}>←</button><label>Участок коридора<select value={page} onChange={event => changePage(Number(event.target.value))}>{Array.from({ length: pages }, (_, index) => <option key={index} value={index}>{index + 1} из {pages}</option>)}</select></label><button type="button" disabled={page === pages - 1} aria-label="Следующий участок" onClick={() => changePage(page + 1)}>→</button></div><p className={styles.segmentRange} aria-live="polite">На схеме: квартиры {apartments[0]}–{apartments.at(-1)}</p></>}
     <div className={styles.caption}><span>Схема этажа {selected.floor}</span><span>Квартир: {allApartments.length}{pages > 1 ? ` · участок ${page + 1}/${pages}` : ""}</span></div>
-    <div className={styles.map} aria-label={`Помещения этажа ${selected.floor}`}>
+    <div data-tour={tourTarget} className={styles.map} aria-label={`Помещения этажа ${selected.floor}`}>
       {pages > 1 && <div className={styles.services}>{zone("elevator", styles.service)}{zone("stairs", styles.service)}{zone("technical", styles.service)}</div>}
       <div className={styles.floor} data-large={pages > 1 || undefined} style={{ "--rows": Math.max(1, Math.ceil(apartments.length / 2)) } as CSSProperties}>
         <div className={styles.core}>{pages === 1 && <div className={styles.transport}>{zone("elevator", styles.service)}{zone("stairs", styles.service)}</div>}{zone("corridor", styles.corridor)}{pages === 1 && zone("technical", `${styles.service} ${styles.technical}`)}</div>

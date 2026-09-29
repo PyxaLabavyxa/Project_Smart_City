@@ -15,9 +15,9 @@ export function CamerasPage() {
   return <SectionPage title="Камеры" description="Общие зоны вашего дома" backHref="/" backLabel="На главную">
     <RequestState {...state} />
     <ul className={styles.list} aria-label="Камеры общих зон">{state.data?.map(camera => <li key={camera.id}>
-      <Link href={`/cameras/${camera.id}`} className={styles.camera}>
+      <Link data-tour="camera-card" href={`/cameras/${camera.id}`} className={styles.camera}>
         <CameraPreview camera={camera} compact />
-        <div className={styles.cardBody}><div className={styles.row}><h2 data-tour="camera-card">{camera.name}</h2><CameraStatus status={camera.status} /></div><p>{camera.note}</p></div>
+        <div className={styles.cardBody}><div className={styles.row}><h2>{camera.name}</h2><CameraStatus status={camera.status} /></div><p>{camera.note}</p></div>
       </Link>
     </li>)}</ul>
     {!state.loading && !state.error && !state.data?.length && <p>Камеры этого дома пока не подключены.</p>}
