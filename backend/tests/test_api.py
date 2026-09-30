@@ -126,6 +126,8 @@ def api(tmp_path):
     if postgres:
         with engine.begin() as connection:
             for table in Base.metadata.sorted_tables:
+                if "id" not in table.c:
+                    continue
                 name = table.name
                 connection.execute(
                     text(

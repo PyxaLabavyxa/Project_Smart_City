@@ -15,9 +15,10 @@ from chatbot.keyboards.inline import mini_app_button
 logger = logging.getLogger(__name__)
 
 
-def reply_keyboard(issue_id: int):
+def reply_keyboard(issue_id: int, *, rejected: bool = False):
     builder = InlineKeyboardBuilder()
-    builder.add(CallbackButton(text="💬 Ответить сотруднику", payload=f"staff_reply_{issue_id}"))
+    if not rejected:
+        builder.add(CallbackButton(text="💬 Ответить сотруднику", payload=f"staff_reply_{issue_id}"))
     builder.row(mini_app_button())
     return builder.as_markup()
 
@@ -64,6 +65,7 @@ async def claim_next(sessions):
                     StaffNotification.max_user_id,
                     StaffNotification.text,
                     StaffNotification.attempts,
+                    StaffNotification.kind,
                 )
             )
         ).one_or_none()
@@ -84,7 +86,7 @@ async def deliver_pending(bot, sessions=session_factory, limit: int = 20) -> int
                     user_id=row.max_user_id,
                     text=row.text,
                     notify=True,
-                    attachments=[reply_keyboard(row.issue_id)],
+                    attachments=[reply_keyboard(row.issue_id, rejected=row.kind == "rejection")],
                 )
             if result is None or isinstance(result, Error):
                 raise RuntimeError("MAX did not confirm sending")

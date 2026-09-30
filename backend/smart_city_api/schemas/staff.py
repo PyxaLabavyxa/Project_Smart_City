@@ -25,12 +25,20 @@ class HouseOutput(BaseModel):
 class ProfileOutput(BaseModel):
     name: str
     houses: list[HouseOutput]
+    contact_houses: list[HouseOutput]
     csrf_token: str
 
 
 class StatusInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
     status: IssueStatus
+    expected_status: IssueStatus
+    request_id: UUID
+
+
+class RejectInput(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    reason: str = Field(min_length=3, max_length=1500)
     expected_status: IssueStatus
     request_id: UUID
 

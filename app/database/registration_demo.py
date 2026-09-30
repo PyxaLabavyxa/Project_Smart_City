@@ -1,5 +1,6 @@
 from sqlalchemy import select, text
 
+from app.database.demo_contacts import seed_demo_contacts
 from app.database.demo_issues import populate_house_examples
 from app.database.demo_services import provision_demo_house_services
 from app.database.models import Apartment, CompanyHouse, House, ManagementCompany
@@ -52,4 +53,5 @@ async def seed_registration_demo(session):
             )
     await populate_house_examples(session, houses)
     await provision_demo_house_services(session, houses)
+    await seed_demo_contacts(session, houses)
     await session.flush()

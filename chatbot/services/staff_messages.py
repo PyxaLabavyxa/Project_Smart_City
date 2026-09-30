@@ -10,6 +10,7 @@ async def reply_issue(session, max_user_id: int, issue_id: int) -> Issue | None:
         .join(User, User.id == Issue.user_id)
         .where(
             Issue.id == issue_id,
+            Issue.rejected_at.is_(None),
             User.max_user_id == max_user_id,
             exists(select(StaffNotification.id).where(StaffNotification.issue_id == Issue.id)),
         )

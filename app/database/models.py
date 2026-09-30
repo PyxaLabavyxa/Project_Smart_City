@@ -136,6 +136,8 @@ class Issue(Base):
     apartment_id: Mapped[int | None] = mapped_column(ForeignKey("apartments.id"))
     request_id: Mapped[str | None] = mapped_column(String(36))
     request_hash: Mapped[str | None] = mapped_column(String(64))
+    rejected_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    rejection_reason: Mapped[str | None] = mapped_column(String(1500))
 
     __table_args__ = (UniqueConstraint("user_id", "request_id", name="uq_issue_request"),)
 
