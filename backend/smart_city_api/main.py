@@ -5,7 +5,7 @@ from pathlib import Path
 from app.database.registration_demo import seed_registration_demo
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -37,8 +37,29 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             if database:
                 await database.close()
 
-    app = FastAPI(title=settings.app_name, version="0.1.0", lifespan=lifespan)
+    app = FastAPI(
+        title=settings.app_name,
+        version="0.1.0",
+        lifespan=lifespan,
+        docs_url="/api/docs",
+        redoc_url="/api/redoc",
+        openapi_url="/api/openapi.json",
+        swagger_ui_oauth2_redirect_url="/api/docs/oauth2-redirect",
+        swagger_ui_parameters={"filter": True, "displayRequestDuration": True},
+    )
     app.state.settings = settings
+
+    @app.get("/docs", include_in_schema=False)
+    async def swagger_redirect():
+        return RedirectResponse("/api/docs")
+
+    @app.get("/redoc", include_in_schema=False)
+    async def redoc_redirect():
+        return RedirectResponse("/api/redoc")
+
+    @app.get("/openapi.json", include_in_schema=False)
+    async def openapi_redirect():
+        return RedirectResponse("/api/openapi.json")
 
     @app.middleware("http")
     async def private_responses(request, call_next):

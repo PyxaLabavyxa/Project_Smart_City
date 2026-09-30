@@ -37,7 +37,7 @@ docker compose --env-file .env.docker --profile bot up -d --build
 | Сервис | Назначение | Доступ |
 | --- | --- | --- |
 | `frontend` | Next.js standalone | `http://localhost:3000` |
-| `api` | FastAPI | `http://localhost:8000/docs` |
+| `api` | FastAPI | `http://localhost:8000/api/docs` |
 | `db` | PostgreSQL 17 | `db:5432`, только контейнеры |
 | `migrate` | Alembic перед запуском приложений | Одноразовая команда |
 | `seed` | Локальный житель | Только local override |
@@ -49,9 +49,9 @@ docker compose --env-file .env.docker --profile bot up -d --build
 
 ## Данные
 
-PostgreSQL хранится в volume `dompulse_postgres_data`, фотографии бота — в `dompulse_media`. API читает тот же том в режиме read-only и выдаёт фото сотрудникам после проверки доступа к дому. Данные из внешней БД автоматически не переносятся; перед переносом нужны резервная копия и отдельное восстановление.
+PostgreSQL хранится в volume `dompulse_postgres_data`, фотографии — в `dompulse_media`. Бот и API записывают вложения в этот том; API выдаёт их жителям и сотрудникам после проверки доступа. Данные из внешней БД автоматически не переносятся; перед переносом нужны резервная копия и отдельное восстановление.
 
-Кабинет сотрудника: `http://localhost:8000/staff/`. Создание аккаунтов и назначение домов: [инструкция](backend/docs/staff-portal.md).
+Кабинет сотрудника: `http://localhost:8000/staff/`. Создание аккаунтов и назначение домов: [инструкция](README.md#сотрудник-ук). Авторизация сотрудника в Swagger: [backend README](backend/README.md#маршруты-и-данные).
 
 `POSTGRES_PASSWORD` применяется при создании базы в пустом volume. Изменение переменной не меняет пароль существующей роли PostgreSQL.
 

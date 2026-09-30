@@ -13,6 +13,7 @@ from smart_city_api.core.staff_auth import (
     COOKIE,
     COOKIE_PATH,
     Staff,
+    StaffAuth,
     authenticate,
     check_login_limit,
     create_session,
@@ -29,6 +30,7 @@ from smart_city_api.schemas.staff import (
     MessageInput,
     ProfileOutput,
     StaffIssuePage,
+    StaffTokenOutput,
     StatusInput,
 )
 from smart_city_api.services import staff as service
@@ -45,19 +47,21 @@ async def contacts(house_id: int, session: Session, employee: Staff):
 
 
 @router.post("/houses/{house_id}/contacts", response_model=ContactsOutput)
-async def update_contacts(
-    house_id: int, body: ContactsInput, session: Session, employee: Staff
-):
+async def update_contacts(house_id: int, body: ContactsInput, session: Session, employee: Staff):
     return await save_contacts(session, employee.id, house_id, body)
 
 
-@router.post("/auth/login", status_code=204)
-async def login(body: LoginInput, request: Request, response: Response, session: Session):
+async def authenticate_login(body: LoginInput, request: Request, session: Session):
     require_same_origin(request)
     await check_login_limit(
         session, body.login, request.client.host if request.client else "unknown"
     )
-    employee = await authenticate(session, body.login, body.password.get_secret_value())
+    return await authenticate(session, body.login, body.password.get_secret_value())
+
+
+@router.post("/auth/login", status_code=204)
+async def login(body: LoginInput, request: Request, response: Response, session: Session):
+    employee = await authenticate_login(body, request, session)
     old_token = request.cookies.get(COOKIE)
     if old_token:
         await session.execute(
@@ -76,26 +80,41 @@ async def login(body: LoginInput, request: Request, response: Response, session:
     )
 
 
+@router.post("/auth/token", response_model=StaffTokenOutput)
+async def access_token(body: LoginInput, request: Request, session: Session):
+    employee = await authenticate_login(body, request, session)
+    hours = request.app.state.settings.staff_session_hours
+    token = await create_session(session, employee.id, hours)
+    return StaffTokenOutput(access_token=token, expires_in=hours * 3600)
+
+
 @router.post("/auth/logout", status_code=204)
-async def logout(request: Request, response: Response, session: Session, employee: Staff):
+async def logout(
+    request: Request,
+    response: Response,
+    session: Session,
+    employee: Staff,
+    authentication: StaffAuth,
+):
     await session.execute(
         delete(StaffSession).where(
-            StaffSession.token_hash == token_hash(request.cookies[COOKIE]),
+            StaffSession.token_hash == token_hash(authentication.token),
             StaffSession.staff_id == employee.id,
         )
     )
     await session.commit()
-    response.delete_cookie(
-        COOKIE,
-        path=COOKIE_PATH,
-        secure=request.app.state.settings.session_cookie_secure,
-        httponly=True,
-        samesite="strict",
-    )
+    if not authentication.via_bearer:
+        response.delete_cookie(
+            COOKIE,
+            path=COOKIE_PATH,
+            secure=request.app.state.settings.session_cookie_secure,
+            httponly=True,
+            samesite="strict",
+        )
 
 
 @router.get("/me", response_model=ProfileOutput)
-async def profile(request: Request, session: Session, employee: Staff):
+async def profile(session: Session, employee: Staff, authentication: StaffAuth):
     houses = (
         await session.scalars(
             select(House)
@@ -106,7 +125,7 @@ async def profile(request: Request, session: Session, employee: Staff):
     return ProfileOutput(
         name=employee.name,
         houses=[HouseOutput(id=h.id, address=h.address) for h in houses],
-        csrf_token=csrf_token(request.cookies[COOKIE]),
+        csrf_token=csrf_token(authentication.token),
     )
 
 

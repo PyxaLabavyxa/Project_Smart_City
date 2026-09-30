@@ -1,15 +1,50 @@
-# Development draft, not an official evaluation-platform schema.
-# The PDF describes fields but supplies no exact schema or version identifier.
-# Align field names/schema_version with the organizer's template before submission.
 schema_version: "draft-0.1"
+format: "Project verification checklist; not an official evaluation-platform schema"
 solution: "Домовед"
-status: development
-base_url: null # Set the deployed public HTTPS URL before submission.
+updated_at: "2026-09-30"
+status: deployed
+base_url: "https://201.34.159.33"
 local_base_url: "http://127.0.0.1:8000"
 openapi: "openapi.json"
+documentation:
+  swagger: "/api/docs"
+  redoc: "/api/redoc"
+  openapi: "/api/openapi.json"
+authentication:
+  staff:
+    scheme: StaffSession
+    type: http
+    bearer_format: "Opaque staff session token"
+    issue_token:
+      method: POST
+      path: "/api/v1/staff/auth/token"
+      headers:
+        Origin: "${BASE_URL}"
+        Content-Type: application/json
+      body:
+        login: "${STAFF_LOGIN}"
+        password: "${STAFF_PASSWORD}"
+      expected_status: 200
+      token_field: access_token
+      lifetime_field: expires_in
+    request_header: "Authorization: Bearer ${STAFF_ACCESS_TOKEN}"
+    logout: "POST /api/v1/staff/auth/logout"
+    note: "Используйте действующего сотрудника. Доступ ограничен назначенными домами. Bearer-запросы не требуют CSRF. Cookie-вход кабинета по /auth/login требует Origin и X-CSRF-Token для записей."
+  resident:
+    scheme: MAXLaunchData
+    type: http
+    bearer_format: "Signed MAX initData"
+    request_header: "Authorization: Bearer ${MAX_INIT_DATA}"
+    note: "Нужны свежие подписанные данные MAX и существующий профиль жителя. Вход POST /api/v1/auth/max создаёт профиль; регистрация квартиры доступна по /api/v1/registration."
+variables:
+  BASE_URL: "https://201.34.159.33"
+  STAFF_LOGIN: "Provided by the operator"
+  STAFF_PASSWORD: "Provided separately; never stored in this file"
+  STAFF_ACCESS_TOKEN: "Taken from issue_token.access_token"
+  MAX_INIT_DATA: "Fresh signed launch data provided by the resident"
 checks:
   - id: service-live
-    description: "Процесс API доступен"
+    description: "Процесс API доступен через публичный reverse proxy"
     method: GET
     path: /health/live
     parameters:
@@ -27,7 +62,7 @@ checks:
         properties:
           status: {type: string, const: ok}
   - id: database-ready
-    description: "Настроенное соединение с БД доступно; без DATABASE_URL ожидается 503"
+    description: "БД доступна; при недоступности или отсутствии DATABASE_URL ожидается 503"
     method: GET
     path: /health/ready
     parameters:
@@ -53,5 +88,51 @@ checks:
     expected:
       status_codes: [401]
       content_type: application/json
-# Authenticated checks require an organizer-approved resident account and MAX launch data.
-# Integration tests cover those scenarios using isolated PostgreSQL schemas.
+  - id: openapi-contract
+    description: "Актуальная схема API с MAXLaunchData и StaffSession"
+    method: GET
+    path: /api/openapi.json
+    parameters: {path: {}, query: {}, headers: {}, body: null}
+    role: anonymous
+    expected:
+      status_codes: [200]
+      content_type: application/json
+      json_schema:
+        type: object
+        required: [openapi, info, paths, components]
+  - id: anonymous-staff-denied
+    description: "Данные сотрудника недоступны без его сессии"
+    method: GET
+    path: /api/v1/staff/me
+    parameters: {path: {}, query: {}, headers: {}, body: null}
+    role: anonymous
+    expected: {status_codes: [401], content_type: application/json}
+  - id: staff-profile
+    description: "Профиль сотрудника содержит только назначенные дома"
+    method: GET
+    path: /api/v1/staff/me
+    requires: [STAFF_ACCESS_TOKEN]
+    parameters:
+      path: {}
+      query: {}
+      headers: {Authorization: "Bearer ${STAFF_ACCESS_TOKEN}"}
+      body: null
+    role: staff
+    expected:
+      status_codes: [200]
+      content_type: application/json
+      json_schema:
+        type: object
+        required: [name, houses, csrf_token]
+  - id: resident-profile
+    description: "Профиль жителя и доступные ему квартиры"
+    method: GET
+    path: /api/v1/me
+    requires: [MAX_INIT_DATA]
+    parameters:
+      path: {}
+      query: {}
+      headers: {Authorization: "Bearer ${MAX_INIT_DATA}"}
+      body: null
+    role: resident
+    expected: {status_codes: [200], content_type: application/json}
