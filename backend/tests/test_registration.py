@@ -124,17 +124,32 @@ def test_staff_scope_decisions_and_resubmission(staff_api):
 
 
 def test_seed_five_houses_is_idempotent_and_does_not_assign(tmp_path):
-    from app.database.models import Base, House, Issue
+    from app.database.models import Base, House, Issue, ManagementCompany
 
     async def scenario():
         db = Database(f"sqlite+aiosqlite:///{tmp_path / 'seed.db'}")
         try:
             async with db.engine.begin() as connection:
                 await connection.run_sync(Base.metadata.create_all)
-            for _ in range(2):
-                async with db.sessions.begin() as session:
-                    await seed_registration_demo(session)
+            async with db.sessions.begin() as session:
+                await seed_registration_demo(session)
+                company = await session.scalar(select(ManagementCompany))
+                original_company_id = company.id
+                original_house_ids = list(
+                    await session.scalars(select(House.id).order_by(House.id))
+                )
+                company.name = "УК «Дом" + "Пульс»"
+            async with db.sessions.begin() as session:
+                await seed_registration_demo(session)
             async with db.sessions() as session:
+                companies = list(await session.scalars(select(ManagementCompany)))
+                assert [(c.id, c.name) for c in companies] == [
+                    (original_company_id, "УК «Домовед»")
+                ]
+                assert (
+                    list(await session.scalars(select(House.id).order_by(House.id)))
+                    == original_house_ids
+                )
                 assert list(
                     await session.scalars(select(House.floors_count).order_by(House.id))
                 ) == [9, 7, 5, 12, 10]

@@ -1,0 +1,6 @@
+.art { pointer-events:none; overflow:hidden; mask-image:linear-gradient(90deg,transparent 0%,#000 30%); }
+.art img { object-fit:contain; object-position:right bottom; }
+.art .night { display:none; }
+:global(:root[data-theme="dark"]) .art .day { display:none; }
+:global(:root[data-theme="dark"]) .art .night { display:block; }
+@media(max-width:760px) { .art img { object-fit:cover; } }

@@ -10,7 +10,7 @@ test('tour controls stay in place when targets move between steps', () => {
     assert.deepEqual(a.card, b.card);
     assert(a.card.left >= 12);
     assert(a.card.left + card.width <= viewport.width - 12);
-    assert.equal(a.card.top + card.height, viewport.height - 12);
+    assert.equal(a.card.top + card.height, viewport.height - (viewport.width <= 760 ? 78 : 0) - 12);
   }
 });
 
@@ -33,4 +33,12 @@ test('offscreen targets never produce negative spotlight dimensions', () => {
     assert(spot.width >= 0 && spot.height >= 0);
     assert(spot.left >= 4 && spot.left + spot.width <= 316);
   }
+});
+
+test('tour respects navigation safe area and fits a short mobile viewport', () => {
+  const viewport = { width: 320, height: 450 };
+  const card = { width: 296, height: 420 };
+  const layout = tourLayout({ left: 16, top: 10, width: 288, height: 300 }, viewport, card, 102);
+  assert.equal(layout.card.top, 12);
+  assert(layout.spot.top + layout.spot.height <= layout.card.top);
 });

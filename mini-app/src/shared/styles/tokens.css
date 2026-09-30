@@ -1,16 +1,16 @@
 :root {
   color-scheme: light;
-  --color-bg: #f7f7f4;
+  --color-bg: #f2f8ff;
   --color-surface: #ffffff;
-  --color-ink: #20242a;
-  --color-muted: #616771;
-  --color-line: #e4e5e3;
-  --color-primary: #315bef;
-  --color-action: #315bef;
+  --color-ink: #08183f;
+  --color-muted: #687a9b;
+  --color-line: #dae6f7;
+  --color-primary: #2f6bff;
+  --color-action: #2f6bff;
   --color-on-action: #ffffff;
-  --color-teal: #34877e;
-  --color-soft: #edf1ff;
-  --color-neutral: #eeefec;
+  --color-teal: #008f8c;
+  --color-soft: #eaf3ff;
+  --color-neutral: #eaf1fb;
   --color-danger: #b04a40;
   --color-danger-bg: #f9e9e6;
   --color-warning: #815618;
@@ -21,10 +21,10 @@
   --color-info-bg: #eaf0fc;
   --color-focus: #a3b5ff;
   --radius-sm: 5px;
-  --radius-input: 8px;
-  --radius-button: 10px;
-  --radius-card: 14px;
-  --radius-panel: 18px;
+  --radius-input: 12px;
+  --radius-button: 14px;
+  --radius-card: 24px;
+  --radius-panel: 26px;
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -42,25 +42,29 @@
   --control-height: 48px;
   --shadow-surface: none;
 }
-:root[data-theme="dark"] {
-  color-scheme: dark;
-  --color-bg: #181a1e;
-  --color-surface: #22252b;
-  --color-ink: #f2f3f5;
-  --color-muted: #b3b9c4;
-  --color-line: #3a3f48;
-  --color-primary: #91a7ff;
-  --color-teal: #8ac9bd;
-  --color-soft: #28324d;
-  --color-neutral: #292d33;
-  --color-danger: #f2b4ad;
-  --color-danger-bg: #482f2b;
-  --color-warning: #f3cf8f;
-  --color-warning-bg: #453821;
-  --color-success: #a2dbcb;
-  --color-success-bg: #253e37;
-  --color-info: #bdd0fa;
-  --color-info-bg: #2b3852;
+ :root[data-theme="dark"] {
+  color-scheme:dark;
+  --color-bg:#0c1626;
+  --color-surface:#15243a;
+  --color-ink:#edf4ff;
+  --color-muted:#a6bad4;
+  --color-line:#2b405c;
+  --color-primary:#8db7ff;
+  --color-action:#3971df;
+  --color-on-action:#ffffff;
+  --color-teal:#76cfc2;
+  --color-soft:#203552;
+  --color-neutral:#22344c;
+  --color-danger:#ffb4ac;
+  --color-danger-bg:#452d38;
+  --color-warning:#edc28a;
+  --color-warning-bg:#3f332b;
+  --color-success:#a4dacb;
+  --color-success-bg:#1d3a3b;
+  --color-info:#b2ceff;
+  --color-info-bg:#203653;
+  --color-focus:#8db7ff;
+  --shadow-surface:0 4px 16px #00000012;
 }
 @media (max-width: 760px) {
   :root { --page-gutter: 16px; --page-spacing: 24px; --font-page-title: 28px; }

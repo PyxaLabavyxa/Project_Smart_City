@@ -1,0 +1,37 @@
+[
+  {
+    "file": "tutorial-point.webp",
+    "mode": "built-in image_gen",
+    "prompt": "Use case: background-extraction. Edit target: attached tutorial gnome. Extract exactly this large close-up gnome face, floppy red hat, white eyebrows/beard and raised red-gloved pointing hand from the reference. Remove ALL blue floor-plan background and white rectangular bottom strip, output genuinely transparent alpha. Complete the lower beard and shoulders only enough for a clean chest-up cutout to peek over a tutorial card. Keep the identical watercolor character, face, proportions, big red hat, eyes and pointing glove. Do not substitute a generic full-body gnome. Landscape tightly framed head-and-hand composition, pointer angled upper right; all hat and fingertip fully inside canvas with small safe transparent margin. No text, UI or scenery."
+  },
+  {
+    "file": "tutorial-rest.webp",
+    "mode": "built-in image_gen",
+    "prompt": "Edit target: tutorial gnome reference. Same exact large close-up face, huge floppy red hat, white beard, expressive blue eyes, watercolor style. Create a calm chest-up variant of this SAME character with both red-gloved hands folded together comfortably below the beard. No pointing. Keep identity, hat silhouette, face proportions unchanged. Complete beard and shoulders. Remove floorplan background and white bottom rectangle entirely. Genuine transparent alpha, tight landscape framing with safe margin, no scene, no UI, no text."
+  },
+  {
+    "file": "tutorial-open.webp",
+    "mode": "built-in image_gen",
+    "prompt": "Edit target: tutorial gnome reference. Create another close-up tutorial pose of exactly this gnome, same face proportions, floppy red hat, white beard, blue eyes and watercolor. His red-gloved hand on the right is lower and open, gently presenting the next tip, relaxed friendly gesture, no index finger upright. Complete beard and shoulders just below face. Remove all floorplan scenery and white bottom rectangle. Genuine transparent background, tightly framed landscape head-and-hand composition with safe margins; no full-body figure, no text, no UI."
+  },
+  {
+    "file": "garden-hq.webp",
+    "mode": "built-in image_gen",
+    "prompt": "Use case: background-extraction. Edit target wide watercolor garden image. Preserve exactly the illustrated scene: blue trees and bench at left, path, blue foreground foliage, red-hatted gnome peeking at right. Remove pale paper/sky background to genuine transparent alpha, keep delicate watercolor edge transitions. Wide composition 3:1 with all trees and gnome intact. No cropping of trees or bottom bushes, no extra objects, no text, no UI."
+  },
+  {
+    "file": "window-gnome.webp",
+    "mode": "built-in image_gen",
+    "prompt": "Use case: background-extraction. Edit target: blue window with gnome reference. Extract ONLY the exact gnome head, full floppy red hat, eyes, nose, cheeks and a little white beard. Remove ALL wall, window-frame and blue background, genuine transparency. Keep character identity and original watercolor style. Tight square composition, head peeking up from lower edge, no arms, no invented torso, no UI or text. This head will be placed inside a real small interactive building window drawn in code."
+  },
+  {
+    "file": "house-night.webp",
+    "mode": "built-in image_gen",
+    "prompt": "Use case: lighting-weather. Edit target: transparent watercolor house illustration. Preserve exact apartment building perspective, number and geometry of floors and windows, trees, composition and delicate watercolor style. Repaint for a sophisticated calm night UI with background #0c1626: slate-blue facade, indigo and muted blue foliage, cool moonlit edges, two or three small warm amber-lit windows. Remove ALL white paper/sky glows, genuine transparent alpha around the scene and trees, no solid background. House fills the right two thirds of a wide 2:1 scene. No text, no UI, no moon, no stars, no extra objects."
+  },
+  {
+    "file": "house-landscape.webp",
+    "mode": "built-in image_gen",
+    "prompt": "Use case: precise-object-edit. Reference image: watercolor garden footer. Create a landscape asset for behind a native interactive building: ONLY blue watercolor trees, bushes and subtle ground. TWO groups: complete tall tree and low bushes at far LEFT, complete tall tree and low bushes at far RIGHT, wide central 60 percent entirely transparent empty space for a facade. NO gnome, NO bench, NO building, NO foreground foliage across the middle. Landscape 3:1 composition, preserve reference soft blue watercolor texture and navy fine tree strokes; trees and roots fully visible, no cropping. Genuine transparent background, no paper/sky rectangle, no text or UI."
+  }
+]

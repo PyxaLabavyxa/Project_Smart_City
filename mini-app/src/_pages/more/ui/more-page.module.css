@@ -26,3 +26,23 @@
 .contactList a { display: flex; align-items: center; min-height: 44px; color: var(--color-primary); }
 .contactList small { font-size: 12px; }
 @media (max-width: 480px) { .contactList { grid-template-columns: minmax(0, 1fr); gap: 18px; } }
+
+.content { max-width:760px; }
+.menu { padding:0 22px; background:var(--color-surface); border-radius:var(--radius-panel); }
+.menu li:last-child { border-bottom:0; }
+.menu :is(a,button) { min-height:92px; padding:16px 0; gap:18px; }
+.menu strong { font-size:20px; font-weight:600; letter-spacing:-.4px; }
+.menu small { margin-top:4px; font-size:14px; line-height:1.45; }
+.menu :is(a,button) > svg { color:var(--color-muted); }
+.icon { width:52px; height:52px; border-radius:16px; color:var(--color-ink); background:var(--color-soft); }
+.icon svg { width:26px; height:26px; }
+.garden { position:relative; margin:24px 0 0; pointer-events:none; opacity:.77; }
+.garden img { display:block; width:100%; height:auto; }
+:global(:root[data-theme="dark"]) .garden { filter:brightness(.65) saturate(.72); }
+.help { margin-top:24px; padding:20px 22px; background:var(--color-surface); border-radius:var(--radius-panel); }
+.help h2 { font-size:19px; }
+.contactsDisclosure { margin-top:16px; padding:12px 22px; background:var(--color-surface); border-radius:var(--radius-panel); }
+.contactsDisclosure summary { min-height:44px; display:flex; align-items:center; cursor:pointer; font-size:14px; color:var(--color-primary); }
+.contacts { margin-top:8px; }
+@media(max-width:760px) { .menu { padding-inline:16px; } .menu :is(a,button) { min-height:76px; gap:15px; } .menu strong { font-size:18px; } .menu small { font-size:13px; } .icon { width:48px; height:48px; border-radius:15px; }  }
+@media(max-width:360px) { .menu { padding-inline:12px; } .menu :is(a,button) { gap:12px; } .menu strong { font-size:17px; } .menu small { font-size:12px; } .icon { width:44px; height:44px; } }

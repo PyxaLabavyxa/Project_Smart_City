@@ -5,6 +5,7 @@ import { IssueList, useIssues, filterIssues, initialIssueFilters } from "@/entit
 import { ReportIssueLink } from "@/features/report-issue";
 import { NavigationLinks } from "@/shared/ui/navigation";
 import { IssueFilters } from "./issue-filters";
+import { HouseArt } from "@/shared/ui/house-art";
 import styles from "./issues-page.module.css";
 import { useHouseSelection } from "@/entities/house";
 import { RequestState } from "@/shared/ui/navigation/request-state";
@@ -14,7 +15,7 @@ export function IssuesPage({ initialCategory = "" }: { initialCategory?: string 
   const [filters, setFilters] = useState({ ...initialIssueFilters, category: initialCategory });
   const visible = filterIssues(issues, filters);
   if (loading || error) return <RequestState loading={loading} error={error} reload={reload} />;
-  return <><header className={styles.heading}><div><h1>Обращения</h1><p>Всё, что происходит в вашем доме · {house.address}</p></div><div className={styles.actions}><ReportIssueLink /></div></header>
+  return <><header className={styles.heading}><HouseArt className={styles.heroArt} /><div><h1>Обращения</h1><p>Всё, что происходит в вашем доме · {house.address}</p></div><div className={styles.actions}><ReportIssueLink /></div></header>
     <div data-tour="issue-controls"><div data-tour="issue-status" className={styles.statusRow}><nav className={styles.tabs} aria-label="Статус обращений">{([{ value: "active", label: "Активные" }, { value: "completed", label: "Решённые" }, { value: "all", label: "Все" }] as const).map(tab => <button key={tab.value} type="button" aria-pressed={filters.status === tab.value} onClick={() => setFilters({ ...filters, status: tab.value })}>{tab.label}<span>{issues.filter(issue => tab.value === "all" || (tab.value === "active" ? issue.status !== "completed" : issue.status === "completed")).length}</span></button>)}</nav><button type="button" className={styles.refresh} aria-label="Обновить обращения" title="Обновить обращения" onClick={reload}><Icon name="refresh" size={20} /></button></div>
     <IssueFilters filters={filters} categories={issues.map(issue => issue.category)} onChange={setFilters} onReset={() => setFilters(initialIssueFilters)} /></div>
     <div className={styles.summary} role="status"><span>Найдено: <b>{visible.length}</b> из {issues.length}</span></div>

@@ -25,3 +25,17 @@
 .embedded .card { padding: 0; border-radius: 0; box-shadow: none; background: transparent; }
 .embedded .card h1 { font-size: 24px; }
 .embedded .card input, .embedded .card select { background: var(--color-surface); color: var(--color-ink); }
+
+.screen { background:var(--color-bg) url('/images/domoved/house-clean.webp') right top / min(420px,80vw) auto no-repeat; color:var(--color-ink); }
+.brand { font-size:28px; padding-top:8px; margin-bottom:40px; }
+.card { background:var(--color-surface); box-shadow:none; }
+.card .empty { border-color:var(--color-primary); }
+.card .empty p, .eyebrow, .card .hint { color:var(--color-muted); }
+.primary { background:linear-gradient(110deg,#3674fa,#2863f5); border-radius:14px; min-height:50px; }
+.card input, .card select { background:var(--color-surface); color:var(--color-ink); border-color:var(--color-line); border-radius:12px; }
+
+.card .notice { background:var(--color-success-bg); color:var(--color-success); }
+.secondary { color:var(--color-muted); }
+.error { color:var(--color-danger); }
+.primary { background:var(--color-action); color:var(--color-on-action); }
+:global(:root[data-theme="dark"]) .screen { background-image:url('/images/domoved/house-night.webp'); }

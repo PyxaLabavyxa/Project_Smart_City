@@ -7,9 +7,9 @@ import { Icon } from "@/shared/ui/icon";
 
 const items = [
   { href: "/", label: "Дом", icon: "home" },
-  { href: "/issues", label: "Обращения", icon: "issues" },
-  { href: "/utilities", label: "ЖКХ", icon: "receipt" },
-  { href: "/cameras", label: "Камеры", icon: "cameras" },
+  { href: "/issues", label: "Обращения", icon: "bubble" },
+  { href: "/utilities", label: "ЖКХ", icon: "droplet" },
+  { href: "/cameras", label: "Камеры", icon: "camera" },
   { href: "/more", label: "Ещё", icon: "more" },
 ] as const;
 

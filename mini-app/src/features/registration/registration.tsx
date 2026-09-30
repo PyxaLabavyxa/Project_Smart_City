@@ -1,4 +1,5 @@
 "use client";
+import { BrandMark } from "@/shared/ui/brand-mark";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useApi } from "@/shared/api/context";
 import { endpoints } from "@/shared/api/client";
@@ -30,7 +31,7 @@ export function RegistrationScreen({ onComplete, onApproved, additional = false 
   }, [api, additional]);
   useEffect(() => { if (!additional && state.data?.complete) complete.current(); }, [state.data?.complete, additional]);
   return <div className={additional ? styles.embedded : styles.screen}>
-    {!additional && <div className={styles.brand}><span>д.</span> домпульс</div>}
+    {!additional && <div className={styles.brand}><BrandMark size={42} />Домовед</div>}
     {!state.data ? <RequestState {...state} /> : !additional && state.data.complete ? <p role="status">Открываем ваш дом…</p> :
       <RegistrationForm initial={state.data} onComplete={onComplete} refresh={state.reload} additional={additional} onApproved={onApproved} />}
     {state.data && state.error && <p role="alert">{state.error}</p>}
@@ -73,7 +74,7 @@ function RegistrationForm({ initial, onComplete, refresh, additional, onApproved
     {pending ? <><p>После принятия заявки квартира появится в боте и мини-приложении. Повторно заполнять данные не нужно.</p><button className={styles.primary} onClick={additional ? onComplete : refresh}>{additional ? "Вернуться к квартирам" : "Проверить статус"}</button></> : approved ?
       <><p>Квартира привязана. Теперь можно сообщать о проблемах и следить за жизнью дома.</p><button className={styles.primary} onClick={onComplete}>{additional ? "Готово — к моим квартирам" : "Открыть мой дом"}</button></> : <>
       {step === 0 && <>
-        <p>ДомПульс помогает сообщать о проблемах, следить за их решением и общаться с управляющей компанией.</p>
+        <p>Домовед помогает сообщать о проблемах, следить за их решением и общаться с управляющей компанией.</p>
         <div className={styles.empty}><strong>Вам пока не назначены квартиры</strong><p>Для назначения обратитесь в свою УК или оставьте заявку в зарегистрированную управляющую компанию.</p></div>
         {initial.status === "rejected" && <p role="status">Предыдущая заявка отклонена. Проверьте данные и отправьте новую.</p>}
         <button className={styles.primary} onClick={() => setStep(1)}>Оставить заявку в УК <span aria-hidden="true">↗</span></button>

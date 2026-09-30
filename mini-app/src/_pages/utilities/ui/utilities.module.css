@@ -72,3 +72,13 @@
   .loadedReveal.revealThird { animation-delay: .06s; }
   @keyframes utility-enter { from { opacity: .5; } to { opacity: 1; } }
 }
+
+.layout { gap:20px; }
+.account { background:var(--color-surface); border-radius:var(--radius-panel); padding:28px; }
+.totals div { padding:10px 0; border-top:1px solid var(--color-line); }
+.totals { gap:0; margin-bottom:0; font-size:14px; }
+.amount { font-size:clamp(36px,5vw,48px); margin-top:30px; color:var(--color-ink); }
+.panel[data-tour="utility-bill"] { position:relative; margin-bottom:8px; border-radius:var(--radius-panel) var(--radius-panel) 0 0; padding-bottom:28px; }
+.panel[data-tour="utility-bill"]::after { content:""; position:absolute; left:0; right:0; bottom:-8px; height:9px; background:linear-gradient(135deg,var(--color-surface) 25%,transparent 25%) -9px 0/18px 18px,linear-gradient(225deg,var(--color-surface) 25%,transparent 25%) -9px 0/18px 18px; }
+.panel[data-tour="utility-bill"] > .muted:last-of-type { margin-top:20px; border-top:1px dashed var(--color-line); padding-top:14px; }
+@media(max-width:600px) { .layout { gap:20px; } .panel, .account { padding:24px 20px; } .accountIcon { display:none; } .panel h2, .account h2 { font-size:23px; } }

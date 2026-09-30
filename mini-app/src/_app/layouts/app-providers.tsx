@@ -55,7 +55,7 @@ function AuthenticatedApp({ children, mode }: { children: ReactNode; mode: "loca
     return api;
   }, [mode]);
   const state = useRemote(load);
-  if (!state.data) return <main className="connection-screen"><h1>ДомПульс</h1><RequestState {...state} /></main>;
+  if (!state.data) return <main className="connection-screen"><h1>Домовед</h1><RequestState {...state} /></main>;
   return <ApiContext value={state.data}>{mode === "max" && <LaunchNavigation />}<MiniAppPresence /><ResidentProfileView>{children}</ResidentProfileView></ApiContext>;
 }
 
@@ -63,7 +63,7 @@ function ResidentProfileView({ children }: { children: ReactNode }) {
   const api = useApi();
   const load = useCallback(async (signal: AbortSignal) => parseProfile(await api(endpoints.me, { signal })), [api]);
   const state = useRemote(load);
-  if (!state.data) return <main className="connection-screen"><h1>ДомПульс</h1><RequestState {...state} /></main>;
+  if (!state.data) return <main className="connection-screen"><h1>Домовед</h1><RequestState {...state} /></main>;
   return <>{state.error && <div role="alert"><p>{state.error}</p><button onClick={state.reload}>Обновить квартиры</button></div>}{state.data.apartments.length ? <ResidentHomes profile={state.data} refreshHomes={state.reload}>{children}</ResidentHomes> : <RegistrationScreen onComplete={state.reload} />}</>;
 }
 

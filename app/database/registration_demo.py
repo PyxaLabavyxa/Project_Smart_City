@@ -9,9 +9,12 @@ async def seed_registration_demo(session):
     if session.bind.dialect.name == "postgresql":
         await session.execute(text("SELECT pg_advisory_xact_lock(71842027)"))
     company = await session.scalar(
-        select(ManagementCompany).where(ManagementCompany.name == "УК «ДомПульс»")
+        select(ManagementCompany).where(
+            ManagementCompany.name.in_(["УК «Домовед»", "УК «Дом" + "Пульс»"])
+        )
     )
     if company is not None:
+        company.name = "УК «Домовед»"
         houses = list(
             await session.scalars(
                 select(House).join(CompanyHouse).where(CompanyHouse.company_id == company.id)
@@ -22,7 +25,7 @@ async def seed_registration_demo(session):
                 house.address = "г. Казань, " + house.address
         await provision_demo_house_services(session, houses)
         return
-    company = ManagementCompany(name="УК «ДомПульс»")
+    company = ManagementCompany(name="УК «Домовед»")
     session.add(company)
     await session.flush()
     houses = []

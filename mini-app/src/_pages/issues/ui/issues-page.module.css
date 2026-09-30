@@ -36,3 +36,15 @@
 .statusRow { display: flex; align-items: center; gap: 8px; margin-bottom: 24px; }
 .statusRow .tabs { min-width: 0; flex-wrap: nowrap; margin-bottom: 0; overflow-x: auto; }
 .statusRow .tabs button { flex-shrink: 0; }
+
+.heading { position:relative; isolation:isolate; min-height:142px; }
+.heading > div:not(.heroArt) { position:relative; z-index:1; }
+.heading p { max-width:75%; text-shadow:0 1px 4px var(--color-bg); }
+.heroArt { position:absolute; z-index:-1; width:320px; height:185px; right:0; bottom:-10px; pointer-events:none; }
+@media(max-width:760px) { .heading { min-height:140px; align-items:flex-start; flex-direction:column; justify-content:center; gap:10px; } .heroArt { width:235px; right:0; opacity:.72; } .heading > div:not(.heroArt) { width:100%; } .heading h1 { font-size:32px; } .heading p { font-size:13px; } }
+
+.heroArt { width:min(60%,520px); height:220px; right:0; bottom:0; opacity:1; }
+@media(max-width:760px) { .heroArt { width:74%; height:190px; right:-8px; bottom:0; opacity:.9; } }
+.heading { min-height:190px; }
+@media(max-width:760px) { .heading { min-height:190px; } }
+.heading p { max-width:55%; }

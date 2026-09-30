@@ -10,3 +10,24 @@
 .link small { display: block; margin-top: 4px; font-size: 13px; color: var(--color-muted); }
 .link:hover { background: var(--color-surface); color: var(--color-primary); }
 .link:active { opacity: .75; }
+
+.back { color:var(--color-primary); margin-bottom:8px; font-size:14px; }
+.hero { position:relative; min-height:142px; display:flex; flex-direction:column; justify-content:center; margin-bottom:20px; isolation:isolate; }
+.hero h1 { position:relative; z-index:1; }
+.hero .description { position:relative; z-index:1; max-width:70%; margin:12px 0 0; font-size:15px; }
+.heroArt { position:absolute; z-index:-1; right:0; bottom:-12px; width:380px; height:194px; pointer-events:none; }
+@media(max-width:760px) {
+  .hero { min-height:125px; margin-bottom:18px; }
+  .heroArt { width:245px; height:178px; right:0; opacity:.82; }
+  .hero h1 { font-size:32px; }
+  .hero .description { max-width:85%; font-size:14px; text-shadow:0 1px 5px var(--color-bg); }
+}
+
+.heroArt { width:min(60%,520px); height:220px; right:0; bottom:0; opacity:1; }
+@media(max-width:760px) { .heroArt { width:74%; height:190px; right:-8px; bottom:0; opacity:.9; } }
+.hero { min-height:190px; }
+.hero .description { max-width:64%; }
+@media(max-width:760px) { .hero { min-height:190px; } .hero .description { max-width:70%; } }
+.hero .description { max-width:52%; }
+@media(max-width:760px) { .hero .description { max-width:52%; } }
+.hero[data-long-title] .heroArt { opacity:.3; }

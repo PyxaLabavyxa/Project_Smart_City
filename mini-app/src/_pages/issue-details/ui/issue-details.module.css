@@ -44,3 +44,15 @@
   .info { padding: 0; }
   .layout h2 { font-size: var(--font-section-title); }
 }
+
+.heading { position:relative; isolation:isolate; min-height:130px; display:flex; flex-direction:column; justify-content:center; margin-bottom:24px; }
+.heading h1, .heading p { position:relative; z-index:1; max-width:80%; text-shadow:0 1px 4px var(--color-bg); }
+.heroArt { position:absolute; z-index:-1; right:0; bottom:-8px; width:280px; height:170px; opacity:.7; pointer-events:none; }
+@media(max-width:760px) { .heading h1 { font-size:28px; } .heroArt { width:220px; height:150px; opacity:.55; } }
+
+.heroArt { width:min(60%,520px); height:220px; right:0; bottom:0; opacity:1; }
+@media(max-width:760px) { .heroArt { width:74%; height:190px; right:-8px; bottom:0; opacity:.9; } }
+.heading { min-height:190px; }
+@media(max-width:760px) { .heading { min-height:190px; } }
+.heading p { max-width:55%; }
+.heroArt { opacity:.3; }

@@ -2,7 +2,7 @@
 # The PDF describes fields but supplies no exact schema or version identifier.
 # Align field names/schema_version with the organizer's template before submission.
 schema_version: "draft-0.1"
-solution: "ДомПульс"
+solution: "Домовед"
 status: development
 base_url: null # Set the deployed public HTTPS URL before submission.
 local_base_url: "http://127.0.0.1:8000"

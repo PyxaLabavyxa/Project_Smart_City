@@ -32,3 +32,40 @@
 
 .addApartment { width:100%; min-height:48px; margin-top:16px; padding:12px; border:1px dashed var(--color-primary); border-radius:12px; color:var(--color-primary); background:var(--color-soft); font:inherit; cursor:pointer; }
 .back { display:block; width:100%; padding:14px 0; border:0; color:var(--color-muted); background:transparent; font:inherit; cursor:pointer; }
+
+.address { position:relative; z-index:1; }
+.address h1 { max-width:72%; font-size:var(--font-page-title); }
+.trigger { line-height:1.18; gap:8px; }
+.meta { display:grid; gap:18px; margin-top:12px; font-size:14px; }
+.meta > span { max-width:72%; }
+.health { width:fit-content; gap:9px; min-height:44px; }
+.health strong { font-size:20px; }
+.health > span { font-size:14px; }
+.sheetHeading h2, .sheet .list strong { text-shadow:none; }
+@media(max-width:760px) {
+  .address { min-height:184px; padding-top:10px; }
+  .address h1 { max-width:78%; font-size:clamp(24px,6.6vw,32px); }
+  .meta { gap:12px; }
+  .meta > span { max-width:80%; font-size:13px; }
+  .health { text-shadow:0 1px 4px var(--color-bg); }
+}
+
+.address { min-height:204px; padding-top:12px; }
+.address h1 { max-width:68%; }
+.meta > span { max-width:66%; }
+.health { margin-top:8px; }
+@media(max-width:760px) { .address { min-height:204px; } .address h1 { max-width:76%; } .meta > span { max-width:74%; } }
+.address { min-height:248px; }
+.address h1 { max-width:100%; }
+.trigger { max-width:100%; }
+.meta > span { max-width:100%; width:fit-content; padding-right:10px; background:linear-gradient(90deg,var(--color-bg) 78%,transparent); }
+.health { padding-right:10px; background:linear-gradient(90deg,var(--color-bg) 75%,transparent); }
+@media(max-width:760px) { .address { min-height:248px; } .address h1 { max-width:100%; font-size:clamp(24px,6.6vw,32px); } .meta > span { max-width:100%; } .health { margin-top:30px; } }
+@media(max-width:760px) {
+  .address { min-height:284px; }
+  .meta > span { background:none; padding-right:0; }
+  .health { display:grid; grid-template-columns:auto auto; gap:2px 8px; margin-top:24px; padding-right:0; background:none; text-shadow:none; }
+  .health strong { grid-column:1; grid-row:1; }
+  .health > svg { grid-column:2; grid-row:1; }
+  .health > span { grid-column:1 / -1; grid-row:2; font-size:12px; }
+}

@@ -62,7 +62,8 @@ async def deliver_pending(bot, sessions=session_factory):
                             f"Новое сообщение от квартиры {sender.number}\n"
                             f"{house.address} · для квартиры {recipient.number}\n\n"
                             f"{message.text[:1500]}\n\n"
-                            "Нажмите «Мой ДомПульс» ниже и перейдите в раздел «Сообщения», чтобы ответить."
+                            "Нажмите «Мой Домовед» ниже и перейдите в раздел «Сообщения», "
+                            "чтобы ответить."
                         ),
                     ),
                     timeout=15,
@@ -74,7 +75,9 @@ async def deliver_pending(bot, sessions=session_factory):
                 notification.available_at = datetime.now(UTC) + timedelta(
                     seconds=min(3600, 5 * 2 ** min(notification.attempts, 10))
                 )
-                logger.warning("Message notification %s will be retried", notification.id)
+                logger.warning(
+                    "Message notification %s will be retried", notification.id
+                )
             else:
                 notification.sent_at = datetime.now(UTC)
             await session.commit()

@@ -34,7 +34,7 @@ export function HouseExplorer({ initialPlace }: { initialPlace?: HouseLocation }
       </section>);
   return <div className={styles.layout}>
     <section className={styles.canvas} aria-label="План этажа">
-      <div data-tour="plan-selection"><div data-tour="plan-floors"><FloorControls expanded house={house} entrance={selected.entrance} floor={selected.floor} onChange={(entrance, floor) => setSelected({ houseId: house.id, entrance, floor, zone: "corridor" })} /></div>
+      <div data-tour="plan-selection"><div data-tour="plan-floors"><FloorControls house={house} entrance={selected.entrance} floor={selected.floor} onChange={(entrance, floor) => setSelected({ houseId: house.id, entrance, floor, zone: "corridor" })} /></div>
       <div className={styles.searchRow}>
         <form data-tour="plan-search" className={styles.search} onSubmit={event => {
           event.preventDefault(); const place = findApartment(house, Number(apartment));

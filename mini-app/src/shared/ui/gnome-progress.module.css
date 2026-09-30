@@ -1,0 +1,16 @@
+.track { --progress:0%; position:relative; width:min(280px,100%); height:70px; margin:4px auto 0; flex-shrink:0; }
+.line { position:absolute; inset:auto 0 0; height:6px; border-radius:6px; overflow:hidden; background:var(--color-line); }
+.line > span { display:block; width:100%; height:100%; border-radius:inherit; transform-origin:left; background:var(--color-action); }
+.traveller { position:absolute; left:clamp(20px,var(--progress),calc(100% - 20px)); bottom:6px; width:40px; height:60px; transform:translateX(-50%); }
+.traveller img { width:40px; height:60px; object-fit:contain; }
+.traveller::after { content:""; position:absolute; width:18px; height:3px; left:11px; bottom:0; background:#687a9b33; border-radius:50%; }
+@media(prefers-reduced-motion:no-preference) {
+  .traveller { transition:left .35s ease-out; }
+  .traveller img { animation:step .28s ease-in-out infinite alternate; transform-origin:center bottom; }
+  .line > span { transition:transform .3s ease-out; }
+  .track[data-indeterminate] .traveller { animation:walk 3s ease-in-out infinite alternate; }
+  .track[data-indeterminate] .line > span { animation:loading 3s ease-in-out infinite alternate; }
+  @keyframes step { from { transform:translateY(0) rotate(-2deg); } to { transform:translateY(-3px) rotate(2deg); } }
+  @keyframes walk { from { left:20px; } to { left:calc(100% - 20px); } }
+  @keyframes loading { from { transform:translateX(-100%) scaleX(.35); } to { transform:translateX(65%) scaleX(.35); } }
+}

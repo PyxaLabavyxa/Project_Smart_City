@@ -1,3 +1,4 @@
-.button { composes: button from "@/shared/styles/controls.module.css"; min-height: 40px; padding: 8px 12px; font-size: 12px; font-weight: 400; }
-
-.button[aria-pressed="true"] { border-color: var(--color-primary); }
+.button { composes: button from "@/shared/styles/controls.module.css"; }
+.button.button { min-height:40px; padding:8px 12px; gap:7px; background:var(--color-soft); font-size:12px; font-weight:400; white-space:nowrap; }
+.button[aria-pressed="true"] { border-color:var(--color-primary); }
+@media(max-width:360px) { .button.button { font-size:10px; padding:8px; gap:4px; } .button svg { width:16px; } }

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { HouseArt } from "@/shared/ui/house-art";
 import { PlaceLink } from "@/entities/house";
 import { Icon } from "@/shared/ui/icon";
 import { formatIssueDate, IssueStatus, type IssueRecord } from "@/entities/issue";
@@ -11,7 +12,7 @@ export function IssueDetailsPage({ issue }: { issue: IssueRecord }) {
   return (
     <>
       <Link href="/issues" className={styles.back}><span aria-hidden="true">←</span> Все обращения</Link>
-      <header className={styles.heading}>
+      <header className={styles.heading}><HouseArt className={styles.heroArt} />
         <h1>{issue.title}</h1>
         <p className={styles.meta}>{`Обращение № ${issue.id}`} · <time dateTime={issue.createdAt}>{formatIssueDate(issue.createdAt)}</time></p>
       </header>

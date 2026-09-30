@@ -19,7 +19,7 @@ async def run(logins):
         async with db.sessions.begin() as session:
             await seed_registration_demo(session)
             company_id = await session.scalar(
-                select(ManagementCompany.id).where(ManagementCompany.name == "УК «ДомПульс»")
+                select(ManagementCompany.id).where(ManagementCompany.name == "УК «Домовед»")
             )
             houses = list(
                 await session.scalars(

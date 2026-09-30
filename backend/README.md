@@ -1,4 +1,4 @@
-# ДомПульс API
+# Домовед API
 
 FastAPI и асинхронный SQLAlchemy с PostgreSQL. API и бот используют модели из `app/database/models.py`; схема управляется Alembic. Общий запуск: [DOCKER.md](../DOCKER.md).
 

@@ -21,3 +21,16 @@ export function applyReading(account: UtilityAccount, meterId: string, value: st
   if (error) throw new Error(error);
   return { ...account, meters: account.meters.map(item => item.id === meterId ? { ...item, current: Number(value.trim().replace(",", ".")) } : item) };
 }
+
+export function invoiceDue(value: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+  const date = new Date(value + "T12:00:00Z");
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString("ru-RU", { day: "numeric", month: "long", timeZone: "Europe/Moscow" });
+}
+export function invoicePeriod(value: string) {
+  if (!/^\d{4}-\d{2}$/.test(value)) return value;
+  const date = new Date(value + "-01T12:00:00Z");
+  if (Number.isNaN(date.getTime())) return value;
+  const label = date.toLocaleDateString("ru-RU", { month: "long", year: "numeric", timeZone: "Europe/Moscow" }).replace(/ г\.$/, "");
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}

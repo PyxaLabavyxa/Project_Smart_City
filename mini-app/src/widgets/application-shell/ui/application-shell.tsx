@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ThemeToggle } from "@/features/toggle-theme";
 import { BottomNavigation } from "./bottom-navigation";
 import styles from "./shell.module.css";
-import { Icon } from "@/shared/ui/icon";
+import { BrandMark } from "@/shared/ui/brand-mark";
 
 export function ApplicationShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -13,7 +13,7 @@ export function ApplicationShell({ children }: { children: ReactNode }) {
     <>
       <a className={styles.skip} href="#main">Перейти к содержимому</a>
       <header className={styles.header}>
-        <Link href="/" prefetch={false} className={styles.brand}><span className={styles.brandmark}><Icon name="home" /></span>ДомПульс</Link>
+        <Link href="/" prefetch={false} className={styles.brand}><BrandMark className={styles.brandmark} />Домовед</Link>
         <ThemeToggle />
       </header>
       <BottomNavigation />

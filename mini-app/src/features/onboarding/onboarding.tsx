@@ -1,6 +1,9 @@
 "use client";
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import Image from "next/image";
+import { BrandMark } from "@/shared/ui/brand-mark";
+import { GnomeProgress } from "@/shared/ui/gnome-progress";
 import { Icon } from "@/shared/ui/icon";
 import { tourSteps as steps } from "./steps";
 import { tourLayout, type TourRect } from "./tour-layout";
@@ -44,6 +47,7 @@ export function OnboardingProvider({ userId, children }: { userId: number; child
     setPosition(null);
     setPreparation({ percent: 0 });
     try {
+      await prepareGuideImages(controller.signal);
       cameraPath.current = await prepareTour(router, controller.signal, percent => setPreparation({ percent }), showGuide ? "/" : returnTo.current);
       await finishPreparation(controller.signal);
       if (controller.signal.aborted) return;
@@ -93,7 +97,7 @@ export function OnboardingProvider({ userId, children }: { userId: number; child
     element.showModal();
     const overflow = document.body.style.overflow;
     const paddingBottom = document.body.style.paddingBottom;
-    document.body.style.paddingBottom = `${parseFloat(getComputedStyle(document.body).paddingBottom) + 308}px`;
+    document.body.style.paddingBottom = `${parseFloat(getComputedStyle(document.body).paddingBottom) + 430}px`;
     document.body.style.overflow = "hidden";
     return () => { element.close(); document.body.style.overflow = overflow; document.body.style.paddingBottom = paddingBottom; };
   }, [isOpen]);
@@ -124,6 +128,7 @@ export function OnboardingProvider({ userId, children }: { userId: number; child
       if (!found) return;
       const viewport = { width: window.innerWidth, height: window.innerHeight };
       const cardRect = card.current.getBoundingClientRect();
+      const navigationHeight = viewport.width <= 760 ? document.querySelector('nav[aria-label="Основная навигация"]')?.getBoundingClientRect().height ?? 78 : 0;
       const viewportKey = `${viewport.width}:${viewport.height}`;
       if (found !== fitted || viewportKey !== fittedViewport) {
         restoreFit();
@@ -132,8 +137,8 @@ export function OnboardingProvider({ userId, children }: { userId: number; child
         originalZoom = found.style.zoom;
         originalWidth = found.style.width;
         const natural = found.getBoundingClientRect();
-        const available = Math.max(120, viewport.height - cardRect.height - 48);
-        if (steps[step].target === "issue-controls" && natural.height > available) {
+        const available = Math.max(120, viewport.height - cardRect.height - navigationHeight - 48);
+        if (["issue-controls", "plan-map"].includes(steps[step].target) && natural.height > available) {
           const scale = available / natural.height;
           found.style.zoom = String(scale);
           found.style.width = `${natural.width / scale}px`;
@@ -144,12 +149,12 @@ export function OnboardingProvider({ userId, children }: { userId: number; child
       if (found !== target || size !== lastSize) {
         target = found;
         lastSize = size;
-        const freeHeight = viewport.height - cardRect.height - 48;
+        const freeHeight = viewport.height - cardRect.height - navigationHeight - 48;
         const desiredTop = Math.max(16, Math.min(80, (freeHeight - rect.height) / 2));
         const nextScroll = Math.max(0, window.scrollY + rect.top - desiredTop);
         window.scrollTo({ top: nextScroll, behavior: "instant" });
       }
-      const next = { ...tourLayout(found.getBoundingClientRect(), viewport, cardRect), missing };
+      const next = { ...tourLayout(found.getBoundingClientRect(), viewport, cardRect, navigationHeight), missing };
       setPosition(previous => JSON.stringify(previous) === JSON.stringify(next) ? previous : next);
     };
     const schedule = () => { cancelAnimationFrame(frame); frame = requestAnimationFrame(update); };
@@ -174,22 +179,23 @@ export function OnboardingProvider({ userId, children }: { userId: number; child
     : current?.text;
   return <Context value={{ start, activeTarget: current?.target ?? null, preparing: preparation !== null }}><span hidden data-app-loading={issues.loading || messages.loading || utilities.loading} />{children}{isOpen && <dialog ref={dialog} className={styles.overlay} aria-labelledby={preparation ? "preparation-title" : "tour-title"} aria-describedby={preparation ? undefined : "tour-description"} onCancel={event => { event.preventDefault(); finish(); }}>
     {preparation ? <section className={styles.preparation} data-complete={preparation.percent === 100 && !preparation.error || undefined}>
-      <div className={styles.preparationMark} aria-hidden="true"><Icon name="home" size={36} /></div>
-      <h2 id="preparation-title">Готовим ваш ДомПульс</h2><p>{preparation.error ?? "Загружаем разделы и фотографии, чтобы знакомство с домом прошло плавно."}</p>
-      <div className={styles.preparationProgress} role="progressbar" aria-label="Подготовка приложения" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(preparation.percent)}>
-        <span style={{ transform: `scaleX(${preparation.percent / 100})` }} />
-      </div>
+      <div className={styles.preparationMark} aria-hidden="true"><BrandMark size={62} /></div>
+      <h2 id="preparation-title">Готовим ваш Домовед</h2><p>{preparation.error ?? "Загружаем разделы и фотографии, чтобы знакомство с домом прошло плавно."}</p>
+      <GnomeProgress value={preparation.percent} label="Подготовка приложения" />
       <span role="status">{preparation.error ? "Подготовка прервана" : preparation.percent === 100 ? "Всё готово" : `Загрузка · ${Math.round(preparation.percent)}%`}</span>
       {preparation.error && <button type="button" className={styles.next} onClick={() => void prepare(guideAfterPreparation.current)}>Попробовать снова</button>}
       {preparation.error && <button type="button" className={styles.back} onClick={finish}>Открыть приложение без подготовки</button>}
     </section> : current && <>
     {position ? <div aria-hidden="true" className={styles.spot} data-tour-spot={current.target} style={position.spot} /> : <div className={styles.shade} />}
+    <div key={`guide-${Math.floor(step! / 3)}`} className={styles.guide} data-pose={Math.floor(step! / 3) % 4} aria-hidden="true" style={position ? { top: Math.max(8, position.card.top - 124), left: position.card.left + (Math.floor(step! / 3) % 4 === 1 ? Math.max(0, (card.current?.offsetWidth ?? 328) - 174) : 8) } : undefined}>
+      <Image src={`/images/domoved/${Math.floor(step! / 3) % 4 < 2 ? "tutorial-point" : Math.floor(step! / 3) % 4 === 2 ? "tutorial-rest" : "tutorial-open"}.webp`} alt="" width={180} height={140} unoptimized loading="eager" />
+    </div>
     <section ref={card} data-compact={current.target === "plan-selection" || current.target === "plan-map" || undefined} className={styles.card} style={position?.card}>
       <div className={styles.top}><span>Подсказка {step! + 1} из {steps.length} · {position ? "Коротко о главном" : "Открываем нужное место…"}</span><button type="button" onClick={finish} aria-label="Закрыть обучение" title="Пропустить обучение"><Icon name="close" size={17} /></button></div>
+      <div className={styles.segments} aria-label={`Шаг ${step! + 1} из ${steps.length}`}>{steps.map((item, index) => <span key={item.target} data-filled={index <= step! || undefined} />)}</div>
       <h2 id="tour-title" tabIndex={-1} ref={heading}>{current.title}</h2>
       <p id="tour-description">{description}</p>
       <footer><button type="button" className={styles.back} onClick={finish}>Пропустить</button><div>{step! > 0 && <button type="button" className={styles.back} onClick={() => move(step! - 1)} aria-label="Предыдущая подсказка"><Icon name="arrow" size={16} style={{ transform: "rotate(180deg)" }} /></button>}<button type="button" disabled={!position} className={styles.next} onClick={() => step === steps.length - 1 ? finish() : move(step! + 1)}>{step === steps.length - 1 ? "Готово" : "Далее"}<Icon name="arrow" size={15} /></button></div></footer>
-      <div className={styles.progress} aria-label={`Шаг ${step! + 1} из ${steps.length}`}><span style={{ width: `${(step! + 1) / steps.length * 100}%` }} /></div>
     </section>
     </>}
   </dialog>}</Context>;
@@ -203,4 +209,14 @@ function finishPreparation(signal: AbortSignal) {
     const timer = window.setTimeout(() => { signal.removeEventListener("abort", abort); resolve(); }, 500);
     signal.addEventListener("abort", abort, { once: true });
   });
+}
+
+async function prepareGuideImages(signal: AbortSignal) {
+  await Promise.all(["tutorial-point", "tutorial-rest", "tutorial-open"].map(async name => {
+    signal.throwIfAborted();
+    const image = new window.Image();
+    image.src = `/images/domoved/${name}.webp`;
+    try { await image.decode(); } catch { throw new Error("Не удалось загрузить иллюстрации обучения. Повторите попытку."); }
+    signal.throwIfAborted();
+  }));
 }
