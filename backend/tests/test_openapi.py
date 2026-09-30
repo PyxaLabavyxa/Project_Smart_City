@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 
 import pytest
+import yaml
 from fastapi.testclient import TestClient
 
 from smart_city_api.core.config import Settings
@@ -12,6 +13,10 @@ def test_exported_openapi_matches_implemented_routes():
     contract = json.loads((Path(__file__).resolve().parents[1] / "openapi.json").read_text("utf-8"))
     app = create_app(Settings(_env_file=None, database_url=None))
     assert contract == app.openapi()
+    yaml_contract = yaml.safe_load(
+        (Path(__file__).resolve().parents[1] / "openapi.yaml").read_text("utf-8")
+    )
+    assert yaml_contract == contract
     assert contract["openapi"].startswith(("3.0.", "3.1."))
 
 

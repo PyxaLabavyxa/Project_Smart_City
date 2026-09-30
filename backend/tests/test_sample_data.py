@@ -17,6 +17,7 @@ pytest_plugins = ["tests.test_api"]
 
 def seed_explicitly(client, *user_ids):
     import asyncio
+
     from app.database.sample_data import provision_sample_resident
     async def seed():
         async with client.app.state.database.sessions.begin() as session:

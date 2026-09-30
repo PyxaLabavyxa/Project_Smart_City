@@ -1,0 +1,29 @@
+{
+  "format_version": "1.0",
+  "team": "Облачный Код",
+  "administrative_access_required": false,
+  "accounts": [
+    {
+      "role": "resident",
+      "required": true,
+      "environment": "public API",
+      "login_method": "Подтверждённый вход MAX",
+      "credential_variable": "MAX_INIT_DATA",
+      "provisioning": "Оператор предоставляет тестовый MAX-аккаунт с привязанной квартирой. Свежую подписанную initData передают отдельно; срок по умолчанию один час."
+    },
+    {
+      "role": "staff",
+      "required": true,
+      "environment": "public API",
+      "login_method": "POST /api/v1/staff/auth/login, cookie-сессия и CSRF из GET /api/v1/staff/me",
+      "credential_variables": [
+        "STAFF_LOGIN",
+        "STAFF_PASSWORD"
+      ],
+      "scope": "Только дом тестового жителя",
+      "provisioning": "Оператор создаёт сотрудника scripts.manage_staff и назначает ему нужный дом. Логин и пароль передаются проверяющему отдельно."
+    }
+  ],
+  "public_credentials_included": false,
+  "isolated_tests": "tests/test_evaluation_materials.py создаёт обе роли из test-data.json во временной SQLite и использует отдельный синтетический ключ MAX; доступ к рабочему серверу не требуется."
+}

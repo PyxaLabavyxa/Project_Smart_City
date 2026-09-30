@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:cloud-code:data-api:1.0",
+  "title": "Облачный Код — DATA-API 1.0",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "solution",
+    "team",
+    "base_url",
+    "checks",
+    "test_data",
+    "test_accounts"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "solution": {
+      "type": "string",
+      "minLength": 1
+    },
+    "team": {
+      "type": "string",
+      "minLength": 1
+    },
+    "base_url": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https://[^/]+/api/v1$"
+    },
+    "test_data": {
+      "type": "string"
+    },
+    "test_accounts": {
+      "type": "string"
+    },
+    "checks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "description",
+          "mandatory",
+          "method",
+          "path",
+          "parameters",
+          "role",
+          "expected"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1
+          },
+          "mandatory": {
+            "type": "boolean"
+          },
+          "method": {
+            "enum": [
+              "GET",
+              "POST",
+              "PUT",
+              "PATCH",
+              "DELETE"
+            ]
+          },
+          "path": {
+            "type": "string",
+            "pattern": "^/(?!api/v1)(?!/)[^?]*$"
+          },
+          "role": {
+            "enum": [
+              "anonymous",
+              "resident",
+              "staff"
+            ]
+          },
+          "parameters": {
+            "type": "object",
+            "required": [
+              "path",
+              "query",
+              "headers",
+              "body"
+            ],
+            "properties": {
+              "path": {
+                "type": "object"
+              },
+              "query": {
+                "type": "object"
+              },
+              "headers": {
+                "type": "object"
+              }
+            }
+          },
+          "expected": {
+            "type": "object",
+            "required": [
+              "status_codes",
+              "content_type",
+              "json_schema"
+            ],
+            "properties": {
+              "status_codes": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "integer",
+                  "minimum": 100,
+                  "maximum": 599
+                }
+              },
+              "content_type": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "json_schema": {
+                "type": [
+                  "object",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

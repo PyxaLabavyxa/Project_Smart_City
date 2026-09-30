@@ -1,138 +1,2062 @@
-schema_version: "draft-0.1"
-format: "Project verification checklist; not an official evaluation-platform schema"
-solution: "Домовед"
-updated_at: "2026-09-30"
-status: deployed
-base_url: "https://201.34.159.33"
-local_base_url: "http://127.0.0.1:8000"
-openapi: "openapi.json"
+schema_version: '1.0'
+schema_file: DATA-API.schema.json
+solution: Домовед
+team: Облачный Код
+updated_at: '2026-09-30'
+base_url: https://201.34.159.33/api/v1
+local_base_url: http://127.0.0.1:8000/api/v1
+openapi: evaluation/openapi.yaml
+openapi_json: evaluation/openapi.json
+test_data: test-data.json
+test_accounts: test-accounts.example.json
+execution:
+  order: В порядке checks; capture сохраняет указанное поле JSON-ответа в переменную
+  parameters: 'Подстановка ${NAME} сохраняет исходный тип значения: ID передаются
+    числами, токены строками'
+  writes: Проверки POST изменяют только выделенные тестовые данные; учётные записи
+    должны иметь общую привязку к тестовому дому
+  version_note: Версия собственного формата команды, определённого DATA-API.schema.json;
+    отдельная схема организаторов не предоставлена
+  cookies: HTTP-клиент сохраняет и отправляет cookie из Set-Cookie между запросами;
+    cookie сотрудника выдаётся staff-login
 documentation:
-  swagger: "/api/docs"
-  redoc: "/api/redoc"
-  openapi: "/api/openapi.json"
+  swagger: https://201.34.159.33/api/docs
+  redoc: https://201.34.159.33/api/redoc
+  openapi: https://201.34.159.33/api/openapi.json
 authentication:
-  staff:
-    scheme: StaffSession
-    type: http
-    bearer_format: "Opaque staff session token"
-    issue_token:
-      method: POST
-      path: "/api/v1/staff/auth/token"
-      headers:
-        Origin: "${BASE_URL}"
-        Content-Type: application/json
-      body:
-        login: "${STAFF_LOGIN}"
-        password: "${STAFF_PASSWORD}"
-      expected_status: 200
-      token_field: access_token
-      lifetime_field: expires_in
-    request_header: "Authorization: Bearer ${STAFF_ACCESS_TOKEN}"
-    logout: "POST /api/v1/staff/auth/logout"
-    note: "Используйте действующего сотрудника. Доступ ограничен назначенными домами. Bearer-запросы не требуют CSRF. Cookie-вход кабинета по /auth/login требует Origin и X-CSRF-Token для записей."
   resident:
     scheme: MAXLaunchData
     type: http
-    bearer_format: "Signed MAX initData"
-    request_header: "Authorization: Bearer ${MAX_INIT_DATA}"
-    note: "Нужны свежие подписанные данные MAX и существующий профиль жителя. Вход POST /api/v1/auth/max создаёт профиль; регистрация квартиры доступна по /api/v1/registration."
+    header: 'Authorization: Bearer ${MAX_INIT_DATA}'
+  staff:
+    type: cookie
+    name: dompulse_staff
+    login_path: /staff/auth/login
+    csrf_header: 'X-CSRF-Token: ${STAFF_CSRF_TOKEN}'
+    csrf_source: staff-profile.csrf_token
 variables:
-  BASE_URL: "https://201.34.159.33"
-  STAFF_LOGIN: "Provided by the operator"
-  STAFF_PASSWORD: "Provided separately; never stored in this file"
-  STAFF_ACCESS_TOKEN: "Taken from issue_token.access_token"
-  MAX_INIT_DATA: "Fresh signed launch data provided by the resident"
+  SITE_ORIGIN: https://201.34.159.33
+  HOUSE_ID: Числовой ID выделенного тестового дома
+  COMPANY_ID: Числовой ID УК тестового дома
+  APARTMENT_ID: Числовой ID квартиры тестового жителя
+  RECIPIENT_APARTMENT_ID: Числовой ID другой тестовой квартиры в том же доме
+  METER_ID: Числовой ID счётчика тестового жителя
+  READING_PERIOD: Текущий открытый период тестового лицевого счёта
+  MAX_INIT_DATA: Свежая initData тестового жителя из MAX
+  STAFF_LOGIN: Логин тестового сотрудника, передаваемый отдельно
+  STAFF_PASSWORD: Пароль тестового сотрудника, передаваемый отдельно
+  ISSUE_ID: Результат issue-create.id
+  ISSUE_REQUEST_ID: Новый UUID для каждого независимого прогона; при повторе того
+    же запроса сохраняется
+  STATUS_REQUEST_ID: Новый UUID для каждого независимого прогона; при повторе того
+    же запроса сохраняется
+  STAFF_MESSAGE_REQUEST_ID: Новый UUID для каждого независимого прогона; при повторе
+    того же запроса сохраняется
+  MESSAGE_REQUEST_ID: Новый UUID для каждого независимого прогона; при повторе того
+    же запроса сохраняется
+  STAFF_CSRF_TOKEN: Результат staff-profile.csrf_token
+service_checks:
+- id: service-live
+  method: GET
+  url: https://201.34.159.33/health/live
+  role: anonymous
+  expected:
+    status_codes:
+    - 200
+    content_type: application/json
+    json_schema:
+      type: object
+      required:
+      - status
+      properties:
+        status:
+          const: ok
+- id: database-ready
+  method: GET
+  url: https://201.34.159.33/health/ready
+  role: anonymous
+  expected:
+    status_codes:
+    - 200
+    content_type: application/json
+    json_schema:
+      type: object
+      required:
+      - status
+      properties:
+        status:
+          const: ok
 checks:
-  - id: service-live
-    description: "Процесс API доступен через публичный reverse proxy"
-    method: GET
-    path: /health/live
-    parameters:
-      path: {}
-      query: {}
-      headers: {}
-      body: null
-    role: anonymous
-    expected:
-      status_codes: [200]
-      content_type: application/json
-      json_schema:
+- id: anonymous-resident-denied
+  description: Защита профиля жителя без авторизации
+  mandatory: true
+  method: GET
+  path: /me
+  parameters:
+    path: {}
+    query: {}
+    headers: {}
+    body: null
+  role: anonymous
+  expected:
+    status_codes:
+    - 401
+    content_type: application/json
+    json_schema:
+      type: object
+      required:
+      - detail
+      properties:
+        detail:
+          type: string
+- id: anonymous-staff-denied
+  description: Защита кабинета сотрудника без авторизации
+  mandatory: true
+  method: GET
+  path: /staff/me
+  parameters:
+    path: {}
+    query: {}
+    headers: {}
+    body: null
+  role: anonymous
+  expected:
+    status_codes:
+    - 401
+    content_type: application/json
+    json_schema:
+      type: object
+      required:
+      - detail
+      properties:
+        detail:
+          type: string
+- id: staff-login
+  description: Вход тестового сотрудника
+  mandatory: true
+  method: POST
+  path: /staff/auth/login
+  parameters:
+    path: {}
+    query: {}
+    headers:
+      Origin: ${SITE_ORIGIN}
+      Content-Type: application/json
+    body:
+      login: ${STAFF_LOGIN}
+      password: ${STAFF_PASSWORD}
+  role: staff
+  expected:
+    status_codes:
+    - 204
+    content_type: null
+    json_schema: null
+- id: resident-login
+  description: Проверка входа MAX
+  mandatory: true
+  method: POST
+  path: /auth/max
+  parameters:
+    path: {}
+    query: {}
+    headers:
+      Authorization: Bearer ${MAX_INIT_DATA}
+      Origin: ${SITE_ORIGIN}
+      Content-Type: application/json
+    body:
+      init_data: ${MAX_INIT_DATA}
+  role: resident
+  expected:
+    status_codes:
+    - 204
+    content_type: null
+    json_schema: null
+- id: resident-profile
+  description: Профиль и квартиры жителя
+  mandatory: true
+  method: GET
+  path: /me
+  parameters:
+    path: {}
+    query: {}
+    headers:
+      Authorization: Bearer ${MAX_INIT_DATA}
+    body: null
+  role: resident
+  expected:
+    status_codes:
+    - 200
+    content_type: application/json
+    json_schema:
+      properties:
+        id:
+          type: integer
+          title: Id
+        name:
+          type: string
+          title: Name
+        apartments:
+          items:
+            properties:
+              id:
+                type: integer
+                title: Id
+              house_id:
+                type: integer
+                title: House Id
+              number:
+                type: integer
+                title: Number
+              entrance:
+                type: integer
+                title: Entrance
+              floor:
+                type: integer
+                title: Floor
+            type: object
+            required:
+            - id
+            - house_id
+            - number
+            - entrance
+            - floor
+            title: ApartmentResponse
+          type: array
+          title: Apartments
+        houses:
+          items:
+            properties:
+              id:
+                type: integer
+                title: Id
+              address:
+                type: string
+                title: Address
+              entrances_count:
+                type: integer
+                title: Entrances Count
+              floors_count:
+                type: integer
+                title: Floors Count
+              apartments_per_floor:
+                type: integer
+                title: Apartments Per Floor
+            type: object
+            required:
+            - id
+            - address
+            - entrances_count
+            - floors_count
+            - apartments_per_floor
+            title: HouseResponse
+          type: array
+          title: Houses
+      type: object
+      required:
+      - id
+      - name
+      - apartments
+      - houses
+      title: Profile
+- id: registration-state
+  description: Состояние регистрации и каталог УК
+  mandatory: true
+  method: GET
+  path: /registration
+  parameters:
+    path: {}
+    query: {}
+    headers:
+      Authorization: Bearer ${MAX_INIT_DATA}
+    body: null
+  role: resident
+  expected:
+    status_codes:
+    - 200
+    content_type: application/json
+    json_schema:
+      type: object
+      required:
+      - name
+      - complete
+      - status
+      - test_mode
+      - companies
+- id: registration-submit
+  description: Заявка на дополнительную квартиру
+  mandatory: true
+  method: POST
+  path: /registration
+  parameters:
+    path: {}
+    query: {}
+    headers:
+      Authorization: Bearer ${MAX_INIT_DATA}
+      Origin: ${SITE_ORIGIN}
+      Content-Type: application/json
+    body:
+      full_name: Житель для проверки
+      company_id: ${COMPANY_ID}
+      house_id: ${HOUSE_ID}
+      apartment_number: 2
+      additional: true
+  role: resident
+  expected:
+    status_codes:
+    - 200
+    content_type: application/json
+    json_schema:
+      type: object
+      required:
+      - name
+      - complete
+      - status
+      - application_status
+      - apartment_id
+- id: house-apartments
+  description: План и доступные квартиры дома
+  mandatory: true
+  method: GET
+  path: /houses/{house_id}/apartments
+  parameters:
+    path:
+      house_id: ${HOUSE_ID}
+    query:
+      cursor: 0
+      limit: 20
+    headers:
+      Authorization: Bearer ${MAX_INIT_DATA}
+    body: null
+  role: resident
+  expected:
+    status_codes:
+    - 200
+    content_type: application/json
+    json_schema:
+      properties:
+        items:
+          items:
+            properties:
+              id:
+                type: integer
+                title: Id
+              house_id:
+                type: integer
+                title: House Id
+              number:
+                type: integer
+                title: Number
+              entrance:
+                type: integer
+                title: Entrance
+              floor:
+                type: integer
+                title: Floor
+            type: object
+            required:
+            - id
+            - house_id
+            - number
+            - entrance
+            - floor
+            title: ApartmentResponse
+          type: array
+          title: Items
+        next_cursor:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Next Cursor
+      type: object
+      required:
+      - items
+      - next_cursor
+      title: ApartmentPage
+- id: issues-list
+  description: Список обращений дома
+  mandatory: true
+  method: GET
+  path: /houses/{house_id}/issues
+  parameters:
+    path:
+      house_id: ${HOUSE_ID}
+    query:
+      cursor: 0
+      limit: 20
+    headers:
+      Authorization: Bearer ${MAX_INIT_DATA}
+    body: null
+  role: resident
+  expected:
+    status_codes:
+    - 200
+    content_type: application/json
+    json_schema:
+      properties:
+        items:
+          items:
+            properties:
+              id:
+                type: integer
+                title: Id
+              house_id:
+                type: integer
+                title: House Id
+              title:
+                type: string
+                title: Title
+              description:
+                type: string
+                title: Description
+              category:
+                type: string
+                enum:
+                - water
+                - heating
+                - electricity
+                - elevator
+                - entrance
+                - yard
+                - garbage
+                - security
+                - other
+                title: IssueCategory
+              status:
+                type: string
+                enum:
+                - new
+                - in_progress
+                - resolved
+                title: IssueStatus
+              priority:
+                type: integer
+                title: Priority
+              created_at:
+                type: string
+                format: date-time
+                title: Created At
+              mine:
+                type: boolean
+                title: Mine
+              address:
+                type: string
+                title: Address
+              place:
+                anyOf:
+                - properties:
+                    entrance:
+                      type: integer
+                      maximum: 100.0
+                      minimum: 1.0
+                      title: Entrance
+                    floor:
+                      type: integer
+                      maximum: 200.0
+                      minimum: 1.0
+                      title: Floor
+                    zone:
+                      type: string
+                      enum:
+                      - apartment
+                      - corridor
+                      - stairs
+                      - elevator
+                      - technical
+                      - entrance
+                      - house
+                      - courtyard
+                      - parking
+                      title: Zone
+                    apartment_id:
+                      anyOf:
+                      - type: integer
+                        exclusiveMinimum: 0.0
+                      - type: 'null'
+                      title: Apartment Id
+                  additionalProperties: false
+                  type: object
+                  required:
+                  - entrance
+                  - floor
+                  - zone
+                  title: Location
+                - type: 'null'
+              history:
+                items:
+                  properties:
+                    status:
+                      type: string
+                      enum:
+                      - new
+                      - in_progress
+                      - resolved
+                      title: IssueStatus
+                    at:
+                      type: string
+                      format: date-time
+                      title: At
+                  type: object
+                  required:
+                  - status
+                  - at
+                  title: IssueHistory
+                type: array
+                title: History
+              photo_ids:
+                items:
+                  type: integer
+                type: array
+                title: Photo Ids
+            type: object
+            required:
+            - id
+            - house_id
+            - title
+            - description
+            - category
+            - status
+            - priority
+            - created_at
+            - mine
+            - address
+            - place
+            - history
+            title: IssueResponse
+          type: array
+          title: Items
+        next_cursor:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Next Cursor
+      type: object
+      required:
+      - items
+      - next_cursor
+      title: IssuePage
+- id: issue-create
+  description: Создание обращения с выбранным местом
+  mandatory: true
+  method: POST
+  path: /houses/{house_id}/issues
+  parameters:
+    path:
+      house_id: ${HOUSE_ID}
+    query: {}
+    headers:
+      Authorization: Bearer ${MAX_INIT_DATA}
+      Origin: ${SITE_ORIGIN}
+      Content-Type: application/json
+    body:
+      title: 'Проверочное обращение: освещение подъезда'
+      description: Синтетическое обращение команды Облачный Код для проверки API.
+      category: electricity
+      place:
+        entrance: 1
+        floor: 1
+        zone: entrance
+        apartment_id: null
+      request_id: ${ISSUE_REQUEST_ID}
+  role: resident
+  expected:
+    status_codes:
+    - 201
+    content_type: application/json
+    json_schema:
+      properties:
+        id:
+          type: integer
+          title: Id
+        house_id:
+          type: integer
+          title: House Id
+        title:
+          type: string
+          title: Title
+        description:
+          type: string
+          title: Description
+        category:
+          type: string
+          enum:
+          - water
+          - heating
+          - electricity
+          - elevator
+          - entrance
+          - yard
+          - garbage
+          - security
+          - other
+          title: IssueCategory
+        status:
+          type: string
+          enum:
+          - new
+          - in_progress
+          - resolved
+          title: IssueStatus
+        priority:
+          type: integer
+          title: Priority
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        mine:
+          type: boolean
+          title: Mine
+        address:
+          type: string
+          title: Address
+        place:
+          anyOf:
+          - properties:
+              entrance:
+                type: integer
+                maximum: 100.0
+                minimum: 1.0
+                title: Entrance
+              floor:
+                type: integer
+                maximum: 200.0
+                minimum: 1.0
+                title: Floor
+              zone:
+                type: string
+                enum:
+                - apartment
+                - corridor
+                - stairs
+                - elevator
+                - technical
+                - entrance
+                - house
+                - courtyard
+                - parking
+                title: Zone
+              apartment_id:
+                anyOf:
+                - type: integer
+                  exclusiveMinimum: 0.0
+                - type: 'null'
+                title: Apartment Id
+            additionalProperties: false
+            type: object
+            required:
+            - entrance
+            - floor
+            - zone
+            title: Location
+          - type: 'null'
+        history:
+          items:
+            properties:
+              status:
+                type: string
+                enum:
+                - new
+                - in_progress
+                - resolved
+                title: IssueStatus
+              at:
+                type: string
+                format: date-time
+                title: At
+            type: object
+            required:
+            - status
+            - at
+            title: IssueHistory
+          type: array
+          title: History
+        photo_ids:
+          items:
+            type: integer
+          type: array
+          title: Photo Ids
+      type: object
+      required:
+      - id
+      - house_id
+      - title
+      - description
+      - category
+      - status
+      - priority
+      - created_at
+      - mine
+      - address
+      - place
+      - history
+      title: IssueResponse
+  capture:
+    ISSUE_ID: id
+- id: issue-details
+  description: Карточка и история созданного обращения
+  mandatory: true
+  method: GET
+  path: /issues/{issue_id}
+  parameters:
+    path:
+      issue_id: ${ISSUE_ID}
+    query: {}
+    headers:
+      Authorization: Bearer ${MAX_INIT_DATA}
+    body: null
+  role: resident
+  expected:
+    status_codes:
+    - 200
+    content_type: application/json
+    json_schema:
+      properties:
+        id:
+          type: integer
+          title: Id
+        house_id:
+          type: integer
+          title: House Id
+        title:
+          type: string
+          title: Title
+        description:
+          type: string
+          title: Description
+        category:
+          type: string
+          enum:
+          - water
+          - heating
+          - electricity
+          - elevator
+          - entrance
+          - yard
+          - garbage
+          - security
+          - other
+          title: IssueCategory
+        status:
+          type: string
+          enum:
+          - new
+          - in_progress
+          - resolved
+          title: IssueStatus
+        priority:
+          type: integer
+          title: Priority
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        mine:
+          type: boolean
+          title: Mine
+        address:
+          type: string
+          title: Address
+        place:
+          anyOf:
+          - properties:
+              entrance:
+                type: integer
+                maximum: 100.0
+                minimum: 1.0
+                title: Entrance
+              floor:
+                type: integer
+                maximum: 200.0
+                minimum: 1.0
+                title: Floor
+              zone:
+                type: string
+                enum:
+                - apartment
+                - corridor
+                - stairs
+                - elevator
+                - technical
+                - entrance
+                - house
+                - courtyard
+                - parking
+                title: Zone
+              apartment_id:
+                anyOf:
+                - type: integer
+                  exclusiveMinimum: 0.0
+                - type: 'null'
+                title: Apartment Id
+            additionalProperties: false
+            type: object
+            required:
+            - entrance
+            - floor
+            - zone
+            title: Location
+          - type: 'null'
+        history:
+          items:
+            properties:
+              status:
+                type: string
+                enum:
+                - new
+                - in_progress
+                - resolved
+                title: IssueStatus
+              at:
+                type: string
+                format: date-time
+                title: At
+            type: object
+            required:
+            - status
+            - at
+            title: IssueHistory
+          type: array
+          title: History
+        photo_ids:
+          items:
+            type: integer
+          type: array
+          title: Photo Ids
+      type: object
+      required:
+      - id
+      - house_id
+      - title
+      - description
+      - category
+      - status
+      - priority
+      - created_at
+      - mine
+      - address
+      - place
+      - history
+      title: IssueResponse
+- id: staff-profile
+  description: Профиль сотрудника и назначенные дома
+  mandatory: true
+  method: GET
+  path: /staff/me
+  parameters:
+    path: {}
+    query: {}
+    headers: {}
+    body: null
+  role: staff
+  expected:
+    status_codes:
+    - 200
+    content_type: application/json
+    json_schema:
+      properties:
+        name:
+          type: string
+          title: Name
+        houses:
+          items:
+            properties:
+              id:
+                type: integer
+                title: Id
+              address:
+                type: string
+                title: Address
+            type: object
+            required:
+            - id
+            - address
+            title: HouseOutput
+          type: array
+          title: Houses
+        csrf_token:
+          type: string
+          title: Csrf Token
+      type: object
+      required:
+      - name
+      - houses
+      - csrf_token
+      title: ProfileOutput
+  capture:
+    STAFF_CSRF_TOKEN: csrf_token
+- id: staff-issues
+  description: Список обращений назначенных домов
+  mandatory: true
+  method: GET
+  path: /staff/issues
+  parameters:
+    path: {}
+    query: {}
+    headers: {}
+    body: null
+  role: staff
+  expected:
+    status_codes:
+    - 200
+    content_type: application/json
+    json_schema:
+      properties:
+        items:
+          items:
+            properties:
+              id:
+                type: integer
+                title: Id
+              title:
+                type: string
+                title: Title
+              description:
+                type: string
+                title: Description
+              category:
+                type: string
+                enum:
+                - water
+                - heating
+                - electricity
+                - elevator
+                - entrance
+                - yard
+                - garbage
+                - security
+                - other
+                title: IssueCategory
+              priority:
+                type: integer
+                enum:
+                - 1
+                - 2
+                - 3
+                title: IssuePriority
+              status:
+                type: string
+                enum:
+                - new
+                - in_progress
+                - resolved
+                title: IssueStatus
+              created_at:
+                type: string
+                format: date-time
+                title: Created At
+              house_id:
+                type: integer
+                title: House Id
+              address:
+                type: string
+                title: Address
+              author:
+                type: string
+                title: Author
+              entrance:
+                anyOf:
+                - type: integer
+                - type: 'null'
+                title: Entrance
+              floor:
+                anyOf:
+                - type: integer
+                - type: 'null'
+                title: Floor
+              zone:
+                anyOf:
+                - type: string
+                - type: 'null'
+                title: Zone
+              apartment:
+                anyOf:
+                - type: integer
+                - type: 'null'
+                title: Apartment
+              photo_count:
+                type: integer
+                title: Photo Count
+            type: object
+            required:
+            - id
+            - title
+            - description
+            - category
+            - priority
+            - status
+            - created_at
+            - house_id
+            - address
+            - author
+            - entrance
+            - floor
+            - zone
+            - apartment
+            - photo_count
+            title: IssueRow
+          type: array
+          title: Items
+        total:
+          type: integer
+          title: Total
+        page:
+          type: integer
+          title: Page
+        page_size:
+          type: integer
+          title: Page Size
+        counts:
+          additionalProperties:
+            type: integer
+          type: object
+          title: Counts
+      type: object
+      required:
+      - items
+      - total
+      - page
+      - page_size
+      - counts
+      title: StaffIssuePage
+- id: staff-issue-details
+  description: Обращение в кабинете сотрудника
+  mandatory: true
+  method: GET
+  path: /staff/issues/{issue_id}
+  parameters:
+    path:
+      issue_id: ${ISSUE_ID}
+    query: {}
+    headers: {}
+    body: null
+  role: staff
+  expected:
+    status_codes:
+    - 200
+    content_type: application/json
+    json_schema:
+      properties:
+        id:
+          type: integer
+          title: Id
+        title:
+          type: string
+          title: Title
+        description:
+          type: string
+          title: Description
+        category:
+          type: string
+          enum:
+          - water
+          - heating
+          - electricity
+          - elevator
+          - entrance
+          - yard
+          - garbage
+          - security
+          - other
+          title: IssueCategory
+        priority:
+          type: integer
+          enum:
+          - 1
+          - 2
+          - 3
+          title: IssuePriority
+        status:
+          type: string
+          enum:
+          - new
+          - in_progress
+          - resolved
+          title: IssueStatus
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        house_id:
+          type: integer
+          title: House Id
+        address:
+          type: string
+          title: Address
+        author:
+          type: string
+          title: Author
+        entrance:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Entrance
+        floor:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Floor
+        zone:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Zone
+        apartment:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Apartment
+        photo_count:
+          type: integer
+          title: Photo Count
+        photos:
+          items:
+            properties:
+              id:
+                type: integer
+                title: Id
+              url:
+                type: string
+                title: Url
+            type: object
+            required:
+            - id
+            - url
+            title: PhotoOutput
+          type: array
+          title: Photos
+        history:
+          items:
+            properties:
+              status:
+                type: string
+                title: Status
+              created_at:
+                type: string
+                format: date-time
+                title: Created At
+            type: object
+            required:
+            - status
+            - created_at
+            title: EventOutput
+          type: array
+          title: History
+        messages:
+          items:
+            properties:
+              id:
+                type: integer
+                title: Id
+              direction:
+                type: string
+                enum:
+                - staff
+                - resident
+                title: Direction
+              author:
+                type: string
+                title: Author
+              text:
+                type: string
+                title: Text
+              created_at:
+                type: string
+                format: date-time
+                title: Created At
+            type: object
+            required:
+            - id
+            - direction
+            - author
+            - text
+            - created_at
+            title: MessageOutput
+          type: array
+          title: Messages
+        notifications:
+          items:
+            properties:
+              id:
+                type: integer
+                title: Id
+              kind:
+                type: string
+                title: Kind
+              status:
+                anyOf:
+                - type: string
+                - type: 'null'
+                title: Status
+              message_id:
+                anyOf:
+                - type: integer
+                - type: 'null'
+                title: Message Id
+              author:
+                type: string
+                title: Author
+              delivery:
+                type: string
+                enum:
+                - sent
+                - pending
+                - retrying
+                title: Delivery
+              created_at:
+                type: string
+                format: date-time
+                title: Created At
+            type: object
+            required:
+            - id
+            - kind
+            - status
+            - message_id
+            - author
+            - delivery
+            - created_at
+            title: DeliveryOutput
+          type: array
+          title: Notifications
+      type: object
+      required:
+      - id
+      - title
+      - description
+      - category
+      - priority
+      - status
+      - created_at
+      - house_id
+      - address
+      - author
+      - entrance
+      - floor
+      - zone
+      - apartment
+      - photo_count
+      - photos
+      - history
+      - messages
+      - notifications
+      title: IssueDetail
+- id: staff-status
+  description: Перевод нового обращения в работу
+  mandatory: true
+  method: POST
+  path: /staff/issues/{issue_id}/status
+  parameters:
+    path:
+      issue_id: ${ISSUE_ID}
+    query: {}
+    headers:
+      Origin: ${SITE_ORIGIN}
+      Content-Type: application/json
+      X-CSRF-Token: ${STAFF_CSRF_TOKEN}
+    body:
+      status: in_progress
+      expected_status: new
+      request_id: ${STATUS_REQUEST_ID}
+  role: staff
+  expected:
+    status_codes:
+    - 200
+    content_type: application/json
+    json_schema:
+      properties:
+        notification_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Notification Id
+        changed:
+          type: boolean
+          title: Changed
+          default: true
+      type: object
+      required:
+      - notification_id
+      title: ActionOutput
+- id: staff-message
+  description: Сообщение сотрудника автору обращения
+  mandatory: true
+  method: POST
+  path: /staff/issues/{issue_id}/messages
+  parameters:
+    path:
+      issue_id: ${ISSUE_ID}
+    query: {}
+    headers:
+      Origin: ${SITE_ORIGIN}
+      Content-Type: application/json
+      X-CSRF-Token: ${STAFF_CSRF_TOKEN}
+    body:
+      text: 'Проверочное сообщение сотрудника: обращение принято в работу.'
+      request_id: ${STAFF_MESSAGE_REQUEST_ID}
+  role: staff
+  expected:
+    status_codes:
+    - 200
+    content_type: application/json
+    json_schema:
+      properties:
+        notification_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Notification Id
+        changed:
+          type: boolean
+          title: Changed
+          default: true
+      type: object
+      required:
+      - notification_id
+      title: ActionOutput
+- id: issue-updated
+  description: Изменённый статус и история доступны жителю
+  mandatory: true
+  method: GET
+  path: /issues/{issue_id}
+  parameters:
+    path:
+      issue_id: ${ISSUE_ID}
+    query: {}
+    headers:
+      Authorization: Bearer ${MAX_INIT_DATA}
+    body: null
+  role: resident
+  expected:
+    status_codes:
+    - 200
+    content_type: application/json
+    json_schema:
+      properties:
+        id:
+          type: integer
+          title: Id
+        house_id:
+          type: integer
+          title: House Id
+        title:
+          type: string
+          title: Title
+        description:
+          type: string
+          title: Description
+        category:
+          type: string
+          enum:
+          - water
+          - heating
+          - electricity
+          - elevator
+          - entrance
+          - yard
+          - garbage
+          - security
+          - other
+          title: IssueCategory
+        status:
+          type: string
+          enum:
+          - new
+          - in_progress
+          - resolved
+          title: IssueStatus
+        priority:
+          type: integer
+          title: Priority
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        mine:
+          type: boolean
+          title: Mine
+        address:
+          type: string
+          title: Address
+        place:
+          anyOf:
+          - properties:
+              entrance:
+                type: integer
+                maximum: 100.0
+                minimum: 1.0
+                title: Entrance
+              floor:
+                type: integer
+                maximum: 200.0
+                minimum: 1.0
+                title: Floor
+              zone:
+                type: string
+                enum:
+                - apartment
+                - corridor
+                - stairs
+                - elevator
+                - technical
+                - entrance
+                - house
+                - courtyard
+                - parking
+                title: Zone
+              apartment_id:
+                anyOf:
+                - type: integer
+                  exclusiveMinimum: 0.0
+                - type: 'null'
+                title: Apartment Id
+            additionalProperties: false
+            type: object
+            required:
+            - entrance
+            - floor
+            - zone
+            title: Location
+          - type: 'null'
+        history:
+          items:
+            properties:
+              status:
+                type: string
+                enum:
+                - new
+                - in_progress
+                - resolved
+                title: IssueStatus
+              at:
+                type: string
+                format: date-time
+                title: At
+            type: object
+            required:
+            - status
+            - at
+            title: IssueHistory
+          type: array
+          title: History
+        photo_ids:
+          items:
+            type: integer
+          type: array
+          title: Photo Ids
+      type: object
+      required:
+      - id
+      - house_id
+      - title
+      - description
+      - category
+      - status
+      - priority
+      - created_at
+      - mine
+      - address
+      - place
+      - history
+      title: IssueResponse
+- id: message-send
+  description: Отправка сообщения соседней квартире
+  mandatory: true
+  method: POST
+  path: /apartments/{apartment_id}/messages
+  parameters:
+    path:
+      apartment_id: ${APARTMENT_ID}
+    query: {}
+    headers:
+      Authorization: Bearer ${MAX_INIT_DATA}
+      Origin: ${SITE_ORIGIN}
+      Content-Type: application/json
+    body:
+      recipient_id: ${RECIPIENT_APARTMENT_ID}
+      text: Проверочное сообщение соседу.
+      request_id: ${MESSAGE_REQUEST_ID}
+  role: resident
+  expected:
+    status_codes:
+    - 201
+    content_type: application/json
+    json_schema:
+      properties:
+        id:
+          type: integer
+          title: Id
+        apartment:
+          type: integer
+          title: Apartment
+        text:
+          type: string
+          title: Text
+        direction:
+          type: string
+          enum:
+          - incoming
+          - outgoing
+          title: Direction
+        createdAt:
+          type: string
+          format: date-time
+          title: Createdat
+      type: object
+      required:
+      - id
+      - apartment
+      - text
+      - direction
+      - createdAt
+      title: MessageResponse
+- id: messages-list
+  description: Переписка квартиры
+  mandatory: true
+  method: GET
+  path: /apartments/{apartment_id}/messages
+  parameters:
+    path:
+      apartment_id: ${APARTMENT_ID}
+    query:
+      cursor: 0
+      limit: 20
+    headers:
+      Authorization: Bearer ${MAX_INIT_DATA}
+    body: null
+  role: resident
+  expected:
+    status_codes:
+    - 200
+    content_type: application/json
+    json_schema:
+      properties:
+        items:
+          items:
+            properties:
+              id:
+                type: integer
+                title: Id
+              apartment:
+                type: integer
+                title: Apartment
+              text:
+                type: string
+                title: Text
+              direction:
+                type: string
+                enum:
+                - incoming
+                - outgoing
+                title: Direction
+              createdAt:
+                type: string
+                format: date-time
+                title: Createdat
+            type: object
+            required:
+            - id
+            - apartment
+            - text
+            - direction
+            - createdAt
+            title: MessageResponse
+          type: array
+          title: Items
+        next_cursor:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Next Cursor
+      type: object
+      required:
+      - items
+      - next_cursor
+      title: MessagePage
+- id: staff-contacts-save
+  description: Сохранение контактов УК для тестового дома
+  mandatory: true
+  method: POST
+  path: /staff/houses/{house_id}/contacts
+  parameters:
+    path:
+      house_id: ${HOUSE_ID}
+    query: {}
+    headers:
+      Origin: ${SITE_ORIGIN}
+      Content-Type: application/json
+      X-CSRF-Token: ${STAFF_CSRF_TOKEN}
+    body:
+      items:
+      - label: Проверочная диспетчерская
+        kind: phone
+        value: '+70000000000'
+        note: Синтетический номер; не предназначен для звонков
+  role: staff
+  expected:
+    status_codes:
+    - 200
+    content_type: application/json
+    json_schema:
+      properties:
+        company_name:
+          type: string
+          title: Company Name
+        items:
+          items:
+            properties:
+              label:
+                type: string
+                maxLength: 100
+                minLength: 1
+                title: Label
+              kind:
+                type: string
+                enum:
+                - phone
+                - email
+                - address
+                - website
+                title: Kind
+              value:
+                type: string
+                maxLength: 300
+                minLength: 1
+                title: Value
+              note:
+                type: string
+                maxLength: 200
+                title: Note
+                default: ''
+            additionalProperties: false
+            type: object
+            required:
+            - label
+            - kind
+            - value
+            title: ContactInput
+          type: array
+          title: Items
+      type: object
+      required:
+      - company_name
+      - items
+      title: ContactsOutput
+- id: resident-contacts
+  description: Контакты УК доступны жителю этого дома
+  mandatory: true
+  method: GET
+  path: /houses/{house_id}/contacts
+  parameters:
+    path:
+      house_id: ${HOUSE_ID}
+    query: {}
+    headers:
+      Authorization: Bearer ${MAX_INIT_DATA}
+    body: null
+  role: resident
+  expected:
+    status_codes:
+    - 200
+    content_type: application/json
+    json_schema:
+      properties:
+        company_name:
+          type: string
+          title: Company Name
+        items:
+          items:
+            properties:
+              label:
+                type: string
+                maxLength: 100
+                minLength: 1
+                title: Label
+              kind:
+                type: string
+                enum:
+                - phone
+                - email
+                - address
+                - website
+                title: Kind
+              value:
+                type: string
+                maxLength: 300
+                minLength: 1
+                title: Value
+              note:
+                type: string
+                maxLength: 200
+                title: Note
+                default: ''
+            additionalProperties: false
+            type: object
+            required:
+            - label
+            - kind
+            - value
+            title: ContactInput
+          type: array
+          title: Items
+      type: object
+      required:
+      - company_name
+      - items
+      title: ContactsOutput
+- id: utilities
+  description: Лицевой счёт и приборы квартиры
+  mandatory: true
+  method: GET
+  path: /apartments/{apartment_id}/utilities
+  parameters:
+    path:
+      apartment_id: ${APARTMENT_ID}
+    query: {}
+    headers:
+      Authorization: Bearer ${MAX_INIT_DATA}
+    body: null
+  role: resident
+  expected:
+    status_codes:
+    - 200
+    content_type: application/json
+    json_schema:
+      anyOf:
+      - properties:
+          number:
+            type: string
+            title: Number
+          invoiceNumber:
+            anyOf:
+            - type: string
+            - type: 'null'
+            title: Invoicenumber
+          area:
+            type: string
+            pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+            title: Area
+          residents:
+            type: integer
+            title: Residents
+          period:
+            anyOf:
+            - type: string
+            - type: 'null'
+            title: Period
+          readingPeriod:
+            type: string
+            title: Readingperiod
+          due:
+            anyOf:
+            - type: string
+              format: date
+            - type: 'null'
+            title: Due
+          charges:
+            items:
+              properties:
+                title:
+                  type: string
+                  title: Title
+                quantity:
+                  type: string
+                  title: Quantity
+                tariff:
+                  type: string
+                  title: Tariff
+                amount:
+                  type: integer
+                  title: Amount
+              type: object
+              required:
+              - title
+              - quantity
+              - tariff
+              - amount
+              title: Charge
+            type: array
+            title: Charges
+          meters:
+            items:
+              properties:
+                id:
+                  type: string
+                  title: Id
+                kind:
+                  type: string
+                  enum:
+                  - cold
+                  - hot
+                  - electricity
+                  title: Kind
+                serial:
+                  type: string
+                  title: Serial
+                previous:
+                  type: string
+                  pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+                  title: Previous
+                current:
+                  anyOf:
+                  - type: string
+                    pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+                  - type: 'null'
+                  title: Current
+              type: object
+              required:
+              - id
+              - kind
+              - serial
+              - previous
+              - current
+              title: MeterResponse
+            type: array
+            title: Meters
         type: object
-        required: [status]
+        required:
+        - number
+        - invoiceNumber
+        - area
+        - residents
+        - period
+        - readingPeriod
+        - due
+        - charges
+        - meters
+        title: AccountResponse
+      - type: 'null'
+      title: Response Account Api V1 Apartments  Apartment Id  Utilities Get
+- id: meter-reading
+  description: Передача показания тестового счётчика
+  mandatory: true
+  method: POST
+  path: /meters/{meter_id}/readings
+  parameters:
+    path:
+      meter_id: ${METER_ID}
+    query: {}
+    headers:
+      Authorization: Bearer ${MAX_INIT_DATA}
+      Origin: ${SITE_ORIGIN}
+      Content-Type: application/json
+    body:
+      value: '13.500'
+      period: ${READING_PERIOD}
+  role: resident
+  expected:
+    status_codes:
+    - 200
+    content_type: application/json
+    json_schema:
+      properties:
+        number:
+          type: string
+          title: Number
+        invoiceNumber:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Invoicenumber
+        area:
+          type: string
+          pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+          title: Area
+        residents:
+          type: integer
+          title: Residents
+        period:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Period
+        readingPeriod:
+          type: string
+          title: Readingperiod
+        due:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+          title: Due
+        charges:
+          items:
+            properties:
+              title:
+                type: string
+                title: Title
+              quantity:
+                type: string
+                title: Quantity
+              tariff:
+                type: string
+                title: Tariff
+              amount:
+                type: integer
+                title: Amount
+            type: object
+            required:
+            - title
+            - quantity
+            - tariff
+            - amount
+            title: Charge
+          type: array
+          title: Charges
+        meters:
+          items:
+            properties:
+              id:
+                type: string
+                title: Id
+              kind:
+                type: string
+                enum:
+                - cold
+                - hot
+                - electricity
+                title: Kind
+              serial:
+                type: string
+                title: Serial
+              previous:
+                type: string
+                pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+                title: Previous
+              current:
+                anyOf:
+                - type: string
+                  pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$
+                - type: 'null'
+                title: Current
+            type: object
+            required:
+            - id
+            - kind
+            - serial
+            - previous
+            - current
+            title: MeterResponse
+          type: array
+          title: Meters
+      type: object
+      required:
+      - number
+      - invoiceNumber
+      - area
+      - residents
+      - period
+      - readingPeriod
+      - due
+      - charges
+      - meters
+      title: AccountResponse
+- id: house-works
+  description: Работы по дому
+  mandatory: true
+  method: GET
+  path: /houses/{house_id}/works
+  parameters:
+    path:
+      house_id: ${HOUSE_ID}
+    query: {}
+    headers:
+      Authorization: Bearer ${MAX_INIT_DATA}
+    body: null
+  role: resident
+  expected:
+    status_codes:
+    - 200
+    content_type: application/json
+    json_schema:
+      type: array
+      items:
         properties:
-          status: {type: string, const: ok}
-  - id: database-ready
-    description: "БД доступна; при недоступности или отсутствии DATABASE_URL ожидается 503"
-    method: GET
-    path: /health/ready
-    parameters:
-      path: {}
-      query: {}
-      headers: {}
-      body: null
-    role: anonymous
-    expected:
-      status_codes: [200]
-      content_type: application/json
-      json_schema:
+          id:
+            type: integer
+            title: Id
+          title:
+            type: string
+            title: Title
+          starts_at:
+            type: string
+            format: date-time
+            title: Starts At
+          ends_at:
+            type: string
+            format: date-time
+            title: Ends At
+          location:
+            type: string
+            title: Location
         type: object
-        required: [status]
+        required:
+        - id
+        - title
+        - starts_at
+        - ends_at
+        - location
+        title: WorkResponse
+      title: Response Works Api V1 Houses  House Id  Works Get
+- id: cameras-metadata
+  description: Список камер без загрузки кадров
+  mandatory: true
+  method: GET
+  path: /houses/{house_id}/cameras
+  parameters:
+    path:
+      house_id: ${HOUSE_ID}
+    query: {}
+    headers:
+      Authorization: Bearer ${MAX_INIT_DATA}
+    body: null
+  role: resident
+  expected:
+    status_codes:
+    - 200
+    content_type: application/json
+    json_schema:
+      type: array
+      items:
         properties:
-          status: {type: string, const: ok}
-  - id: anonymous-resident-denied
-    description: "Данные жителя недоступны без подтверждённого входа MAX"
-    method: GET
-    path: /api/v1/me
-    parameters: {path: {}, query: {}, headers: {}, body: null}
-    role: anonymous
-    expected:
-      status_codes: [401]
-      content_type: application/json
-  - id: openapi-contract
-    description: "Актуальная схема API с MAXLaunchData и StaffSession"
-    method: GET
-    path: /api/openapi.json
-    parameters: {path: {}, query: {}, headers: {}, body: null}
-    role: anonymous
-    expected:
-      status_codes: [200]
-      content_type: application/json
-      json_schema:
+          id:
+            type: string
+            title: Id
+          name:
+            type: string
+            title: Name
+          status:
+            type: string
+            enum:
+            - online
+            - maintenance
+            - unavailable
+            title: Status
+          note:
+            type: string
+            title: Note
         type: object
-        required: [openapi, info, paths, components]
-  - id: anonymous-staff-denied
-    description: "Данные сотрудника недоступны без его сессии"
-    method: GET
-    path: /api/v1/staff/me
-    parameters: {path: {}, query: {}, headers: {}, body: null}
-    role: anonymous
-    expected: {status_codes: [401], content_type: application/json}
-  - id: staff-profile
-    description: "Профиль сотрудника содержит только назначенные дома"
-    method: GET
-    path: /api/v1/staff/me
-    requires: [STAFF_ACCESS_TOKEN]
-    parameters:
-      path: {}
-      query: {}
-      headers: {Authorization: "Bearer ${STAFF_ACCESS_TOKEN}"}
-      body: null
-    role: staff
-    expected:
-      status_codes: [200]
-      content_type: application/json
-      json_schema:
-        type: object
-        required: [name, houses, csrf_token]
-  - id: resident-profile
-    description: "Профиль жителя и доступные ему квартиры"
-    method: GET
-    path: /api/v1/me
-    requires: [MAX_INIT_DATA]
-    parameters:
-      path: {}
-      query: {}
-      headers: {Authorization: "Bearer ${MAX_INIT_DATA}"}
-      body: null
-    role: resident
-    expected: {status_codes: [200], content_type: application/json}
+        required:
+        - id
+        - name
+        - status
+        - note
+        title: CameraResponse
+      title: Response Cameras Api V1 Houses  House Id  Cameras Get
+- id: staff-logout
+  description: Отзыв тестового токена сотрудника
+  mandatory: true
+  method: POST
+  path: /staff/auth/logout
+  parameters:
+    path: {}
+    query: {}
+    headers:
+      Origin: ${SITE_ORIGIN}
+      X-CSRF-Token: ${STAFF_CSRF_TOKEN}
+    body: null
+  role: staff
+  expected:
+    status_codes:
+    - 204
+    content_type: null
+    json_schema: null

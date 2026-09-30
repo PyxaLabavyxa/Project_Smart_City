@@ -1,0 +1,113 @@
+{
+  "format_version": "1.0",
+  "solution": "Домовед",
+  "team": "Облачный Код",
+  "synthetic": true,
+  "environment": "Изолированная временная БД в tests/test_evaluation_materials.py; не экспорт рабочих пользователей",
+  "live_usage": "Для публичного API оператор подставляет ID квартир, дома и счётчика тестового жителя. Изменения выполняются только на его данных. UUID должны быть новыми для каждого независимого прогона.",
+  "fixture": {
+    "company": {
+      "id": 1,
+      "name": "Проверочная УК Облачный Код"
+    },
+    "house": {
+      "id": 1,
+      "address": "Проверочный дом, 1",
+      "entrances_count": 1,
+      "floors_count": 1,
+      "apartments_per_floor": 2
+    },
+    "resident": {
+      "id": 1,
+      "max_user_id": 101,
+      "name": "Житель для проверки"
+    },
+    "apartments": [
+      {
+        "id": 1,
+        "house_id": 1,
+        "number": 1,
+        "entrance": 1,
+        "floor": 1
+      },
+      {
+        "id": 2,
+        "house_id": 1,
+        "number": 2,
+        "entrance": 1,
+        "floor": 1
+      }
+    ],
+    "resident_apartment_id": 1,
+    "staff": {
+      "id": 1,
+      "login": "evaluation_staff",
+      "name": "Сотрудник для проверки",
+      "house_ids": [
+        1
+      ]
+    },
+    "meter": {
+      "id": 1,
+      "kind": "cold",
+      "serial": "EVAL-0001",
+      "previous": "12.000"
+    }
+  },
+  "payloads": {
+    "resident_login": {
+      "init_data": "${MAX_INIT_DATA}"
+    },
+    "staff_login": {
+      "login": "${STAFF_LOGIN}",
+      "password": "${STAFF_PASSWORD}"
+    },
+    "registration": {
+      "full_name": "Житель для проверки",
+      "company_id": "${COMPANY_ID}",
+      "house_id": "${HOUSE_ID}",
+      "apartment_number": 2,
+      "additional": true
+    },
+    "issue": {
+      "title": "Проверочное обращение: освещение подъезда",
+      "description": "Синтетическое обращение команды Облачный Код для проверки API.",
+      "category": "electricity",
+      "place": {
+        "entrance": 1,
+        "floor": 1,
+        "zone": "entrance",
+        "apartment_id": null
+      },
+      "request_id": "${ISSUE_REQUEST_ID}"
+    },
+    "staff_status": {
+      "status": "in_progress",
+      "expected_status": "new",
+      "request_id": "${STATUS_REQUEST_ID}"
+    },
+    "staff_message": {
+      "text": "Проверочное сообщение сотрудника: обращение принято в работу.",
+      "request_id": "${STAFF_MESSAGE_REQUEST_ID}"
+    },
+    "message": {
+      "recipient_id": "${RECIPIENT_APARTMENT_ID}",
+      "text": "Проверочное сообщение соседу.",
+      "request_id": "${MESSAGE_REQUEST_ID}"
+    },
+    "contacts": {
+      "items": [
+        {
+          "label": "Проверочная диспетчерская",
+          "kind": "phone",
+          "value": "+70000000000",
+          "note": "Синтетический номер; не предназначен для звонков"
+        }
+      ]
+    },
+    "reading": {
+      "value": "13.500",
+      "period": "${READING_PERIOD}"
+    }
+  }
+}
