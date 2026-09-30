@@ -17,7 +17,7 @@ from app.database.models import (
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from smart_city_api.core.staff_auth import hash_password, verify_password
+from smart_city_api.core.staff_auth import hash_password, token_hash, verify_password
 from tests.test_api import headers
 
 pytest_plugins = ["tests.test_api"]
@@ -108,6 +108,83 @@ def status_body(**changes):
         "request_id": str(uuid4()),
         **changes,
     }
+
+
+def issue_token(client, name="manager"):
+    response = client.post(
+        ROOT + "/auth/token", json={"login": name, "password": PASSWORD}, headers=ORIGIN
+    )
+    assert response.status_code == 200, response.text
+    assert "set-cookie" not in response.headers
+    return response
+
+
+def test_staff_token_supports_swagger_reads_writes_and_revocation(staff_api):
+    client, engine, _ = staff_api
+    response = issue_token(client)
+    token = response.json()["access_token"]
+    assert response.json()["token_type"] == "bearer"
+    assert response.json()["expires_in"] == client.app.state.settings.staff_session_hours * 3600
+    assert response.headers["cache-control"] == "no-store"
+    assert not client.cookies.get("dompulse_staff")
+    authorization = {"Authorization": "Bearer " + token}
+    with Session(engine) as session:
+        stored = session.scalar(select(StaffSession))
+        assert stored.token_hash == token_hash(token)
+        assert stored.token_hash != token
+    profile = client.get(ROOT + "/me", headers=authorization)
+    assert profile.status_code == 200
+    assert [house["id"] for house in profile.json()["houses"]] == [1]
+    assert client.get(ROOT + "/issues", headers=authorization).status_code == 200
+    assert client.get(ROOT + "/issues/3", headers=authorization).status_code == 404
+    assert client.get("/api/v1/me", headers=authorization).status_code == 401
+    assert client.get(ROOT + "/photos/1", headers=authorization).status_code == 200
+    updated = client.post(ROOT + "/issues/1/status", json=status_body(), headers=authorization)
+    assert updated.status_code == 200, updated.text
+    assert client.post(ROOT + "/auth/logout", headers=authorization).status_code == 204
+    assert client.get(ROOT + "/me", headers=authorization).status_code == 401
+
+
+def test_bearer_never_falls_back_to_cookie_or_bypasses_cookie_csrf(staff_api):
+    client, _, _ = staff_api
+    login(client)
+    assert client.get(ROOT + "/me", headers={"Authorization": "Bearer invalid"}).status_code == 401
+    assert (
+        client.post(ROOT + "/issues/1/status", json=status_body(), headers=ORIGIN).status_code
+        == 403
+    )
+    assert client.get(ROOT + "/me", headers=headers()).status_code == 401
+    other_token = issue_token(client, "other").json()["access_token"]
+    authorization = {"Authorization": "Bearer " + other_token}
+    profile = client.get(ROOT + "/me", headers=authorization)
+    assert [house["id"] for house in profile.json()["houses"]] == [2]
+    assert client.get(ROOT + "/issues/1", headers=authorization).status_code == 404
+    assert client.post(ROOT + "/auth/logout", headers=authorization).status_code == 204
+    assert client.get(ROOT + "/me").status_code == 200
+
+
+def test_staff_token_checks_credentials_origin_expiry_and_active_account(staff_api):
+    client, engine, _ = staff_api
+    body = {"login": "manager", "password": PASSWORD}
+    assert client.post(ROOT + "/auth/token", json=body).status_code == 403
+    assert (
+        client.post(
+            ROOT + "/auth/token", json={**body, "password": "wrong"}, headers=ORIGIN
+        ).status_code
+        == 401
+    )
+    token = issue_token(client).json()["access_token"]
+    authorization = {"Authorization": "Bearer " + token}
+    with Session(engine) as session:
+        session.scalar(select(StaffSession)).expires_at = datetime.now(UTC) - timedelta(seconds=1)
+        session.commit()
+    assert client.get(ROOT + "/me", headers=authorization).status_code == 401
+    token = issue_token(client).json()["access_token"]
+    with Session(engine) as session:
+        session.get(StaffUser, 1).active = False
+        session.commit()
+    assert client.get(ROOT + "/me", headers={"Authorization": "Bearer " + token}).status_code == 401
+    assert client.post(ROOT + "/auth/token", json=body, headers=ORIGIN).status_code == 401
 
 
 def test_authentication_is_separate_secure_revocable_and_expiring(staff_api):

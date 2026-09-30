@@ -17,6 +17,12 @@ class LoginInput(BaseModel):
         return value.strip().lower()
 
 
+class StaffTokenOutput(BaseModel):
+    access_token: str
+    token_type: Literal["bearer"] = "bearer"
+    expires_in: int
+
+
 class HouseOutput(BaseModel):
     id: int
     address: str

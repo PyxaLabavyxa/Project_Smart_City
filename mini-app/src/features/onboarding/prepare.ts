@@ -19,6 +19,7 @@ export async function prepareTour(router: Router, signal: AbortSignal, progress:
 }
 
 function waitForPage(path: string, signal: AbortSignal) {
+  const expectedPath = path.replace(/\/+$/, "") || "/";
   return new Promise<void>((resolve, reject) => {
     const started = Date.now();
     let finishing = false;
@@ -30,7 +31,8 @@ function waitForPage(path: string, signal: AbortSignal) {
     const abort = () => finish(new DOMException("Подготовка отменена", "AbortError"));
     const timer = window.setInterval(() => {
       const main = document.querySelector<HTMLElement>("#main");
-      const pending = !main || main.dataset.pagePath !== path || main.querySelector('[aria-busy="true"]') || document.querySelector('[data-app-loading="true"]');
+      const actualPath = main?.dataset.pagePath;
+      const pending = !main || actualPath === undefined || (actualPath.replace(/\/+$/, "") || "/") !== expectedPath || main.querySelector('[aria-busy="true"]') || document.querySelector('[data-app-loading="true"]');
       const images = main ? Array.from(main.querySelectorAll("img")) : [];
       for (const image of images) image.loading = "eager";
       const error = !pending && main?.querySelector('.request-state[role="alert"]');

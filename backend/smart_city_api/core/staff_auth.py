@@ -2,12 +2,14 @@ import asyncio
 import hashlib
 import hmac
 import secrets
+from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Annotated
 from urllib.parse import urlsplit
 
 from app.database.models import StaffLoginThrottle, StaffSession, StaffUser
 from fastapi import Depends, HTTPException, Request
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import delete, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
@@ -17,6 +19,28 @@ from smart_city_api.api.dependencies import Session
 COOKIE = "dompulse_staff"
 COOKIE_PATH = "/api/v1/staff"
 PASSWORD_ITERATIONS = 600_000
+staff_bearer = HTTPBearer(auto_error=False, scheme_name="StaffSession")
+
+
+@dataclass(frozen=True)
+class StaffAuthentication:
+    token: str
+    via_bearer: bool
+
+
+async def get_staff_authentication(
+    request: Request,
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(staff_bearer)],
+) -> StaffAuthentication:
+    token = credentials.credentials if credentials else request.cookies.get(COOKIE, "")
+    if not token or len(token) > 100:
+        raise HTTPException(
+            401, "Войдите в кабинет сотрудника", headers={"WWW-Authenticate": "Bearer"}
+        )
+    return StaffAuthentication(token=token, via_bearer=credentials is not None)
+
+
+StaffAuth = Annotated[StaffAuthentication, Depends(get_staff_authentication)]
 
 
 def hash_password(password: str) -> str:
@@ -117,10 +141,8 @@ async def create_session(session: Session, staff_id: int, hours: int) -> str:
     return token
 
 
-async def get_staff(request: Request, session: Session) -> StaffUser:
-    token = request.cookies.get(COOKIE, "")
-    if not token or len(token) > 100:
-        raise HTTPException(401, "Войдите в кабинет сотрудника")
+async def get_staff(request: Request, session: Session, authentication: StaffAuth) -> StaffUser:
+    token = authentication.token
     employee = await session.scalar(
         select(StaffUser)
         .join(StaffSession, StaffSession.staff_id == StaffUser.id)
@@ -132,7 +154,7 @@ async def get_staff(request: Request, session: Session) -> StaffUser:
     )
     if employee is None:
         raise HTTPException(401, "Сессия истекла. Войдите повторно")
-    if request.method not in ("GET", "HEAD", "OPTIONS"):
+    if not authentication.via_bearer and request.method not in ("GET", "HEAD", "OPTIONS"):
         require_same_origin(request)
         if not hmac.compare_digest(
             request.headers.get("x-csrf-token", "").encode(), csrf_token(token).encode()

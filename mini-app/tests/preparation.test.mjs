@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { prepareTour } from '../src/features/onboarding/prepare.ts';
 
-async function prepareWithCameras(cameraCount, stopAt, updates = []) {
+async function prepareWithCameras(cameraCount, stopAt, updates = [], redirects = {}) {
   const previousDocument = globalThis.document;
   const previousWindow = globalThis.window;
   const controller = new AbortController();
@@ -20,7 +20,7 @@ async function prepareWithCameras(cameraCount, stopAt, updates = []) {
       prefetch() {},
       replace(href) {
         visited.push(href);
-        pathname = href.split('?')[0];
+        pathname = (redirects[href] ?? href).split('?')[0];
         if (href === stopAt) controller.abort();
       },
     }, controller.signal, percent => updates.push(percent), '/utilities?invoice=latest');
@@ -49,4 +49,18 @@ test('cancelling page preparation never reports successful completion', async ()
   const updates = [];
   await assert.rejects(prepareWithCameras(4, '/cameras', updates), { name: 'AbortError' });
   assert(!updates.includes(100));
+});
+
+test('a cached health redirect with a trailing slash does not stop preparation at 63 percent', async () => {
+  const { updates, visited } = await prepareWithCameras(4, undefined, [], { '/health': '/health/' });
+  assert(updates.some(value => Math.round(value) === 63));
+  assert.equal(updates.at(-1), 100);
+  assert(visited.includes('/info'));
+  assert(visited.includes('/more'));
+});
+
+test('preparation completes when the return page has a trailing slash and a query', async () => {
+  const { updates, visited } = await prepareWithCameras(0, undefined, [], { '/utilities?invoice=latest': '/utilities/?invoice=latest' });
+  assert.equal(visited.at(-1), '/utilities?invoice=latest');
+  assert.equal(updates.at(-1), 100);
 });
