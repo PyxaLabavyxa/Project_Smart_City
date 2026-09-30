@@ -79,7 +79,8 @@ class IssueRepository:
             .where(
                 and_(
                     User.max_user_id == max_user_id,
-                    Issue.house_id == house_id
+                    Issue.house_id == house_id,
+                    Issue.rejected_at.is_(None),
                 )
             )
             .order_by(
@@ -126,7 +127,8 @@ class IssueRepository:
             .where(
                 and_(
                     User.max_user_id == max_user_id,
-                    Issue.house_id == house_id
+                    Issue.house_id == house_id,
+                    Issue.rejected_at.is_(None),
                 )
             )
         )

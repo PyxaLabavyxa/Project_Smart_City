@@ -12,7 +12,7 @@ const categories = {
 const zones = { apartment: "Квартира", corridor: "Коридор", elevator: "Лифт", stairs: "Лестница", entrance: "Подъезд", yard: "Двор", roof: "Крыша", basement: "Подвал" };
 const state = { profile: null, status: "", page: 1, total: 0, detail: null, listRequest: 0, detailRequest: 0, busy: false };
 const contactState = { request: 0, house: "", loaded: false, dirty: false, loading: false, saving: false };
-let searchTimer, toastTimer, messageAction, statusAction;
+let searchTimer, toastTimer, messageAction, statusAction, rejectionAction;
 
 function escapeHtml(value) {
   return String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
@@ -69,7 +69,7 @@ async function enterWorkspace() {
   $("staff-name").textContent = state.profile.name;
   $("avatar").textContent = state.profile.name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
   $("house-filter").innerHTML = '<option value="">Все мои дома</option>' + state.profile.houses.map((house) => `<option value="${house.id}">${esc(house.address)}</option>`).join("");
-  $("contact-house").innerHTML = state.profile.houses.map((house) => `<option value="${house.id}">${esc(house.address)}</option>`).join("");
+  $("contact-house").innerHTML = state.profile.contact_houses.map((house) => `<option value="${house.id}">${esc(house.address)}</option>`).join("");
   $("priority-filter").value = ""; $("search").value = "";
   $("no-houses").hidden = state.profile.houses.length > 0;
   $("login-screen").hidden = true; $("workspace").hidden = false; $("boot").hidden = true;
@@ -145,11 +145,13 @@ async function openDetail(id) {
       <div class="detail-meta"><span>${esc(detail.author)}</span><span>·</span><time>${esc(date(detail.created_at))}</time><span class="priority p${detail.priority}">${esc(priorities[detail.priority])} приоритет</span></div>
       <section class="section"><h3>Что произошло</h3><p class="description">${esc(detail.description)}</p>${detail.photos.length ? `<div class="photos">${detail.photos.map((photo, index) => `<button class="photo-thumb" data-photo="${photo.id}" aria-label="Открыть фото ${index + 1}"><img src="${esc(photo.url)}" alt="Фото ${index + 1}" loading="lazy"></button>`).join("")}</div><p class="form-help">Нажмите на фото, чтобы рассмотреть его</p>` : '<p class="form-help">Житель не прикрепил фотографии</p>'}</section>
       <section class="section"><h3>Статус обращения</h3><form id="status-form" class="status-form"><label class="sr-only" for="status-select">Новый статус</label><select id="status-select">${Object.entries(statuses).map(([value, label]) => `<option value="${value}"${value === detail.status ? " selected" : ""}>${label}</option>`).join("")}</select><button class="primary" type="submit">Сохранить статус</button></form><p class="form-help">Автор получит уведомление в боте. Отмечайте обращение решённым после устранения проблемы.</p><p id="detail-error" class="error detail-error" role="alert" hidden></p><div id="delivery-summary" class="delivery-summary"></div></section>
+      <section class="section"><h3>Отклонить обращение</h3><form id="reject-form" class="message-form"><label for="reject-reason">Причина отклонения</label><textarea id="reject-reason" minlength="3" maxlength="1500" required placeholder="Объясните жителю, почему обращение отклонено"></textarea><p class="form-help">Обращение исчезнет из списков. Бот отправит автору указанную причину.</p><button class="danger" type="submit">Отклонить обращение</button></form><p id="reject-error" class="error detail-error" role="alert" hidden></p></section>
       <section class="section"><h3>Диалог с жителем</h3><div id="conversation" class="conversation" aria-live="polite"></div><form id="message-form" class="message-form"><label for="message-text">Уточните детали</label><textarea id="message-text" maxlength="1500" required placeholder="Здравствуйте! Подскажите, пожалуйста, где именно находится неисправность?"></textarea><div class="composer-footer"><span id="message-count">0 / 1500</span><button class="primary" type="submit">Отправить в MAX ↗</button></div></form><p id="message-error" class="error detail-error" role="alert" hidden></p><p class="form-help">Ответ жителя появится здесь автоматически. Показаны последние 200 сообщений.</p></section>
       <section class="section"><h3>История статусов</h3><ol id="history" class="timeline"></ol></section></div>`;
     renderConversation(detail);
     if (!$("issue-dialog").open) $("issue-dialog").showModal();
     $("status-form").addEventListener("submit", saveStatus);
+    $("reject-form").addEventListener("submit", rejectIssue);
     $("message-form").addEventListener("submit", sendMessage);
     $("message-text").addEventListener("input", () => { $("message-count").textContent = `${$("message-text").value.length} / 1500`; });
   } catch (error) { toast(error.message); }
@@ -173,6 +175,21 @@ async function saveStatus(event) {
     const updated = await api(`/issues/${detail.id}`); renderConversation(updated);
     await loadList();
   } catch (error) { if ($("detail-error")) showError("detail-error", error.message); }
+  finally { setBusy(false); }
+}
+async function rejectIssue(event) {
+  event.preventDefault(); if (state.busy || !state.detail) return;
+  const detail = state.detail, reason = $("reject-reason").value.trim();
+  if (reason.length < 3) { showError("reject-error", "Укажите причину: от 3 до 1500 символов"); return; }
+  const key = `${detail.id}:${detail.status}:${reason}`;
+  if (rejectionAction?.key !== key) rejectionAction = { key, id: uuid() };
+  setBusy(true); showError("reject-error", "");
+  try {
+    await api(`/issues/${detail.id}/reject`, { method: "POST", body: JSON.stringify({ reason, expected_status: detail.status, request_id: rejectionAction.id }) });
+    rejectionAction = null; $("issue-dialog").close();
+    toast("Обращение отклонено. Причина поставлена в очередь отправки в MAX.");
+    await loadList();
+  } catch (error) { if ($("reject-error")) showError("reject-error", error.message); }
   finally { setBusy(false); }
 }
 async function sendMessage(event) {
@@ -213,7 +230,9 @@ $("refresh").addEventListener("click", loadList);
 $("refresh-detail").addEventListener("click", async () => {
   if (!state.detail) return;
   const draft = $("message-text")?.value || "";
+  const reason = $("reject-reason")?.value || "";
   await openDetail(state.detail.id);
+  if ($("reject-reason")) $("reject-reason").value = reason;
   if ($("message-text")) { $("message-text").value = draft; $("message-count").textContent = `${draft.length} / 1500`; }
 });
 document.querySelectorAll(".stat").forEach((button) => button.addEventListener("click", () => {
@@ -276,7 +295,7 @@ async function loadRegistrations() {
       <td>${item.source === "bot" ? "Чатбот" : "Мини-приложение"}</td>
       <td>${esc({ pending: "Ожидает решения", approved: "Принята", rejected: "Отклонена" }[item.status])}${item.auto_approved ? '<span class="row-meta">Автоматически · тестовый режим</span>' : ""}</td>
       <td>${esc(date(item.created_at, true))}</td>
-      <td>${item.status === "pending" ? `<button class="secondary" data-registration="${item.id}" data-decision="approve">Принять</button> <button class="text-button" data-registration="${item.id}" data-decision="reject">Отклонить</button>` : `<span class="muted">${item.auto_approved ? "Принято автоматически" : "Рассмотрено"}</span>`}</td></tr>`).join("");
+      <td>${item.status === "approved" ? `<button class="danger" data-delete-user="${item.id}" data-resident="${esc(item.full_name)}">Удалить пользователя</button>` : item.status === "pending" ? `<button class="secondary" data-registration="${item.id}" data-decision="approve">Принять</button> <button class="text-button" data-registration="${item.id}" data-decision="reject">Отклонить</button>` : `<span class="muted">${item.auto_approved ? "Принято автоматически" : "Рассмотрено"}</span>`}</td></tr>`).join("");
     $("registrations-empty").hidden = data.total !== 0;
     $("registrations-page").textContent = data.total ? `Страница ${registrationPage} · всего заявок: ${data.total}` : "Нет заявок";
     $("registrations-prev").disabled = registrationPage <= 1;
@@ -289,13 +308,25 @@ $("refresh-registrations").addEventListener("click", loadRegistrations);
 $("registrations-prev").addEventListener("click", () => { if (registrationPage > 1) { registrationPage--; void loadRegistrations(); } });
 $("registrations-next").addEventListener("click", () => { if (registrationPage * 25 < registrationTotal) { registrationPage++; void loadRegistrations(); } });
 $("registrations-body").addEventListener("click", async event => {
-  const button = event.target.closest("[data-registration]");
+  const button = event.target.closest("[data-registration], [data-delete-user]");
   if (!button || state.busy) return;
+  const deleting = button.hasAttribute("data-delete-user");
+  if (deleting && !window.confirm(`Удалить аккаунт «${button.dataset.resident}»? Все его обращения, переписка, показания и привязки к квартирам будут удалены. Квартиры и данные других жильцов сохранятся. Это действие нельзя отменить.`)) return;
   state.busy = true; button.disabled = true;
   try {
-    await api(`/registrations/${Number(button.dataset.registration)}/${button.dataset.decision}`, { method: "POST" });
-    toast(button.dataset.decision === "approve" ? "Заявка принята. Квартира привязана." : "Заявка отклонена.");
+    if (deleting) {
+      try { await api(`/registrations/${Number(button.dataset.deleteUser)}/user`, { method: "DELETE" }); }
+      catch (error) { if (error.status !== 404) throw error; }
+      toast("Аккаунт пользователя удалён из системы.");
+    } else {
+      await api(`/registrations/${Number(button.dataset.registration)}/${button.dataset.decision}`, { method: "POST" });
+      toast(button.dataset.decision === "approve" ? "Заявка принята. Квартира привязана." : "Заявка отклонена.");
+    }
     await loadRegistrations();
+    if (registrationPage > 1 && (registrationPage - 1) * 25 >= registrationTotal) {
+      registrationPage = Math.max(1, Math.ceil(registrationTotal / 25)); await loadRegistrations();
+    }
+    if (deleting) await loadList();
   } catch (error) { showError("registrations-error", error.message); }
   finally { state.busy = false; button.disabled = false; }
 });
@@ -326,7 +357,7 @@ function readContactDraft() {
 }
 function contactBusy(busy) {
   $("contacts-fields").disabled = busy;
-  $("contact-house").disabled = busy || !state.profile?.houses.length;
+  $("contact-house").disabled = busy || !state.profile?.contact_houses.length;
   $("refresh-contacts").disabled = busy;
   $("contacts-form").setAttribute("aria-busy", String(busy));
 }

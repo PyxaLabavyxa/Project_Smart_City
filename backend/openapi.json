@@ -1424,6 +1424,58 @@
         }
       }
     },
+    "/api/v1/staff/issues/{issue_id}/reject": {
+      "post": {
+        "tags": [
+          "Staff"
+        ],
+        "summary": "Reject Issue",
+        "operationId": "reject_issue_api_v1_staff_issues__issue_id__reject_post",
+        "parameters": [
+          {
+            "name": "issue_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Issue Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionOutput"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/staff/issues/{issue_id}/messages": {
       "post": {
         "tags": [
@@ -1554,6 +1606,41 @@
                 "schema": {}
               }
             }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/staff/registrations/{application_id}/user": {
+      "delete": {
+        "tags": [
+          "Staff"
+        ],
+        "summary": "Delete Account",
+        "operationId": "delete_account_api_v1_staff_registrations__application_id__user_delete",
+        "parameters": [
+          {
+            "name": "application_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Application Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
           },
           "422": {
             "description": "Validation Error",
@@ -2980,6 +3067,13 @@
             "type": "array",
             "title": "Houses"
           },
+          "contact_houses": {
+            "items": {
+              "$ref": "#/components/schemas/HouseOutput"
+            },
+            "type": "array",
+            "title": "Contact Houses"
+          },
           "csrf_token": {
             "type": "string",
             "title": "Csrf Token"
@@ -2989,6 +3083,7 @@
         "required": [
           "name",
           "houses",
+          "contact_houses",
           "csrf_token"
         ],
         "title": "ProfileOutput"
@@ -3060,6 +3155,32 @@
           "apartment_number"
         ],
         "title": "RegistrationInput"
+      },
+      "RejectInput": {
+        "properties": {
+          "reason": {
+            "type": "string",
+            "maxLength": 1500,
+            "minLength": 3,
+            "title": "Reason"
+          },
+          "expected_status": {
+            "$ref": "#/components/schemas/IssueStatus"
+          },
+          "request_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Request Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "reason",
+          "expected_status",
+          "request_id"
+        ],
+        "title": "RejectInput"
       },
       "SendMessage": {
         "properties": {

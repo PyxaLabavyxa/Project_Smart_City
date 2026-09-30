@@ -1,5 +1,6 @@
 import hashlib
 import json
+from datetime import UTC, datetime
 
 from app.database.enums import IssuePriority, IssueStatus
 from app.database.models import (
@@ -28,6 +29,7 @@ from smart_city_api.schemas.staff import (
     MessageInput,
     MessageOutput,
     PhotoOutput,
+    RejectInput,
     StaffIssuePage,
     StatusInput,
 )
@@ -37,10 +39,17 @@ def house_scope(staff_id: int):
     return select(StaffHouse.house_id).where(StaffHouse.staff_id == staff_id)
 
 
-async def accessible_issue(session: AsyncSession, staff_id: int, issue_id: int) -> Issue:
-    issue = await session.scalar(
-        select(Issue).where(Issue.id == issue_id, Issue.house_id.in_(house_scope(staff_id)))
+async def accessible_issue(
+    session: AsyncSession, staff_id: int, issue_id: int, *, lock: bool = False
+) -> Issue:
+    query = select(Issue).where(
+        Issue.id == issue_id,
+        Issue.house_id.in_(house_scope(staff_id)),
+        Issue.rejected_at.is_(None),
     )
+    if lock:
+        query = query.with_for_update()
+    issue = await session.scalar(query)
     if issue is None:
         raise HTTPException(404, "Обращение не найдено или недоступно")
     return issue
@@ -92,7 +101,7 @@ async def list_issues(
     page: int,
     page_size: int,
 ) -> StaffIssuePage:
-    conditions = [Issue.house_id.in_(house_scope(staff_id))]
+    conditions = [Issue.house_id.in_(house_scope(staff_id)), Issue.rejected_at.is_(None)]
     if house_id is not None:
         conditions.append(Issue.house_id == house_id)
     if priority is not None:
@@ -137,7 +146,11 @@ async def list_issues(
 async def detail(session: AsyncSession, staff_id: int, issue_id: int) -> IssueDetail:
     row = (
         await session.execute(
-            row_query().where(Issue.id == issue_id, Issue.house_id.in_(house_scope(staff_id)))
+            row_query().where(
+                Issue.id == issue_id,
+                Issue.house_id.in_(house_scope(staff_id)),
+                Issue.rejected_at.is_(None),
+            )
         )
     ).one_or_none()
     if row is None:
@@ -203,7 +216,7 @@ async def detail(session: AsyncSession, staff_id: int, issue_id: int) -> IssueDe
     )
 
 
-def action_hash(issue_id: int, kind: str, body: StatusInput | MessageInput) -> str:
+def action_hash(issue_id: int, kind: str, body: StatusInput | MessageInput | RejectInput) -> str:
     data = {"issue_id": issue_id, "kind": kind, **body.model_dump(mode="json")}
     return hashlib.sha256(json.dumps(data, sort_keys=True).encode()).hexdigest()
 
@@ -248,7 +261,7 @@ async def perform_action(
     kind = "status" if isinstance(body, StatusInput) else "message"
     staff_id = staff.id
     fingerprint = action_hash(issue_id, kind, body)
-    issue = await accessible_issue(session, staff.id, issue_id)
+    issue = await accessible_issue(session, staff.id, issue_id, lock=True)
     prior = await previous_action(session, staff.id, body.request_id, fingerprint)
     if prior:
         return prior
@@ -265,6 +278,7 @@ async def perform_action(
             .where(
                 Issue.id == issue.id,
                 Issue.status == body.expected_status,
+                Issue.rejected_at.is_(None),
             )
             .values(status=body.status)
         )
@@ -316,3 +330,64 @@ async def perform_action(
         if prior:
             return prior
         raise
+
+
+async def reject_issue(
+    session: AsyncSession, staff: StaffUser, issue_id: int, body: RejectInput
+) -> ActionOutput:
+    staff_id = staff.id
+    fingerprint = action_hash(issue_id, "rejection", body)
+    issue = await session.scalar(
+        select(Issue)
+        .where(Issue.id == issue_id, Issue.house_id.in_(house_scope(staff_id)))
+        .with_for_update()
+    )
+    if issue is None:
+        raise HTTPException(404, "Обращение не найдено или недоступно")
+    prior = await previous_action(session, staff_id, body.request_id, fingerprint)
+    if prior:
+        return prior
+    if issue.rejected_at is not None or issue.status != body.expected_status:
+        raise HTTPException(409, "Обращение уже изменено. Обновите список")
+    author = await session.get(User, issue.user_id)
+    house = await session.get(House, issue.house_id)
+    changed = await session.execute(
+        update(Issue)
+        .where(
+            Issue.id == issue_id,
+            Issue.rejected_at.is_(None),
+            Issue.status == body.expected_status,
+        )
+        .values(rejected_at=datetime.now(UTC), rejection_reason=body.reason)
+    )
+    if changed.rowcount != 1:
+        await session.rollback()
+        prior = await previous_action(session, staff_id, body.request_id, fingerprint)
+        if prior:
+            return prior
+        raise HTTPException(409, "Обращение уже изменено. Обновите список")
+    notice = StaffNotification(
+        issue_id=issue_id,
+        staff_id=staff_id,
+        max_user_id=author.max_user_id,
+        kind="rejection",
+        status="rejected",
+        text=(
+            f"❌ Обращение №{issue_id} отклонено управляющей компанией\n\n"
+            f"{issue.title}\n📍 {house.address}\n\nПричина: {body.reason}"
+        ),
+        request_id=str(body.request_id),
+        request_hash=fingerprint,
+    )
+    session.add(notice)
+    try:
+        await session.flush()
+        notice_id = notice.id
+        await session.commit()
+    except IntegrityError:
+        await session.rollback()
+        prior = await previous_action(session, staff_id, body.request_id, fingerprint)
+        if prior:
+            return prior
+        raise
+    return ActionOutput(notification_id=notice_id)

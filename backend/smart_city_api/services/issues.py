@@ -3,7 +3,7 @@ import hashlib
 from app.database.enums import IssueCategory, IssuePriority, IssueStatus
 from app.database.models import Apartment, House, Issue, IssueEvent, IssuePhoto
 from fastapi import HTTPException
-from sqlalchemy import or_, select
+from sqlalchemy import and_, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -12,10 +12,13 @@ from smart_city_api.services.access import own_apartment_ids, require_house
 
 
 def visible_issues(user_id: int):
-    return or_(
-        Issue.apartment_id.is_(None),
-        Issue.user_id == user_id,
-        Issue.apartment_id.in_(own_apartment_ids(user_id)),
+    return and_(
+        Issue.rejected_at.is_(None),
+        or_(
+            Issue.apartment_id.is_(None),
+            Issue.user_id == user_id,
+            Issue.apartment_id.in_(own_apartment_ids(user_id)),
+        ),
     )
 
 
@@ -113,6 +116,10 @@ async def create_issue(
     )
 
     def check_retry(existing: Issue):
+        if existing.rejected_at is not None:
+            raise HTTPException(
+                409, "Обращение отклонено. Для нового обращения отправьте новую заявку"
+            )
         if existing.request_hash != fingerprint:
             raise HTTPException(409, "Этот ключ запроса уже использован для другого обращения")
 

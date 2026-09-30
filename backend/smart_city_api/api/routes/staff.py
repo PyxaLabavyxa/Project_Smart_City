@@ -2,7 +2,7 @@ import asyncio
 from typing import Annotated
 
 from app.database.enums import IssuePriority, IssueStatus
-from app.database.models import House, IssuePhoto, StaffSession
+from app.database.models import CompanyHouse, House, IssuePhoto, StaffSession
 from app.paths import project_path
 from fastapi import APIRouter, HTTPException, Query, Request, Response
 from fastapi.responses import FileResponse
@@ -29,6 +29,7 @@ from smart_city_api.schemas.staff import (
     LoginInput,
     MessageInput,
     ProfileOutput,
+    RejectInput,
     StaffIssuePage,
     StaffTokenOutput,
     StatusInput,
@@ -36,6 +37,7 @@ from smart_city_api.schemas.staff import (
 from smart_city_api.services import staff as service
 from smart_city_api.services.contacts import read_contacts, save_contacts, staff_house
 from smart_city_api.services.photos import photo_path
+from smart_city_api.services.staff_accounts import delete_registered_user
 
 router = APIRouter(prefix="/api/v1/staff", tags=["Staff"])
 
@@ -122,8 +124,17 @@ async def profile(session: Session, employee: Staff, authentication: StaffAuth):
             .order_by(House.address)
         )
     ).all()
+    contact_houses = (
+        await session.scalars(
+            select(House)
+            .join(CompanyHouse, CompanyHouse.house_id == House.id)
+            .where(House.id.in_(service.house_scope(employee.id)))
+            .order_by(House.address)
+        )
+    ).all()
     return ProfileOutput(
         name=employee.name,
+        contact_houses=[HouseOutput(id=h.id, address=h.address) for h in contact_houses],
         houses=[HouseOutput(id=h.id, address=h.address) for h in houses],
         csrf_token=csrf_token(authentication.token),
     )
@@ -153,6 +164,11 @@ async def issue_detail(issue_id: int, session: Session, employee: Staff):
 @router.post("/issues/{issue_id}/status", response_model=ActionOutput)
 async def update_status(issue_id: int, body: StatusInput, session: Session, employee: Staff):
     return await service.perform_action(session, employee, issue_id, body)
+
+
+@router.post("/issues/{issue_id}/reject", response_model=ActionOutput)
+async def reject_issue(issue_id: int, body: RejectInput, session: Session, employee: Staff):
+    return await service.reject_issue(session, employee, issue_id, body)
 
 
 @router.post("/issues/{issue_id}/messages", response_model=ActionOutput)
@@ -225,6 +241,13 @@ async def registrations(session: Session, employee: Staff, page: Annotated[int, 
             for r, a, h, c in rows
         ],
     }
+
+
+@router.delete("/registrations/{application_id}/user", status_code=204)
+async def delete_account(application_id: int, request: Request, session: Session, employee: Staff):
+    await delete_registered_user(
+        session, employee.id, application_id, request.app.state.settings.media_root
+    )
 
 
 @router.post("/registrations/{application_id}/{decision}")
