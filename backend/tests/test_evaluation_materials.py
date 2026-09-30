@@ -67,6 +67,7 @@ def test_materials_are_valid_and_match_documented_application_routes():
     )
     public_contract = read_json(config["openapi_json"])
     assert read_yaml(config["openapi"]) == public_contract
+    assert public_contract == contract
     assert contract == create_app(Settings(_env_file=None, database_url=None)).openapi()
     assert config["team"] == read_json(config["test_data"])["team"] == "Облачный Код"
     assert config["base_url"] == "https://201.34.159.33/api/v1"

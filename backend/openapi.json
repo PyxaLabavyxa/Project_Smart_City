@@ -1431,6 +1431,11 @@
         ],
         "summary": "Reject Issue",
         "operationId": "reject_issue_api_v1_staff_issues__issue_id__reject_post",
+        "security": [
+          {
+            "StaffSession": []
+          }
+        ],
         "parameters": [
           {
             "name": "issue_id",
@@ -1627,6 +1632,11 @@
         ],
         "summary": "Delete Account",
         "operationId": "delete_account_api_v1_staff_registrations__application_id__user_delete",
+        "security": [
+          {
+            "StaffSession": []
+          }
+        ],
         "parameters": [
           {
             "name": "application_id",

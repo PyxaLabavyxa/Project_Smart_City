@@ -605,6 +605,8 @@ paths:
       - Staff
       summary: Contacts
       operationId: contacts_api_v1_staff_houses__house_id__contacts_get
+      security:
+      - StaffSession: []
       parameters:
       - name: house_id
         in: path
@@ -630,6 +632,8 @@ paths:
       - Staff
       summary: Update Contacts
       operationId: update_contacts_api_v1_staff_houses__house_id__contacts_post
+      security:
+      - StaffSession: []
       parameters:
       - name: house_id
         in: path
@@ -677,6 +681,31 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/staff/auth/token:
+    post:
+      tags:
+      - Staff
+      summary: Access Token
+      operationId: access_token_api_v1_staff_auth_token_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginInput'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffTokenOutput'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /api/v1/staff/auth/logout:
     post:
       tags:
@@ -686,6 +715,8 @@ paths:
       responses:
         '204':
           description: Successful Response
+      security:
+      - StaffSession: []
   /api/v1/staff/me:
     get:
       tags:
@@ -699,12 +730,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProfileOutput'
+      security:
+      - StaffSession: []
   /api/v1/staff/issues:
     get:
       tags:
       - Staff
       summary: Issues
       operationId: issues_api_v1_staff_issues_get
+      security:
+      - StaffSession: []
       parameters:
       - name: house_id
         in: query
@@ -775,6 +810,8 @@ paths:
       - Staff
       summary: Issue Detail
       operationId: issue_detail_api_v1_staff_issues__issue_id__get
+      security:
+      - StaffSession: []
       parameters:
       - name: issue_id
         in: path
@@ -801,6 +838,8 @@ paths:
       - Staff
       summary: Update Status
       operationId: update_status_api_v1_staff_issues__issue_id__status_post
+      security:
+      - StaffSession: []
       parameters:
       - name: issue_id
         in: path
@@ -833,6 +872,8 @@ paths:
       - Staff
       summary: Reject Issue
       operationId: reject_issue_api_v1_staff_issues__issue_id__reject_post
+      security:
+      - StaffSession: []
       parameters:
       - name: issue_id
         in: path
@@ -865,6 +906,8 @@ paths:
       - Staff
       summary: Send Message
       operationId: send_message_api_v1_staff_issues__issue_id__messages_post
+      security:
+      - StaffSession: []
       parameters:
       - name: issue_id
         in: path
@@ -897,6 +940,8 @@ paths:
       - Staff
       summary: Photo
       operationId: photo_api_v1_staff_photos__photo_id__get
+      security:
+      - StaffSession: []
       parameters:
       - name: photo_id
         in: path
@@ -919,6 +964,8 @@ paths:
       - Staff
       summary: Registrations
       operationId: registrations_api_v1_staff_registrations_get
+      security:
+      - StaffSession: []
       parameters:
       - name: page
         in: query
@@ -946,6 +993,8 @@ paths:
       - Staff
       summary: Delete Account
       operationId: delete_account_api_v1_staff_registrations__application_id__user_delete
+      security:
+      - StaffSession: []
       parameters:
       - name: application_id
         in: path
@@ -968,6 +1017,8 @@ paths:
       - Staff
       summary: Decide Application
       operationId: decide_application_api_v1_staff_registrations__application_id___decision__post
+      security:
+      - StaffSession: []
       parameters:
       - name: application_id
         in: path
@@ -2086,6 +2137,24 @@ components:
       - page_size
       - counts
       title: StaffIssuePage
+    StaffTokenOutput:
+      properties:
+        access_token:
+          type: string
+          title: Access Token
+        token_type:
+          type: string
+          const: bearer
+          title: Token Type
+          default: bearer
+        expires_in:
+          type: integer
+          title: Expires In
+      type: object
+      required:
+      - access_token
+      - expires_in
+      title: StaffTokenOutput
     StatusInput:
       properties:
         status:
@@ -2158,5 +2227,8 @@ components:
       title: WorkResponse
   securitySchemes:
     MAXLaunchData:
+      type: http
+      scheme: bearer
+    StaffSession:
       type: http
       scheme: bearer
