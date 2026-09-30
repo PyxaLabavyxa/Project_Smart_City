@@ -16,7 +16,7 @@ import { RegistrationScreen } from "@/features/registration/registration";
 import { MiniAppPresence } from "@/features/mini-app-presence";
 import { LaunchNavigation } from "@/features/launch-navigation";
 import { OnboardingProvider } from "@/features/onboarding/onboarding";
-import { RequestState } from "@/shared/ui/navigation/request-state";
+import { StartupScreen } from "@/shared/ui/startup-screen";
 
 export function AppProviders({ children }: { children: ReactNode }) {
   const localEnabled = process.env.NEXT_PUBLIC_ENABLE_LOCAL_LOGIN === "true";
@@ -55,7 +55,7 @@ function AuthenticatedApp({ children, mode }: { children: ReactNode; mode: "loca
     return api;
   }, [mode]);
   const state = useRemote(load);
-  if (!state.data) return <main className="connection-screen"><h1>Домовед</h1><RequestState {...state} /></main>;
+  if (!state.data) return <StartupScreen error={state.error} actions={state.error ? <button type="button" onClick={state.reload}>Повторить</button> : undefined} />;
   return <ApiContext value={state.data}>{mode === "max" && <LaunchNavigation />}<MiniAppPresence /><ResidentProfileView>{children}</ResidentProfileView></ApiContext>;
 }
 
@@ -63,7 +63,7 @@ function ResidentProfileView({ children }: { children: ReactNode }) {
   const api = useApi();
   const load = useCallback(async (signal: AbortSignal) => parseProfile(await api(endpoints.me, { signal })), [api]);
   const state = useRemote(load);
-  if (!state.data) return <main className="connection-screen"><h1>Домовед</h1><RequestState {...state} /></main>;
+  if (!state.data) return <StartupScreen error={state.error} actions={state.error ? <button type="button" onClick={state.reload}>Повторить</button> : undefined} />;
   return <>{state.error && <div role="alert"><p>{state.error}</p><button onClick={state.reload}>Обновить квартиры</button></div>}{state.data.apartments.length ? <ResidentHomes profile={state.data} refreshHomes={state.reload}>{children}</ResidentHomes> : <RegistrationScreen onComplete={state.reload} />}</>;
 }
 
@@ -84,7 +84,7 @@ function ConnectedHouse({ userId, house, choices, choose, children, refreshHomes
   const issueGateway = useMemo(() => createIssueGateway(api, currentHouse), [api, currentHouse]);
   const messageGateway = useMemo(() => createMessageGateway(api, currentHouse), [api, currentHouse]);
   const utilitiesGateway = useMemo(() => createUtilitiesGateway(api, house.residentApartmentId!), [api, house.residentApartmentId]);
-  if (!state.data) return <main className="connection-screen"><h1>{house.address}</h1><RequestState {...state} /></main>;
+  if (!state.data) return <StartupScreen error={state.error} actions={state.error ? <button type="button" onClick={state.reload}>Повторить</button> : undefined} />;
   return <HouseSelectionProvider house={currentHouse} choices={choices} choose={choose} refreshHomes={refreshHomes}>
     <IssueProvider gateway={issueGateway}><MessageProvider gateway={messageGateway}>
       <UtilitiesProvider gateway={utilitiesGateway}><OnboardingProvider userId={userId}>{children}</OnboardingProvider></UtilitiesProvider>

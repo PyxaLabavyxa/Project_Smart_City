@@ -5,6 +5,7 @@ from app.database.models import User
 from app.database.requests import create_user_if_exist
 from app.database.session import session_factory
 from app.services.registration import (
+    STAFF_SITE_NOTICE,
     TEST_NOTICE,
     WELCOME,
     catalog,
@@ -59,7 +60,8 @@ async def finish_registration(event, context):
         context,
         "🎉 Добро пожаловать в Домовед!\n\n🔑 Квартира привязана. "
         "Теперь можно сообщать о проблемах и следить за жизнью дома.\n\n"
-        "📱 Откройте мини-приложение — там вас ждёт короткое обучение.",
+        "📱 Откройте мини-приложение — там вас ждёт короткое обучение.\n\n"
+        + STAFF_SITE_NOTICE,
     )
     await context.clear()
     await event.message.answer(

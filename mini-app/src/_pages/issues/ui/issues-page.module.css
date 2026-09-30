@@ -48,3 +48,7 @@
 .heading { min-height:190px; }
 @media(max-width:760px) { .heading { min-height:190px; } }
 .heading p { max-width:55%; }
+
+/* Leave the illustration above the issue controls. */
+.heroArt { bottom:14px; }
+@media(max-width:760px) { .heroArt { bottom:14px; } }

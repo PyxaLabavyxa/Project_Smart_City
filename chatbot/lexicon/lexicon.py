@@ -1,4 +1,5 @@
 from app.database.enums import IssueStatus
+from app.services.registration import STAFF_SITE_NOTICE
 
 ISSUE_STATUS_LABELS = {
     IssueStatus.NEW.value: "❌ Не обработано",
@@ -8,12 +9,13 @@ ISSUE_STATUS_LABELS = {
 
 LEXICON: dict[str, str] = {
     "bot_start": (
-        "🏙️ Добро пожаловать в «Умный город»!\n\n"
+        "🏙️ Добро пожаловать в Домовед!\n\n"
         "Не горит свет в подъезде, протекает труба или сломался лифт? "
         "Расскажите, что случилось, и при необходимости приложите фото.\n\n"
         "📝 «Сообщить о проблеме» — создать обращение.\n"
         "📋 «Мои обращения» — посмотреть статистику и последнее обращение.\n\n"
-        "Выберите действие ниже 👇"
+        + STAFF_SITE_NOTICE
+        + "\n\nВыберите действие ниже 👇"
     ),
     "help": (
         "ℹ️ Как отправить обращение\n\n"

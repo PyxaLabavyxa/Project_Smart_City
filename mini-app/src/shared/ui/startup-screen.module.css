@@ -1,0 +1,11 @@
+.screen { position:fixed; inset:0; z-index:100; display:grid; place-items:center; padding:24px; background:var(--color-bg); color:var(--color-ink); text-align:center; }
+.content { position:relative; width:min(360px,100%); display:grid; grid-template-rows:84px 64px 66px 74px 24px; gap:12px; align-items:center; }
+.mark { display:grid; place-items:center; height:84px; }
+.content h2 { margin:0; font-size:28px; line-height:1.15; letter-spacing:-.7px; }
+.description { margin:0; color:var(--color-muted); font-size:14px; line-height:1.6; }
+.status { color:var(--color-muted); font-size:12px; font-variant-numeric:tabular-nums; }
+.actions { position:absolute; top:calc(100% + 16px); width:100%; display:grid; justify-items:center; gap:12px; max-height:calc(50dvh - 180px); overflow:auto; }
+.actions p { margin:0; font-size:13px; color:var(--color-muted); }
+.actions button { min-height:42px; border:0; border-radius:12px; padding:8px 18px; background:var(--color-action); color:var(--color-on-action); font:inherit; font-size:14px; cursor:pointer; }
+@media(max-height:600px) { .screen:has(.actions) .content { transform:translateY(-50px); } .actions { max-height:120px; } }
+@media(prefers-reduced-motion:no-preference) { .screen[data-complete] { animation:finish .18s ease-out .32s both; } @keyframes finish { to { opacity:0; } } }

@@ -14,7 +14,7 @@
 .next { display: inline-flex; align-items: center; gap: 8px; border: 0; border-radius: 10px; min-height: 40px; padding: 9px 13px; background: var(--color-primary); color: var(--color-on-action); font: inherit; font-size: 12px; cursor: pointer; }
 .progress { flex-shrink: 0; height: 3px; margin-inline: -16px; background: var(--color-line); }
 .progress span { display: block; height: 100%; border-radius: 3px; background: var(--color-primary); }
-@media (max-width: 760px) { .card { right: max(12px, calc(50% - 164px)); } }
+@media (max-width: 760px) { .card { left:max(12px,calc((100vw - 440px) / 2)); right:auto; } }
 @media (prefers-reduced-motion: no-preference) { .progress span { transition: width .2s; } }
 
 @media (max-height: 760px) { .card[data-compact] { height: min(220px, calc(100dvh - 24px)); } }

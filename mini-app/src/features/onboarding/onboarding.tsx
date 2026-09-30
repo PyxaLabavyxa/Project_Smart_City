@@ -2,8 +2,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Image from "next/image";
-import { BrandMark } from "@/shared/ui/brand-mark";
-import { GnomeProgress } from "@/shared/ui/gnome-progress";
+import { StartupScreen } from "@/shared/ui/startup-screen";
 import { Icon } from "@/shared/ui/icon";
 import { tourSteps as steps } from "./steps";
 import { tourLayout, type TourRect } from "./tour-layout";
@@ -178,16 +177,13 @@ export function OnboardingProvider({ userId, children }: { userId: number; child
     ? "missing" in current ? current.missing : "Этот элемент пока недоступен. " + current.text
     : current?.text;
   return <Context value={{ start, activeTarget: current?.target ?? null, preparing: preparation !== null }}><span hidden data-app-loading={issues.loading || messages.loading || utilities.loading} />{children}{isOpen && <dialog ref={dialog} className={styles.overlay} aria-labelledby={preparation ? "preparation-title" : "tour-title"} aria-describedby={preparation ? undefined : "tour-description"} onCancel={event => { event.preventDefault(); finish(); }}>
-    {preparation ? <section className={styles.preparation} data-complete={preparation.percent === 100 && !preparation.error || undefined}>
-      <div className={styles.preparationMark} aria-hidden="true"><BrandMark size={62} /></div>
-      <h2 id="preparation-title">Готовим ваш Домовед</h2><p>{preparation.error ?? "Загружаем разделы и фотографии, чтобы знакомство с домом прошло плавно."}</p>
-      <GnomeProgress value={preparation.percent} label="Подготовка приложения" />
-      <span role="status">{preparation.error ? "Подготовка прервана" : preparation.percent === 100 ? "Всё готово" : `Загрузка · ${Math.round(preparation.percent)}%`}</span>
-      {preparation.error && <button type="button" className={styles.next} onClick={() => void prepare(guideAfterPreparation.current)}>Попробовать снова</button>}
-      {preparation.error && <button type="button" className={styles.back} onClick={finish}>Открыть приложение без подготовки</button>}
-    </section> : current && <>
+    {preparation ? <StartupScreen percent={preparation.percent} error={preparation.error}
+      complete={preparation.percent === 100 && !preparation.error}
+      status={preparation.percent === 100 ? "Всё готово" : `Загрузка · ${Math.round(preparation.percent)}%`}
+      actions={preparation.error ? <><button type="button" onClick={() => void prepare(guideAfterPreparation.current)}>Попробовать снова</button><button type="button" onClick={finish}>Открыть приложение без подготовки</button></> : undefined}
+    /> : current && <>
     {position ? <div aria-hidden="true" className={styles.spot} data-tour-spot={current.target} style={position.spot} /> : <div className={styles.shade} />}
-    <div key={`guide-${Math.floor(step! / 3)}`} className={styles.guide} data-pose={Math.floor(step! / 3) % 4} aria-hidden="true" style={position ? { top: Math.max(8, position.card.top - 124), left: position.card.left + (Math.floor(step! / 3) % 4 === 1 ? Math.max(0, (card.current?.offsetWidth ?? 328) - 174) : 8) } : undefined}>
+    <div key={`guide-${Math.floor(step! / 3)}`} className={styles.guide} data-pose={Math.floor(step! / 3) % 4} aria-hidden="true" style={position ? { top: Math.max(8, position.card.top - 112), left: position.card.left + (Math.floor(step! / 3) % 4 === 1 ? Math.max(0, (card.current?.offsetWidth ?? 328) - 174) : 8) } : undefined}>
       <Image src={`/images/domoved/${Math.floor(step! / 3) % 4 < 2 ? "tutorial-point" : Math.floor(step! / 3) % 4 === 2 ? "tutorial-rest" : "tutorial-open"}.webp`} alt="" width={180} height={140} unoptimized loading="eager" />
     </div>
     <section ref={card} data-compact={current.target === "plan-selection" || current.target === "plan-map" || undefined} className={styles.card} style={position?.card}>
