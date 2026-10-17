@@ -42,7 +42,7 @@ async def start_reply(event: MessageCallback, context: MemoryContext):
         issue = await reply_issue(session, event.callback.user.user_id, issue_id)
         if issue is None:
             await event.message.answer(
-                "Обращение недоступно. Выберите уведомление по своей заявке.",
+                "Обращение недоступно. Обновите раздел «Мои обращения».",
                 attachments=[inl_mini_app()],
             )
             return

@@ -80,12 +80,17 @@ def inl_houses(houses: list[tuple[int, str, int]]) -> AttachmentType.INLINE_KEYB
     return builder.as_markup()
 
 
-def inl_back_to_menu():
+def inl_back_to_menu(*, issue_id: int | None = None):
     builder = InlineKeyboardBuilder()
+    back_button = CallbackButton(text=LEXICON["back_to_menu"], payload="back_to_menu")
 
-    builder.add(
-        CallbackButton(text=LEXICON["back_to_menu"], payload="back_to_menu")
-    )
+    if issue_id is not None:
+        builder.add(CallbackButton(
+            text=LEXICON["write_to_staff"], payload=f"staff_reply_{issue_id}",
+        ))
+        builder.row(back_button)
+    else:
+        builder.add(back_button)
 
     builder.row(mini_app_button())
     return builder.as_markup()

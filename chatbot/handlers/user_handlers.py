@@ -244,14 +244,16 @@ async def process_my_issues(event: MessageCallback, context: MemoryContext):
         await context.update_data(house_id=houses[0][0])
 
         async with session_factory() as session:
-            await event.message.edit(
-                text=await get_issue_information(
-                    session=session,
-                    max_user_id=max_user_id,
-                    house_id=houses[0][0]
-                ),
-                attachments=[inl_back_to_menu()]
+            text, issue_id = await get_issue_information(
+                session=session,
+                max_user_id=max_user_id,
+                house_id=houses[0][0]
             )
+
+        await event.message.edit(
+            text=text,
+            attachments=[inl_back_to_menu(issue_id=issue_id)]
+        )
 
         await context.set_state(FSMViewingReports.viewing)
     else:
@@ -270,13 +272,15 @@ async def process_my_issues_after_choice(event: MessageCallback, context: Memory
     house_id = int(event.callback.payload.removeprefix("house_"))
 
     async with session_factory() as session:
-        await event.message.edit(
-            text=await get_issue_information(
-                session=session,
-                max_user_id=event.callback.user.user_id,
-                house_id=house_id
-            ),
-            attachments=[inl_back_to_menu()]
+        text, issue_id = await get_issue_information(
+            session=session,
+            max_user_id=event.callback.user.user_id,
+            house_id=house_id
         )
+
+    await event.message.edit(
+        text=text,
+        attachments=[inl_back_to_menu(issue_id=issue_id)]
+    )
 
     await context.set_state(FSMViewingReports.viewing)

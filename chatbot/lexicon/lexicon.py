@@ -106,6 +106,7 @@ LEXICON: dict[str, str] = {
     "yes": "✅ Отправить",
     "no": "↩️ Отменить",
     "back_to_menu": "🏠 Главное меню",
+    "write_to_staff": "💬 Написать сотруднику",
     "open_mini_app": "📲 Мой Домовед",
 }
 

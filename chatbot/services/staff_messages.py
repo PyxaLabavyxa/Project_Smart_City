@@ -1,7 +1,6 @@
-from sqlalchemy import exists, select
+from app.database.models import Issue, IssueMessage, User
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
-
-from app.database.models import Issue, IssueMessage, StaffNotification, User
 
 
 async def reply_issue(session, max_user_id: int, issue_id: int) -> Issue | None:
@@ -12,7 +11,6 @@ async def reply_issue(session, max_user_id: int, issue_id: int) -> Issue | None:
             Issue.id == issue_id,
             Issue.rejected_at.is_(None),
             User.max_user_id == max_user_id,
-            exists(select(StaffNotification.id).where(StaffNotification.issue_id == Issue.id)),
         )
     )
 
@@ -27,7 +25,7 @@ async def save_reply(sessions, max_user_id: int, issue_id: int, text: str, mid: 
     async with sessions() as session:
         issue = await reply_issue(session, max_user_id, issue_id)
         if issue is None:
-            raise ValueError("Обращение недоступно. Откройте уведомление по своей заявке")
+            raise ValueError("Обращение недоступно. Обновите раздел «Мои обращения»")
         prior = select(IssueMessage.id).where(
             IssueMessage.issue_id == issue_id, IssueMessage.request_id == request_id
         )

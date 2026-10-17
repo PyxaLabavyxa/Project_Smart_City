@@ -5,7 +5,9 @@ from app.database.enums import IssueStatus
 from chatbot.lexicon.lexicon import ISSUE_STATUS_LABELS, LEXICON
 
 
-async def get_issue_information(session: AsyncSession, max_user_id: int, house_id: int) -> str:
+async def get_issue_information(
+    session: AsyncSession, max_user_id: int, house_id: int,
+) -> tuple[str, int | None]:
     issues = IssueRepository(session)
 
     last_issue = await issues.get_last_issue(max_user_id, house_id)
@@ -34,8 +36,9 @@ async def get_issue_information(session: AsyncSession, max_user_id: int, house_i
         )
     )
 
-    return LEXICON["issue_statistics"].format(
+    text = LEXICON["issue_statistics"].format(
         total=total,
         all_statuses=all_statuses,
         last_issue=last_issue_text
     )
+    return text, last_issue.id if last_issue is not None else None
