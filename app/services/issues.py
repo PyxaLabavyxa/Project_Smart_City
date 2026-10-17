@@ -1,7 +1,15 @@
-from app.database.session import session_factory
+import asyncio
+import logging
+
+from app.ai.schemas import ReportAnalysis
+from app.database.enums import IssueCategory, IssuePriority
 from app.database.requests import create_issue, get_issue_author
+from app.database.session import session_factory
 from app.services.report_analysis import generate_issue_data
 from app.storage.photos import LocalPhotoStorage
+
+logger = logging.getLogger(__name__)
+AI_ANALYSIS_TIMEOUT_SECONDS = 30
 
 
 async def submit_issue(
@@ -19,10 +27,19 @@ async def submit_issue(
     async with session_factory() as session:
         await get_issue_author(session, max_user_id, house_id)
     
-    analysis = await generate_issue_data(
-        description=description,
-        model=report_model
-    )
+    try:
+        async with asyncio.timeout(AI_ANALYSIS_TIMEOUT_SECONDS):
+            analysis = await generate_issue_data(
+                description=description,
+                model=report_model
+            )
+    except Exception as exc:
+        logger.warning("Report analysis failed (%s); using default metadata", type(exc).__name__)
+        analysis = ReportAnalysis(
+            title="Обращение жителя",
+            category=IssueCategory.OTHER,
+            priority=IssuePriority.MEDIUM,
+        )
 
     paths = await photo_storage.save_many(photo_urls or [])
     try:
