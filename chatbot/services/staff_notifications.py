@@ -3,14 +3,13 @@ import logging
 from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
-from maxapi.types import CallbackButton
 from maxapi.types.errors import Error
 from maxapi.utils.inline_keyboard import InlineKeyboardBuilder
-from sqlalchemy import exists, select, update
+from sqlalchemy import exists, or_, select, update
 
-from app.database.models import StaffNotification
+from app.database.models import MiniAppPresence, StaffNotification, User
 from app.database.session import session_factory
-from chatbot.keyboards.inline import mini_app_button
+from chatbot.keyboards.inline import issue_app_button, mini_app_button
 
 logger = logging.getLogger(__name__)
 
@@ -18,25 +17,44 @@ logger = logging.getLogger(__name__)
 def reply_keyboard(issue_id: int, *, rejected: bool = False):
     builder = InlineKeyboardBuilder()
     if not rejected:
-        builder.add(CallbackButton(text="💬 Ответить сотруднику", payload=f"staff_reply_{issue_id}"))
-    builder.row(mini_app_button())
+        builder.add(issue_app_button(issue_id))
+        builder.row(mini_app_button())
+    else:
+        builder.add(mini_app_button())
     return builder.as_markup()
+
+
+def active_chat(now):
+    return exists(
+        select(MiniAppPresence.user_id)
+        .join(User, User.id == MiniAppPresence.user_id)
+        .where(
+            User.max_user_id == StaffNotification.max_user_id,
+            MiniAppPresence.issue_id == StaffNotification.issue_id,
+            MiniAppPresence.expires_at > now,
+        )
+    ).correlate(StaffNotification)
 
 
 async def claim_next(sessions):
     now = datetime.now(UTC)
     async with sessions.begin() as session:
         previous = StaffNotification.__table__.alias("previous")
+        viewing = active_chat(now)
         candidate = await session.scalar(
             select(StaffNotification.id)
             .where(
                 StaffNotification.sent_at.is_(None),
+                StaffNotification.suppressed_at.is_(None),
                 StaffNotification.available_at <= now,
+                or_(StaffNotification.kind != "message", ~viewing),
                 ~exists(
                     select(previous.c.id).where(
                         previous.c.issue_id == StaffNotification.issue_id,
                         previous.c.id < StaffNotification.id,
                         previous.c.sent_at.is_(None),
+                        previous.c.suppressed_at.is_(None),
+                        or_(previous.c.kind != "message", ~viewing),
                     )
                 ),
             )
@@ -53,6 +71,7 @@ async def claim_next(sessions):
                 .where(
                     StaffNotification.id == candidate,
                     StaffNotification.sent_at.is_(None),
+                    StaffNotification.suppressed_at.is_(None),
                     StaffNotification.available_at <= now,
                 )
                 .values(
@@ -79,6 +98,24 @@ async def deliver_pending(bot, sessions=session_factory, limit: int = 20) -> int
         if claim is None:
             break
         row, lease = claim
+        # The resident may have opened/read the chat after this lease was claimed.
+        async with sessions.begin() as session:
+            ready = await session.scalar(
+                select(StaffNotification.id).where(
+                    StaffNotification.id == row.id,
+                    StaffNotification.lease_token == lease,
+                    StaffNotification.sent_at.is_(None),
+                    StaffNotification.suppressed_at.is_(None),
+                    or_(StaffNotification.kind != "message", ~active_chat(datetime.now(UTC))),
+                )
+            )
+            if ready is None:
+                await session.execute(
+                    update(StaffNotification)
+                    .where(StaffNotification.id == row.id, StaffNotification.lease_token == lease)
+                    .values(lease_token=None, available_at=datetime.now(UTC))
+                )
+                continue
         success = False
         try:
             async with asyncio.timeout(25):
@@ -109,6 +146,7 @@ async def deliver_pending(bot, sessions=session_factory, limit: int = 20) -> int
                     StaffNotification.id == row.id,
                     StaffNotification.lease_token == lease,
                     StaffNotification.sent_at.is_(None),
+                    StaffNotification.suppressed_at.is_(None),
                 )
                 .values(**values)
             )

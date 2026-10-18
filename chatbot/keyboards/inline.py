@@ -16,6 +16,13 @@ def mini_app_button() -> OpenAppButton:
     return OpenAppButton(text=LEXICON["open_mini_app"], web_app=mini_app_username())
 
 
+def issue_app_button(issue_id: int) -> LinkButton:
+    return LinkButton(
+        text=LEXICON["write_to_staff"],
+        url=f"https://max.ru/{mini_app_username()}?startapp=issue_{issue_id}",
+    )
+
+
 def inl_mini_app():
     builder = InlineKeyboardBuilder()
     builder.row(mini_app_button())
@@ -85,9 +92,7 @@ def inl_back_to_menu(*, issue_id: int | None = None):
     back_button = CallbackButton(text=LEXICON["back_to_menu"], payload="back_to_menu")
 
     if issue_id is not None:
-        builder.add(CallbackButton(
-            text=LEXICON["write_to_staff"], payload=f"staff_reply_{issue_id}",
-        ))
+        builder.add(issue_app_button(issue_id))
         builder.row(back_button)
     else:
         builder.add(back_button)

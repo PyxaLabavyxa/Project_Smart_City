@@ -1,18 +1,18 @@
 import json
 import time
-from datetime import UTC, datetime, timedelta
 from urllib.parse import parse_qsl
 from uuid import UUID
 
-from app.database.models import MiniAppPresence, User
+from app.database.models import User
 from app.database.requests import create_user_if_exist
 from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel, Field
-from sqlalchemy import delete, select
+from sqlalchemy import select
 
 from smart_city_api.api.dependencies import Resident, Session
 from smart_city_api.core.auth import InvalidLaunchData, sign_session, validate_launch_data
 from smart_city_api.core.local_login import LOCAL_COOKIE, LOCAL_USER_MAX_ID, local_login_allowed
+from smart_city_api.services.presence import update_presence
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
@@ -95,20 +95,4 @@ class PresenceInput(BaseModel):
 
 @router.post("/presence", status_code=204)
 async def presence(data: PresenceInput, session: Session, user: Resident):
-    await session.scalar(select(User.id).where(User.id == user.id).with_for_update())
-    now = datetime.now(UTC)
-    await session.execute(
-        delete(MiniAppPresence).where(
-            MiniAppPresence.user_id == user.id,
-            MiniAppPresence.expires_at < now - timedelta(days=1),
-        )
-    )
-    key = (user.id, str(data.client_id))
-    current = await session.get(MiniAppPresence, key)
-    if current is None:
-        current = MiniAppPresence(user_id=user.id, client_id=str(data.client_id), sequence=0)
-        session.add(current)
-    if data.sequence > current.sequence:
-        current.sequence = data.sequence
-        current.expires_at = now + timedelta(seconds=45) if data.active else now
-    await session.commit()
+    await update_presence(session, user, data.client_id, data.sequence, data.active)

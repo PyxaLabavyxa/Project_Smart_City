@@ -28,7 +28,7 @@ export function createApiClient() {
         const detail = data && typeof data === "object" && "detail" in data ? data.detail : undefined;
         throw new ApiError(typeof detail === "string" ? detail : response.status === 422 ? "Проверьте заполненные поля." : "Не удалось выполнить запрос. Повторите попытку.", response.status);
       }
-      if (options.body !== undefined && path !== endpoints.presence) cache.clear();
+      if (options.body !== undefined && path !== endpoints.presence && !/^\/issues\/[1-9]\d*\/presence$/.test(path)) cache.clear();
       else if (options.cacheFor) cache.set(path, { data, expires: Date.now() + options.cacheFor });
       return data;
     } catch (error) {
@@ -49,6 +49,8 @@ export const endpoints = {
   apartments: (house: string) => `/houses/${encodeURIComponent(house)}/apartments`,
   issues: (house: string) => `/houses/${encodeURIComponent(house)}/issues`,
   issue: (id: string) => `/issues/${encodeURIComponent(id)}`,
+  issueMessages: (id: string) => `/issues/${encodeURIComponent(id)}/messages`,
+  issuePresence: (id: string) => `/issues/${encodeURIComponent(id)}/presence`,
   messages: (apartment: number) => `/apartments/${apartment}/messages`,
   utilities: (apartment: number) => `/apartments/${apartment}/utilities`,
   readings: (meter: string) => `/meters/${encodeURIComponent(meter)}/readings`,

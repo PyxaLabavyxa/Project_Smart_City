@@ -208,7 +208,10 @@ async def detail(session: AsyncSession, staff_id: int, issue_id: int) -> IssueDe
                 status=n.status,
                 message_id=n.message_id,
                 author=name,
-                delivery="sent" if n.sent_at else "retrying" if n.attempts else "pending",
+                delivery=(
+                    "sent" if n.sent_at else "read" if n.suppressed_at
+                    else "retrying" if n.attempts else "pending"
+                ),
                 created_at=n.created_at,
             )
             for n, name in notifications
@@ -247,7 +250,7 @@ STATUS_TEXT = {
     IssueStatus.RESOLVED: (
         "✅ Обращение №{id} отмечено как решённое",
         "Проверьте, устранена ли проблема. Если она осталась, "
-        "нажмите «Ответить сотруднику» и расскажите об этом.",
+        "откройте обращение и напишите об этом в чате с УК.",
     ),
 }
 
@@ -302,9 +305,10 @@ async def perform_action(
         )
         session.add(message)
         text = (
-            f"💬 Уточнение по обращению №{issue.id}\n\n{issue.title}\n📍 {house.address}\n\n"
+            f"💬 Новое сообщение УК по обращению №{issue.id}\n\n"
+            f"{issue.title}\n📍 {house.address}\n\n"
             f"{staff.name}, управляющая компания:\n{body.text}\n\n"
-            "Нажмите «Ответить сотруднику», чтобы отправить ответ по этому обращению."
+            "Откройте обращение по кнопке ниже: история и ответы доступны в чате с УК."
         )
     try:
         await session.flush()

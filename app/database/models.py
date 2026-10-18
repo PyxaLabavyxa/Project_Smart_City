@@ -336,6 +336,8 @@ class StaffNotification(Base):
     sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     __table_args__ = (UniqueConstraint("staff_id", "request_id", name="uq_staff_action_request"),)
 
+    suppressed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
 
 class MiniAppPresence(Base):
     __tablename__ = "mini_app_presence"
@@ -343,6 +345,9 @@ class MiniAppPresence(Base):
     client_id: Mapped[str] = mapped_column(String(36), primary_key=True)
     sequence: Mapped[int] = mapped_column(Integer)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    issue_id: Mapped[int | None] = mapped_column(
+        ForeignKey("issues.id", name="fk_mini_app_presence_issue", ondelete="CASCADE")
+    )
 
 
 class ManagementCompany(Base):

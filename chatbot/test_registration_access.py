@@ -37,7 +37,7 @@ class RegistrationAccessTests(unittest.IsolatedAsyncioTestCase):
                 Apartment(house_id=house.id, number=number, entrance=1, floor=(number - 1) // 4 + 1)
                 for number in range(1, 13)
             )
-        for module in (access, registration, user_handlers, staff_messages):
+        for module in (access, registration, user_handlers):
             mocked = patch.object(module, "session_factory", self.sessions)
             mocked.start()
             self.addCleanup(mocked.stop)

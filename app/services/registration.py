@@ -14,7 +14,7 @@ from app.database.models import (
 
 STAFF_SITE_NOTICE = (
     "🏢 Для управляющей компании также реализован сайт — заявки и работа с домами:\n"
-    "https://201.34.159.33/staff"
+    "https://201.34.159.33/staff\n\n"
 )
 
 WELCOME = (

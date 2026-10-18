@@ -11,7 +11,6 @@ from sqlalchemy.orm import Session
 
 from smart_city_api.db.session import Database
 from smart_city_api.runtime import loop_factory
-from tests.test_staff import ROOT, login
 
 pytest_plugins = ["tests.test_staff"]
 
@@ -34,8 +33,7 @@ def callback_event():
 def test_last_issue_button_can_start_a_conversation_before_staff_reply(
     staff_api, after_house_choice
 ):
-    from chatbot.handlers import staff_messages, user_handlers
-    from chatbot.states.states import FSMStaffReply, FSMViewingReports
+    from chatbot.handlers import user_handlers
     from maxapi.context import MemoryContext
 
     client, engine, _ = staff_api
@@ -47,7 +45,6 @@ def test_last_issue_button_can_start_a_conversation_before_staff_reply(
             await context.clear()
             with (
                 patch.object(user_handlers, "session_factory", database.sessions),
-                patch.object(staff_messages, "session_factory", database.sessions),
             ):
                 handler = (
                     user_handlers.process_my_issues_after_choice
@@ -56,21 +53,11 @@ def test_last_issue_button_can_start_a_conversation_before_staff_reply(
                 )
                 await handler(event, context)
                 markup = event.message.edit.await_args.kwargs["attachments"][0]
-                assert markup.payload.buttons[0][0].payload == "staff_reply_1"
-                assert markup.payload.buttons[0][0].text == "💬 Написать сотруднику"
+                assert markup.payload.buttons[0][0].url.endswith("?startapp=issue_1")
+                assert markup.payload.buttons[0][0].text == "💬 Обращение и чат с УК"
                 assert markup.payload.buttons[1][0].payload == "back_to_menu"
                 assert markup.payload.buttons[2][0].web_app
 
-                event.callback.payload = markup.payload.buttons[0][0].payload
-                await staff_messages.start_reply(event, context)
-                assert await context.get_state() == FSMStaffReply.waiting
-                assert (await context.get_data())["staff_issue_id"] == 1
-                await staff_messages.receive_reply(event, context)
-                assert await context.get_state() == FSMViewingReports.viewing
-                # Re-delivery of the same MAX message must not duplicate the question.
-                from chatbot.services.staff_messages import save_reply
-
-                await save_reply(database.sessions, 101, 1, event.message.body.text, "question-1")
         finally:
             await context.clear()
             await database.close()
@@ -78,12 +65,7 @@ def test_last_issue_button_can_start_a_conversation_before_staff_reply(
     asyncio.run(run(), loop_factory=loop_factory)
     with Session(engine) as session:
         assert session.scalar(select(func.count()).select_from(StaffNotification)) == 0
-        assert session.scalar(select(func.count()).select_from(IssueMessage)) == 1
-    login(client)
-    messages = client.get(ROOT + "/issues/1").json()["messages"]
-    assert [(m["direction"], m["text"]) for m in messages] == [
-        ("resident", "Когда планируется ремонт?"),
-    ]
+        assert session.scalar(select(func.count()).select_from(IssueMessage)) == 0
 
 
 def test_empty_issue_statistics_have_no_staff_reply_button(api):
@@ -149,25 +131,3 @@ def test_statistics_select_latest_own_nonrejected_issue_in_chosen_house(api):
             await database.close()
 
     asyncio.run(run(), loop_factory=loop_factory)
-
-
-def test_initiating_question_rejects_foreign_missing_and_rejected_issues(staff_api):
-    from chatbot.services.staff_messages import save_reply
-
-    client, engine, _ = staff_api
-    with Session(engine) as session:
-        session.get(Issue, 1).rejected_at = datetime.now(UTC)
-        session.commit()
-
-    async def run():
-        database = Database(client.app.state.database.engine.url)
-        try:
-            for user_id, issue_id in ((101, 2), (101, 999), (101, 1)):
-                with pytest.raises(ValueError, match="недоступно"):
-                    await save_reply(database.sessions, user_id, issue_id, "Вопрос", "invalid")
-        finally:
-            await database.close()
-
-    asyncio.run(run(), loop_factory=loop_factory)
-    with Session(engine) as session:
-        assert session.scalar(select(func.count()).select_from(IssueMessage)) == 0

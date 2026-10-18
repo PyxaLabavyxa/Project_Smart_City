@@ -12,11 +12,19 @@ from starlette.datastructures import UploadFile
 from smart_city_api.api.dependencies import Resident, Session
 from smart_city_api.schemas.app import CreateIssue, IssuePage, IssueResponse, Profile
 from smart_city_api.schemas.contacts import ContactsOutput
+from smart_city_api.schemas.issue_chat import (
+    IssueChatPresenceInput,
+    IssueMessageInput,
+    IssueMessageOutput,
+    IssueMessagePage,
+)
 from smart_city_api.schemas.resident import ApartmentPage, ApartmentResponse, HouseResponse
 from smart_city_api.services.access import own_apartment_ids, require_house
 from smart_city_api.services.contacts import read_contacts
+from smart_city_api.services.issue_chat import read_messages, send_message
 from smart_city_api.services.issues import create_issue, get_issue, issue_response, visible_issues
 from smart_city_api.services.photos import MAX_BYTES, MAX_PHOTOS, photo_path, save_photo
+from smart_city_api.services.presence import update_presence
 
 router = APIRouter(prefix="/api/v1", tags=["resident"])
 Limit = Annotated[int, Query(ge=1, le=100)]
@@ -105,6 +113,31 @@ async def issues(
 @router.get("/issues/{issue_id}", response_model=IssueResponse)
 async def detail(issue_id: int, session: Session, user: Resident):
     return await get_issue(session, user.id, issue_id)
+
+
+@router.get("/issues/{issue_id}/messages", response_model=IssueMessagePage)
+async def issue_messages(
+    issue_id: int, session: Session, user: Resident, cursor: Cursor = 0, limit: Limit = 100
+):
+    """Переписка автора обращения с УК. Другим жильцам недоступна."""
+    return await read_messages(session, user.id, issue_id, cursor, limit)
+
+
+@router.post("/issues/{issue_id}/messages", response_model=IssueMessageOutput)
+async def issue_message(issue_id: int, data: IssueMessageInput, session: Session, user: Resident):
+    """Отправить сообщение в УК; повтор с тем же request_id не создаёт дубликат."""
+    return await send_message(session, user, issue_id, data)
+
+
+@router.post("/issues/{issue_id}/presence", status_code=204)
+async def issue_presence(
+    issue_id: int, data: IssueChatPresenceInput, session: Session, user: Resident
+):
+    """Присутствие автора в чате и подтверждение прочитанных сообщений."""
+    await update_presence(
+        session, user, data.client_id, data.sequence, data.active,
+        issue_id=issue_id, last_message_id=data.last_message_id,
+    )
 
 
 @router.post("/houses/{house_id}/issues", response_model=IssueResponse, status_code=201)

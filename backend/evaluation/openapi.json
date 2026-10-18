@@ -466,6 +466,184 @@
         }
       }
     },
+    "/api/v1/issues/{issue_id}/messages": {
+      "get": {
+        "tags": [
+          "resident"
+        ],
+        "summary": "Issue Messages",
+        "description": "Переписка автора обращения с УК. Другим жильцам недоступна.",
+        "operationId": "issue_messages_api_v1_issues__issue_id__messages_get",
+        "security": [
+          {
+            "MAXLaunchData": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "issue_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Issue Id"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Cursor"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssueMessagePage"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "resident"
+        ],
+        "summary": "Issue Message",
+        "description": "Отправить сообщение в УК; повтор с тем же request_id не создаёт дубликат.",
+        "operationId": "issue_message_api_v1_issues__issue_id__messages_post",
+        "security": [
+          {
+            "MAXLaunchData": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "issue_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Issue Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IssueMessageInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssueMessageOutput"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/issues/{issue_id}/presence": {
+      "post": {
+        "tags": [
+          "resident"
+        ],
+        "summary": "Issue Presence",
+        "description": "Присутствие автора в чате и подтверждение прочитанных сообщений.",
+        "operationId": "issue_presence_api_v1_issues__issue_id__presence_post",
+        "security": [
+          {
+            "MAXLaunchData": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "issue_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Issue Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IssueChatPresenceInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/houses/{house_id}/issues/with-photos": {
       "post": {
         "tags": [
@@ -2193,7 +2371,8 @@
             "enum": [
               "sent",
               "pending",
-              "retrying"
+              "retrying",
+              "read"
             ],
             "title": "Delivery"
           },
@@ -2324,6 +2503,45 @@
           "other"
         ],
         "title": "IssueCategory"
+      },
+      "IssueChatPresenceInput": {
+        "properties": {
+          "client_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Client Id"
+          },
+          "sequence": {
+            "type": "integer",
+            "maximum": 2147483647.0,
+            "minimum": 1.0,
+            "title": "Sequence"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "last_message_id": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Message Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "client_id",
+          "sequence",
+          "active"
+        ],
+        "title": "IssueChatPresenceInput"
       },
       "IssueDetail": {
         "properties": {
@@ -2483,6 +2701,94 @@
           "at"
         ],
         "title": "IssueHistory"
+      },
+      "IssueMessageInput": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 1500,
+            "minLength": 1,
+            "title": "Text"
+          },
+          "request_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Request Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "text",
+          "request_id"
+        ],
+        "title": "IssueMessageInput"
+      },
+      "IssueMessageOutput": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "staff",
+              "resident"
+            ],
+            "title": "Direction"
+          },
+          "author": {
+            "type": "string",
+            "title": "Author"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "direction",
+          "author",
+          "text",
+          "created_at"
+        ],
+        "title": "IssueMessageOutput"
+      },
+      "IssueMessagePage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/IssueMessageOutput"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "title": "IssueMessagePage"
       },
       "IssuePage": {
         "properties": {

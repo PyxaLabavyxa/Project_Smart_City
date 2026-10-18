@@ -105,7 +105,7 @@ class DeliveryOutput(BaseModel):
     status: str | None
     message_id: int | None
     author: str
-    delivery: Literal["sent", "pending", "retrying"]
+    delivery: Literal["sent", "pending", "retrying", "read"]
     created_at: datetime
 
 

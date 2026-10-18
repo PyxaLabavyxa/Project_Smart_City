@@ -85,6 +85,9 @@ export function OnboardingProvider({ userId, children }: { userId: number; child
     try { showGuide = localStorage.getItem(storageKey) !== "done"; } catch {}
     const timer = window.setInterval(() => {
       if (!document.querySelector('nav[aria-label="Основная навигация"]')) return;
+      // The initial issue may still be resolving its house. Starting the tour
+      // now would navigate away before the house switch captures the return URL.
+      if (document.querySelector('#main .request-state[aria-busy="true"]')) return;
       window.clearInterval(timer);
       void prepare(showGuide);
     }, 60);

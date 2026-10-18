@@ -13,10 +13,6 @@ class FSMViewingReports(StatesGroup):
     choose_house = State()
 
 
-class FSMStaffReply(StatesGroup):
-    waiting = State()
-
-
 class FSMRegistration(StatesGroup):
     name = State()
     apartment = State()

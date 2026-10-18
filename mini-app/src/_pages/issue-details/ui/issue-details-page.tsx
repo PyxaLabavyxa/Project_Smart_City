@@ -7,6 +7,7 @@ import { IssueHistory } from "./issue-history";
 import styles from "./issue-details.module.css";
 import { IssueWorkflow } from "@/features/manage-issue";
 import { IssuePhotos } from "@/entities/issue/ui/issue-photos";
+import { IssueConversation } from "@/features/issue-chat/issue-conversation";
 
 export function IssueDetailsPage({ issue }: { issue: IssueRecord }) {
   return (
@@ -16,6 +17,7 @@ export function IssueDetailsPage({ issue }: { issue: IssueRecord }) {
         <h1>{issue.title}</h1>
         <p className={styles.meta}>{`Обращение № ${issue.id}`} · <time dateTime={issue.createdAt}>{formatIssueDate(issue.createdAt)}</time></p>
       </header>
+      {issue.mine && <a href="#issue-chat" className={styles.chatAction}><Icon name="messages" size={18} />Написать в УК</a>}
       <div className={styles.layout}>
         <section className={styles.info} aria-labelledby="issue-information">
           <h2 id="issue-information" className={styles.sectionLabel}>Об обращении</h2>
@@ -37,6 +39,7 @@ export function IssueDetailsPage({ issue }: { issue: IssueRecord }) {
         </section>
         <IssueHistory issue={issue} />
       </div>
+      {issue.mine && <IssueConversation key={issue.id} issueId={issue.id} />}
     </>
   );
 }
