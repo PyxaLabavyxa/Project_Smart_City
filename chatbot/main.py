@@ -31,6 +31,7 @@ async def main() -> None:
     dp.middlewares.append(PhotoMiddleware(LocalPhotoStorage(config.storage.root)))
 
     dp.include_routers(
+        user_handlers.start_router,
         user_handlers.router,
         registration.router,
         staff_messages.router,

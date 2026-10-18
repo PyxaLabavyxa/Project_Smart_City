@@ -18,6 +18,7 @@ from chatbot.states.states import FSMReport, FSMViewingReports
 from chatbot.filters.message_filters import has_photo_or_text
 from app.database.requests import get_user_houses
 from chatbot.handlers.registration import initial_prompt
+from chatbot.middlewares.registration import RegistrationRequiredMiddleware
 from chatbot.services.issue_information import get_issue_information
 from app.database.session import session_factory
 from app.services.issues import submit_issue
@@ -26,15 +27,17 @@ from app.storage.photos import LocalPhotoStorage, PhotoError
 
 
 router = Router()
+router.middlewares.append(RegistrationRequiredMiddleware())
+start_router = Router()
 logger = logging.getLogger(__name__)
 
-@router.bot_started()
+@start_router.bot_started()
 async def process_bot_start(event: BotStarted):
     text, buttons = await initial_prompt(event.from_user.user_id, event.from_user.full_name)
     await event.bot.send_message(chat_id=event.chat_id, text=text, attachments=[buttons])
 
 
-@router.message_created(CommandStart())
+@start_router.message_created(CommandStart())
 async def process_command_start(event: MessageCreated, context: MemoryContext):
     await context.clear()
     text, buttons = await initial_prompt(event.from_user.user_id, event.from_user.full_name)

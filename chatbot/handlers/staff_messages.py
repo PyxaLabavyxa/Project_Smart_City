@@ -7,10 +7,12 @@ from maxapi.utils.inline_keyboard import InlineKeyboardBuilder
 
 from app.database.session import session_factory
 from chatbot.keyboards.inline import inl_mini_app, mini_app_button
+from chatbot.middlewares.registration import RegistrationRequiredMiddleware
 from chatbot.services.staff_messages import reply_issue, save_reply
 from chatbot.states.states import FSMStaffReply
 
 router = Router()
+router.middlewares.append(RegistrationRequiredMiddleware())
 logger = logging.getLogger(__name__)
 
 
