@@ -29,7 +29,7 @@ export function HealthSummary() {
     return `${command}${40 + index * spacing},${160 - point.score * 1.3}`;
   }).join(" ");
   return <div className={styles.layout}>
-    <section aria-label="Состояние дома" className={styles.summary}>
+    <section data-tour="health-overview" aria-label="Состояние дома" className={styles.summary}>
       <Link href="/issues" className={styles.score}><span><strong>{score}/100</strong><Icon name="arrow" size={20} /></span><p>Открытых обращений: {problems.length}</p></Link>
       <div><h2>{problems.length ? "Есть вопросы, требующие внимания" : "В доме всё спокойно"}</h2></div>
     </section>

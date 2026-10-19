@@ -39,7 +39,7 @@ export function RecipientSelector({ openSelected = false }: { openSelected?: boo
   }
   return <>
     <RequestState loading={loading} error={error} reload={reload} />
-    <div className={styles.chatLayout} data-open={active !== null}>
+    <div data-tour="message-panel" className={styles.chatLayout} data-open={active !== null}>
       <section className={styles.inbox} aria-label="Список переписок">
         <div className={styles.inboxHeading}><h2 ref={inboxHeading} tabIndex={-1}>Переписки</h2><button data-tour="new-message" className={styles.chip} onClick={openPicker}>Написать</button></div>
         <label className={styles.field}>Поиск по перепискам<input type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Квартира или сообщение" /></label>

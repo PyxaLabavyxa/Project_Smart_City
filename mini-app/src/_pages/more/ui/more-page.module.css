@@ -72,3 +72,6 @@
 .contactFeedback { margin:10px 0; font-size:13px; color:var(--color-muted); }
 
 .menu li:nth-child(2) .icon,.menu li:nth-child(3) .icon,.menu li:nth-child(4) .icon { color:var(--color-primary); }
+
+.footer { min-height:calc(155 * var(--u)); justify-content:center; padding-top:calc(20 * var(--u)); gap:calc(22 * var(--u)); }
+.mascot { width:calc(125 * var(--u)); height:calc(135 * var(--u)); flex-shrink:0; opacity:.77; }

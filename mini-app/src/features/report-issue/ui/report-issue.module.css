@@ -123,3 +123,4 @@
 
 .form[data-step="3"] .actions .previous { flex-basis:32%; }
 .form[data-step="3"] .actions .primary { font-size:calc(18 * var(--u)); padding:calc(10 * var(--u)); }
+.sheet[open]:not(:modal) { z-index:60; }

@@ -1,7 +1,8 @@
 "use client";
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import Image from "next/image";
+import { Zhorik } from "@/shared/ui/zhorik";
+import { nextTourIndex } from "./tour-navigation";
 import { StartupScreen } from "@/shared/ui/startup-screen";
 import { Icon } from "@/shared/ui/icon";
 import { tourSteps as steps } from "./steps";
@@ -14,12 +15,13 @@ import { useUtilityAccount } from "@/entities/utilities";
 
 const Context = createContext<{ start: () => void; activeTarget: string | null; preparing: boolean }>({ start: () => {}, activeTarget: null, preparing: false });
 export const useOnboarding = () => useContext(Context);
-type Position = { spot: TourRect; card: { left: number; top: number }; missing: boolean };
+type Position = { spot: TourRect; card: { left: number; top: number } };
 
 export function OnboardingProvider({ userId, children }: { userId: number; children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [step, setStep] = useState<number | null>(null);
+  const [excluded, setExcluded] = useState<string[]>([]);
   const [preparation, setPreparation] = useState<{ percent: number; error?: string } | null>({ percent: 0 });
   const preparationRun = useRef<AbortController | null>(null);
   const prepared = useRef(false);
@@ -43,6 +45,7 @@ export function OnboardingProvider({ userId, children }: { userId: number; child
     const controller = new AbortController();
     preparationRun.current = controller;
     setStep(null);
+    setExcluded([]);
     setPosition(null);
     setPreparation({ percent: 0 });
     try {
@@ -67,11 +70,12 @@ export function OnboardingProvider({ userId, children }: { userId: number; child
     returnTo.current = window.location.pathname + window.location.search;
     setPosition(null);
     setDestination("/");
+    setExcluded([]);
     setStep(0);
     router.replace("/", { scroll: false });
   }, [prepare, router]);
   useEffect(() => () => preparationRun.current?.abort(), []);
-  function finish() {
+  const finish = useCallback(() => {
     preparationRun.current?.abort();
     preparationRun.current = null;
     setPreparation(null);
@@ -79,7 +83,7 @@ export function OnboardingProvider({ userId, children }: { userId: number; child
     setStep(null);
     setPosition(null);
     router.replace(returnTo.current, { scroll: true });
-  }
+  }, [router, storageKey]);
   useEffect(() => {
     let showGuide = true;
     try { showGuide = localStorage.getItem(storageKey) !== "done"; } catch {}
@@ -103,6 +107,15 @@ export function OnboardingProvider({ userId, children }: { userId: number; child
     document.body.style.overflow = "hidden";
     return () => { element.close(); document.body.style.overflow = overflow; document.body.style.paddingBottom = paddingBottom; };
   }, [isOpen]);
+  const move = useCallback((next: number) => {
+    const camera = document.querySelector('[data-tour="camera-card"]')?.closest("a");
+    if (camera && /^\/cameras\/[1-9][0-9]*$/.test(camera.pathname)) cameraPath.current = camera.pathname;
+    const href = steps[next].href === "camera" ? cameraPath.current : steps[next].href;
+    setPosition(null);
+    setDestination(href);
+    setStep(next);
+    router.replace(href, { scroll: false });
+  }, [router]);
   useEffect(() => {
     if (step === null || pathname !== destination) return;
     heading.current?.focus({ preventScroll: true });
@@ -112,10 +125,14 @@ export function OnboardingProvider({ userId, children }: { userId: number; child
     let fittedViewport = "";
     let originalZoom = "";
     let originalWidth = "";
+    let originalMaxHeight = "";
+    let originalOverflow = "";
     const restoreFit = () => {
       if (!fitted) return;
       fitted.style.zoom = originalZoom;
       fitted.style.width = originalWidth;
+      fitted.style.maxHeight = originalMaxHeight;
+      fitted.style.overflowY = originalOverflow;
       fitted = null;
     };
     let frame = 0;
@@ -123,12 +140,18 @@ export function OnboardingProvider({ userId, children }: { userId: number; child
     const update = () => {
       if (!card.current) return;
       const candidates = [...document.querySelectorAll<HTMLElement>(`[data-tour="${steps[step].target}"]`)];
-      let found = candidates.find(element => element.getBoundingClientRect().width > 0 && element.getBoundingClientRect().height > 0) ?? null;
-      const missing = !found;
-      if (!found && Date.now() - started < 3000) return;
-      if (!found) found = document.querySelector<HTMLElement>("#main h1, #main h2");
-      if (!found) return;
+      const found = candidates.find(element => element.getBoundingClientRect().width > 0 && element.getBoundingClientRect().height > 0) ?? null;
+      if (!found) {
+        if (Date.now() - started < 1800 || document.querySelector('#main [aria-busy="true"]')) return;
+        const unavailable = [...excluded, steps[step].target];
+        setExcluded(unavailable);
+        const next = nextTourIndex(steps, step, 1, unavailable);
+        if (next === null) finish(); else move(next);
+        return;
+      }
       const viewport = { width: window.innerWidth, height: window.innerHeight };
+      const guideHeight = card.current.previousElementSibling?.getBoundingClientRect().height ?? 0;
+      const above = !!steps[step].guide;
       const cardRect = card.current.getBoundingClientRect();
       const navigationHeight = document.querySelector('nav[aria-label="Основная навигация"]')?.getBoundingClientRect().height ?? 78;
       const viewportKey = `${viewport.width}:${viewport.height}`;
@@ -138,8 +161,14 @@ export function OnboardingProvider({ userId, children }: { userId: number; child
         fittedViewport = viewportKey;
         originalZoom = found.style.zoom;
         originalWidth = found.style.width;
+        originalMaxHeight = found.style.maxHeight;
+        originalOverflow = found.style.overflowY;
         const natural = found.getBoundingClientRect();
         const available = Math.max(120, viewport.height - cardRect.height - navigationHeight - 48);
+        if (steps[step].target === "message-panel") {
+          found.style.maxHeight = `${Math.max(120, available - guideHeight)}px`;
+          found.style.overflowY = "auto";
+        }
         if (["issue-controls", "plan-map"].includes(steps[step].target) && natural.height > available) {
           const scale = available / natural.height;
           found.style.zoom = String(scale);
@@ -151,12 +180,23 @@ export function OnboardingProvider({ userId, children }: { userId: number; child
       if (found !== target || size !== lastSize) {
         target = found;
         lastSize = size;
-        const freeHeight = viewport.height - cardRect.height - navigationHeight - 48;
-        const desiredTop = Math.max(16, Math.min(80, (freeHeight - rect.height) / 2));
-        const nextScroll = Math.max(0, window.scrollY + rect.top - desiredTop);
-        window.scrollTo({ top: nextScroll, behavior: "instant" });
+        if (above) {
+          const bottom = viewport.height - navigationHeight - 16;
+          const headroom = cardRect.height + (steps[step].guide === "hanging" ? guideHeight : 0) + 32;
+          if (steps[step].target === "camera-report") {
+            window.scrollTo({ top: 0, behavior: "instant" });
+            const cameraButton = found.getBoundingClientRect();
+            if (cameraButton.bottom > bottom) window.scrollBy({ top: cameraButton.bottom - bottom, behavior: "instant" });
+          } else if (rect.bottom > bottom) window.scrollBy({ top: rect.bottom - bottom, behavior: "instant" });
+          else if (rect.top < headroom) window.scrollBy({ top: rect.top - headroom, behavior: "instant" });
+        } else {
+          const freeHeight = viewport.height - cardRect.height - navigationHeight - 48;
+          const desiredTop = Math.max(16, Math.min(80, (freeHeight - rect.height) / 2));
+          const nextScroll = Math.max(0, window.scrollY + rect.top - desiredTop);
+          window.scrollTo({ top: nextScroll, behavior: "instant" });
+        }
       }
-      const next = { ...tourLayout(found.getBoundingClientRect(), viewport, cardRect, navigationHeight), missing };
+      const next = tourLayout(found.getBoundingClientRect(), viewport, cardRect, navigationHeight, above ? { placement: "above", guideHeight: steps[step].guide === "hanging" ? guideHeight : 0 } : undefined);
       setPosition(previous => JSON.stringify(previous) === JSON.stringify(next) ? previous : next);
     };
     const schedule = () => { cancelAnimationFrame(frame); frame = requestAnimationFrame(update); };
@@ -165,20 +205,12 @@ export function OnboardingProvider({ userId, children }: { userId: number; child
     window.addEventListener("resize", schedule);
     update();
     return () => { restoreFit(); clearInterval(timer); cancelAnimationFrame(frame); window.removeEventListener("scroll", schedule, true); window.removeEventListener("resize", schedule); };
-  }, [step, pathname, destination]);
-  function move(next: number) {
-    const camera = document.querySelector('[data-tour="camera-card"]')?.closest("a");
-    if (camera && /^\/cameras\/[1-9][0-9]*$/.test(camera.pathname)) cameraPath.current = camera.pathname;
-    const href = steps[next].href === "camera" ? cameraPath.current : steps[next].href;
-    setPosition(null);
-    setDestination(href);
-    setStep(next);
-    router.replace(href, { scroll: false });
-  }
+  }, [step, pathname, destination, excluded, finish, move]);
   const current = step === null ? null : steps[step];
-  const description = current && position?.missing
-    ? "missing" in current ? current.missing : "Этот элемент пока недоступен. " + current.text
-    : current?.text;
+  const visibleSteps = steps.filter(item => !excluded.includes(item.target));
+  const visibleIndex = visibleSteps.findIndex(item => item.target === current?.target);
+  const previousStep = step === null ? null : nextTourIndex(steps, step, -1, excluded);
+  const nextStep = step === null ? null : nextTourIndex(steps, step, 1, excluded);
   return <Context value={{ start, activeTarget: current?.target ?? null, preparing: preparation !== null }}><span hidden data-app-loading={issues.loading || messages.loading || utilities.loading} />{children}{isOpen && <dialog ref={dialog} className={styles.overlay} aria-labelledby={preparation ? "preparation-title" : "tour-title"} aria-describedby={preparation ? undefined : "tour-description"} onCancel={event => { event.preventDefault(); finish(); }}>
     {preparation ? <StartupScreen percent={preparation.percent} error={preparation.error}
       complete={preparation.percent === 100 && !preparation.error}
@@ -186,16 +218,16 @@ export function OnboardingProvider({ userId, children }: { userId: number; child
       actions={preparation.error ? <><button type="button" onClick={() => void prepare(guideAfterPreparation.current)}>Попробовать снова</button><button type="button" onClick={finish}>Открыть приложение без подготовки</button></> : undefined}
     /> : current && <>
     {position ? <div aria-hidden="true" className={styles.spot} data-tour-spot={current.target} style={position.spot} /> : <div className={styles.shade} />}
-    <div key={`guide-${Math.floor(step! / 3)}`} className={styles.guide} data-pose={Math.floor(step! / 3) % 4} aria-hidden="true" style={position ? { top: Math.max(8, position.card.top - 112), left: position.card.left + (Math.floor(step! / 3) % 4 === 1 ? Math.max(0, (card.current?.offsetWidth ?? 328) - 174) : 8) } : undefined}>
-      <Image src={`/images/domoved/${Math.floor(step! / 3) % 4 < 2 ? "tutorial-point" : Math.floor(step! / 3) % 4 === 2 ? "tutorial-rest" : "tutorial-open"}.webp`} alt="" width={180} height={140} unoptimized loading="eager" />
-    </div>
-    <section ref={card} data-compact={current.target === "plan-selection" || current.target === "plan-map" || undefined} className={styles.card} style={position?.card}>
-      <div className={styles.top}><span>Подсказка {step! + 1} из {steps.length} · {position ? "Коротко о главном" : "Открываем нужное место…"}</span><button type="button" onClick={finish} aria-label="Закрыть обучение" title="Пропустить обучение"><Icon name="close" size={17} /></button></div>
-      <div className={styles.segments} aria-label={`Шаг ${step! + 1} из ${steps.length}`}>{steps.map((item, index) => <span key={item.target} data-filled={index <= step! || undefined} />)}</div>
+    <div className={styles.panel} data-guide={current.guide} style={position?.card}>
+      <Zhorik pose={current.pose} mirrored={current.side === "right" && current.pose === "point"} className={`${styles.guide} ${current.side === "right" ? styles.guideRight : ""}`} />
+    <section ref={card} className={styles.card}>
+      <div className={styles.top}><span>Подсказка {visibleIndex + 1} из {visibleSteps.length}</span><button type="button" onClick={finish} aria-label="Закрыть обучение" title="Пропустить обучение"><Icon name="close" size={17} /></button></div>
+      <div className={styles.segments} role="progressbar" aria-valuemin={1} aria-valuemax={visibleSteps.length} aria-valuenow={visibleIndex + 1} aria-label={`Шаг ${visibleIndex + 1} из ${visibleSteps.length}`}>{visibleSteps.map((item, index) => <span key={item.target} data-filled={index <= visibleIndex || undefined} />)}</div>
       <h2 id="tour-title" tabIndex={-1} ref={heading}>{current.title}</h2>
-      <p id="tour-description">{description}</p>
-      <footer><button type="button" className={styles.back} onClick={finish}>Пропустить</button><div>{step! > 0 && <button type="button" className={styles.back} onClick={() => move(step! - 1)} aria-label="Предыдущая подсказка"><Icon name="arrow" size={16} style={{ transform: "rotate(180deg)" }} /></button>}<button type="button" disabled={!position} className={styles.next} onClick={() => step === steps.length - 1 ? finish() : move(step! + 1)}>{step === steps.length - 1 ? "Готово" : "Далее"}<Icon name="arrow" size={15} /></button></div></footer>
+      <p id="tour-description">{current.text}</p>
+      <footer><button type="button" className={styles.back} onClick={finish}>Пропустить</button><div>{previousStep !== null && <button type="button" className={styles.back} onClick={() => move(previousStep!)} aria-label="Предыдущая подсказка"><Icon name="arrow" size={16} style={{ transform: "rotate(180deg)" }} /></button>}<button type="button" disabled={!position} className={styles.next} onClick={() => nextStep === null ? finish() : move(nextStep)}>{nextStep === null ? "Готово" : "Далее"}<Icon name="arrow" size={15} /></button></div></footer>
     </section>
+    </div>
     </>}
   </dialog>}</Context>;
 }
@@ -211,10 +243,10 @@ function finishPreparation(signal: AbortSignal) {
 }
 
 async function prepareGuideImages(signal: AbortSignal) {
-  await Promise.all(["tutorial-point", "tutorial-rest", "tutorial-open"].map(async name => {
+  await Promise.all(["point", "rest", "open", "peek", "hanging"].map(async name => {
     signal.throwIfAborted();
     const image = new window.Image();
-    image.src = `/images/domoved/${name}.webp`;
+    image.src = `/images/zhorik/${name}.png`;
     try { await image.decode(); } catch { throw new Error("Не удалось загрузить иллюстрации обучения. Повторите попытку."); }
     signal.throwIfAborted();
   }));

@@ -1,6 +1,3 @@
-.art { pointer-events:none; overflow:hidden; mask-image:linear-gradient(90deg,transparent 0%,#000 30%); }
+.art { pointer-events:none; }
 .art img { object-fit:contain; object-position:right bottom; }
-.art .night { display:none; }
-:global(:root[data-theme="dark"]) .art .day { display:none; }
-:global(:root[data-theme="dark"]) .art .night { display:block; }
-@media(max-width:760px) { .art img { object-fit:cover; } }
+:global(:root[data-theme="dark"]) .art img { filter:brightness(.73) saturate(.85) drop-shadow(0 0 10px rgb(102 192 224 / 12%)); }

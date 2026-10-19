@@ -42,3 +42,27 @@ test('tour respects navigation safe area and fits a short mobile viewport', () =
   assert.equal(layout.card.top, 12);
   assert(layout.spot.top + layout.spot.height <= layout.card.top);
 });
+
+import { nextTourIndex } from '../src/features/onboarding/tour-navigation.ts';
+
+test('unavailable tour steps are skipped in both directions and at either end', () => {
+  const steps = ['house', 'bill', 'meters', 'camera', 'finish'].map(target => ({ target }));
+  assert.equal(nextTourIndex(steps, 0, 1, ['bill', 'meters', 'camera']), 4);
+  assert.equal(nextTourIndex(steps, 4, -1, ['bill', 'meters', 'camera']), 0);
+  assert.equal(nextTourIndex(steps, 0, -1, []), null);
+  assert.equal(nextTourIndex(steps, 4, 1, []), null);
+  assert.equal(nextTourIndex(steps, 0, 1, ['bill', 'meters', 'camera', 'finish']), null);
+});
+
+test('bottom action keeps its full highlight below an upper card and hanging mascot', () => {
+  for (const viewport of [{ width: 440, height: 968 }, { width: 320, height: 600 }, { width: 1366, height: 900 }]) {
+    const guideHeight = Math.max(72, Math.min(230, (viewport.height - 300) / 2));
+    const target = { left: (viewport.width - 260) / 2, top: viewport.height - 160, width: 260, height: 50 };
+    const card = { width: Math.min(440, viewport.width - 24), height: 220 };
+    const result = tourLayout(target, viewport, card, 78, { placement: 'above', guideHeight });
+    assert(result.card.top + card.height + guideHeight <= target.top - 16);
+    assert(result.spot.top <= target.top);
+    assert(result.spot.top + result.spot.height >= target.top + target.height);
+    assert.equal(result.card.left, (viewport.width - card.width) / 2);
+  }
+});
