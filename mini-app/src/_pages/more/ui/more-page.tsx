@@ -8,6 +8,7 @@ import { useHouseSelection } from "@/entities/house";
 import { useOnboarding } from "@/features/onboarding/onboarding";
 import styles from "./more-page.module.css";
 const items = [
+ { href:"/settings", icon:"settings", title:"Настройки", description:"Тема и уведомления" },
  { href:"/house", icon:"building", title:"План дома", description:"Этажи, квартиры и общие зоны" },
  { href:"/utilities", icon:"receipt", title:"ЖКХ", description:"Квитанции и показания" },
  { href:"/messages", icon:"messages", title:"Сообщения", description:"Переписки с соседями" },

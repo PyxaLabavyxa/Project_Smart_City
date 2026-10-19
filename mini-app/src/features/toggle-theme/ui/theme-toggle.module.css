@@ -1,4 +1,0 @@
-.button { position:absolute; right:0; display:grid; place-items:center; width:44px; height:44px; padding:0; border:1px solid var(--color-line); border-radius:13px; background:var(--color-surface); color:var(--color-muted); }
-.button span { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
-.button svg { width:23px; height:23px; }
-.button:hover { background:var(--color-soft); }

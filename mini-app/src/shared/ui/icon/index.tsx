@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 const paths = {
+  device: "M7 2h10v20H7ZM11 18h2",
   clock:"M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM12 6v6l4 2",
   people:"M14 7a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM3 22v-4a6 6 0 0 1 12 0v4M18 4a3 3 0 0 1 0 6m1 4a5 5 0 0 1 3 4v4",
   info:"M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM12 11v6m0-10h.01",
@@ -19,11 +20,11 @@ const paths = {
   home: "m3 10 9-7 9 7v11h-6v-7H9v7H3Z",
   issues: "M9 4H5v17h14V4h-4M9 2h6v5H9ZM8 12h8M8 16h6",
   plan: "m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2ZM9 3v16m6-14v16",
-  cameras: "M3 6h12v12H3Zm12 4 6-3v10l-6-3Z",
+  cameras: "m3 4 16 4-3 8L1 10Zm1 7-1 4h7l2-2m-5 2v5h6m-6-5H2m17-7 3 1-2 5-3-1",
   more: "M7 12a2 2 0 1 1-4 0 2 2 0 0 1 4 0Zm7 0a2 2 0 1 1-4 0 2 2 0 0 1 4 0Zm7 0a2 2 0 1 1-4 0 2 2 0 0 1 4 0Z",
   bubble: "M20 11a8 8 0 0 1-8 8 9 9 0 0 1-4-1l-5 3 2-6a8 8 0 1 1 15-4Z",
   droplet: "M12 2C9 6 4 11 4 15a8 8 0 0 0 16 0c0-4-5-9-8-13ZM8 14c0 3 1 4 4 4",
-  camera: "M3 7h4l2-3h6l2 3h4v14H3ZM16 14a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z",
+  camera: "m3 4 16 4-3 8L1 10Zm1 7-1 4h7l2-2m-5 2v5h6m-6-5H2m17-7 3 1-2 5-3-1",
   moon: "M20 15A8 8 0 0 1 9 4a8 8 0 1 0 11 11Z",
   sun: "M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0ZM12 2v2m0 16v2M2 12h2m16 0h2M5 5l1 1m12 12 1 1M5 19l1-1M18 6l1-1",
   messages: "M4 3h13v12H9l-5 4Zm13 5h4v13l-5-3h-4",
@@ -48,7 +49,6 @@ export function Icon({ name, size = 21, style, active = false }: { name: keyof t
     home:"M12 2 1 10v12h8v-7h6v7h8V10L12 2Z",
     receipt:"M4 1h16v22l-4-2-4 2-4-2-4 2V1Zm4 4v2h8V5H8Zm0 5v2h8v-2H8Zm0 5v2h5v-2H8Z",
     messages:"M3 2h18v17H10l-7 4V2Zm4 4v2h10V6H7Zm0 5v2h7v-2H7Z",
-    camera:"M8 2h8l2 4h5v16H1V6h5l2-4Zm9 12a5 5 0 1 0-10 0 5 5 0 0 0 10 0Z",
     more:paths.more,
   };
   if (active && filled[name]) return <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" fillRule="evenodd" aria-hidden="true" style={style}><path d={filled[name]} /></svg>;

@@ -16,6 +16,7 @@ import { RegistrationScreen } from "@/features/registration/registration";
 import { MiniAppPresence } from "@/features/mini-app-presence";
 import { LaunchNavigation } from "@/features/launch-navigation";
 import { OnboardingProvider } from "@/features/onboarding/onboarding";
+import { ThemeSync } from "@/features/settings/theme-sync";
 import { StartupScreen } from "@/shared/ui/startup-screen";
 
 export function AppProviders({ children }: { children: ReactNode }) {
@@ -35,6 +36,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
     } finally { setSwitching(false); }
   }
   return <>
+    <ThemeSync />
     {localEnabled && process.env.NEXT_PUBLIC_SHOW_LOCAL_LOGIN_CONTROLS === "true" && <aside className="local-login-bar" aria-label="Режим входа">
       <span>{mode === "local" ? "Локальный вход" : "Вход через MAX"}</span>
       <label>Режим <select value={mode} disabled={switching} onChange={event => void switchMode(event.target.value === "local" ? "local" : "max")}>

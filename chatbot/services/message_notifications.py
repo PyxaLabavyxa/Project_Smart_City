@@ -10,6 +10,7 @@ from app.database.models import (
     MiniAppPresence,
     User,
 )
+from app.database.notification_preferences import notification_enabled
 from app.database.session import session_factory
 from maxapi.types.errors import Error
 from sqlalchemy import select
@@ -44,7 +45,9 @@ async def deliver_pending(bot, sessions=session_factory):
                 )
                 .limit(1)
             )
-            if active is not None:
+            if active is not None or not await notification_enabled(
+                session, notification.max_user_id, "personal_messages"
+            ):
                 notification.suppressed_at = datetime.now(UTC)
                 await session.commit()
                 continue
@@ -75,9 +78,7 @@ async def deliver_pending(bot, sessions=session_factory):
                 notification.available_at = datetime.now(UTC) + timedelta(
                     seconds=min(3600, 5 * 2 ** min(notification.attempts, 10))
                 )
-                logger.warning(
-                    "Message notification %s will be retried", notification.id
-                )
+                logger.warning("Message notification %s will be retried", notification.id)
             else:
                 notification.sent_at = datetime.now(UTC)
             await session.commit()

@@ -29,6 +29,10 @@ class User(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     max_user_id: Mapped[int] = mapped_column(BigInteger, unique=True)
     name: Mapped[str] = mapped_column(String(200))
+    notify_personal_messages: Mapped[bool] = mapped_column(Boolean, default=True, server_default=true())
+    notify_issue_messages: Mapped[bool] = mapped_column(Boolean, default=True, server_default=true())
+    notify_issue_statuses: Mapped[bool] = mapped_column(Boolean, default=True, server_default=true())
+    notify_announcements: Mapped[bool] = mapped_column(Boolean, default=True, server_default=true())
 
     apartment_links: Mapped[list["UserApartment"]] = relationship(
         "UserApartment",

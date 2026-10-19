@@ -66,3 +66,9 @@ test('bottom action keeps its full highlight below an upper card and hanging mas
     assert.equal(result.card.left, (viewport.width - card.width) / 2);
   }
 });
+
+test('location hint reserves space for the peeking mascot on a short screen', () => {
+  const layout = tourLayout({ left: 16, top: 297, width: 288, height: 170 }, { width: 320, height: 600 }, { width: 296, height: 220 }, 60, { placement: 'above', guideHeight: 0, topInset: 60 });
+  assert(layout.card.top >= 60);
+  assert(layout.card.top + 220 < layout.spot.top);
+});

@@ -45,6 +45,7 @@ export const endpoints = {
   logout: "/auth/logout",
   presence: "/auth/presence",
   me: "/me",
+  notifications: "/me/notifications",
   registration: "/registration",
   apartments: (house: string) => `/houses/${encodeURIComponent(house)}/apartments`,
   issues: (house: string) => `/houses/${encodeURIComponent(house)}/issues`,

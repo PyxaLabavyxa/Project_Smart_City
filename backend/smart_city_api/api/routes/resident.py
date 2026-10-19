@@ -18,6 +18,7 @@ from smart_city_api.schemas.issue_chat import (
     IssueMessageOutput,
     IssueMessagePage,
 )
+from smart_city_api.schemas.notifications import NotificationPreferences
 from smart_city_api.schemas.resident import ApartmentPage, ApartmentResponse, HouseResponse
 from smart_city_api.services.access import own_apartment_ids, require_house
 from smart_city_api.services.contacts import read_contacts
@@ -35,6 +36,21 @@ Cursor = Annotated[int, Query(ge=0)]
 async def contacts(house_id: int, session: Session, user: Resident):
     await require_house(session, user.id, house_id)
     return await read_contacts(session, house_id)
+
+
+@router.get("/me/notifications", response_model=NotificationPreferences)
+async def notification_preferences(user: Resident):
+    return {key: getattr(user, "notify_" + key) for key in NotificationPreferences.model_fields}
+
+
+@router.post("/me/notifications", response_model=NotificationPreferences)
+async def save_notification_preferences(
+    data: NotificationPreferences, session: Session, user: Resident
+):
+    for key, value in data.model_dump().items():
+        setattr(user, "notify_" + key, value)
+    await session.commit()
+    return data
 
 
 @router.get("/me", response_model=Profile)
@@ -135,8 +151,13 @@ async def issue_presence(
 ):
     """Присутствие автора в чате и подтверждение прочитанных сообщений."""
     await update_presence(
-        session, user, data.client_id, data.sequence, data.active,
-        issue_id=issue_id, last_message_id=data.last_message_id,
+        session,
+        user,
+        data.client_id,
+        data.sequence,
+        data.active,
+        issue_id=issue_id,
+        last_message_id=data.last_message_id,
     )
 
 

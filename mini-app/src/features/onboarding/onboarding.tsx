@@ -169,6 +169,14 @@ export function OnboardingProvider({ userId, children }: { userId: number; child
           found.style.maxHeight = `${Math.max(120, available - guideHeight)}px`;
           found.style.overflowY = "auto";
         }
+        if (steps[step].target === "issue-location") {
+          const room = Math.max(120, viewport.height - cardRect.height - 100);
+          if (natural.height > room) {
+            const scale = room / natural.height;
+            found.style.zoom = String(scale);
+            found.style.width = `${natural.width / scale}px`;
+          }
+        }
         if (["issue-controls", "plan-map"].includes(steps[step].target) && natural.height > available) {
           const scale = available / natural.height;
           found.style.zoom = String(scale);
@@ -196,7 +204,7 @@ export function OnboardingProvider({ userId, children }: { userId: number; child
           window.scrollTo({ top: nextScroll, behavior: "instant" });
         }
       }
-      const next = tourLayout(found.getBoundingClientRect(), viewport, cardRect, navigationHeight, above ? { placement: "above", guideHeight: steps[step].guide === "hanging" ? guideHeight : 0 } : undefined);
+      const next = tourLayout(found.getBoundingClientRect(), viewport, cardRect, navigationHeight, above ? { placement: "above", guideHeight: steps[step].guide === "hanging" ? guideHeight : 0, topInset: steps[step].guide === "inset" ? guideHeight + 4 : undefined } : undefined);
       setPosition(previous => JSON.stringify(previous) === JSON.stringify(next) ? previous : next);
     };
     const schedule = () => { cancelAnimationFrame(frame); frame = requestAnimationFrame(update); };
