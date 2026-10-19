@@ -51,9 +51,11 @@ test('cancelling page preparation never reports successful completion', async ()
   assert(!updates.includes(100));
 });
 
-test('a cached health redirect with a trailing slash does not stop preparation at 63 percent', async () => {
+test('a cached health redirect with a trailing slash does not stop preparation before the remaining screens', async () => {
   const { updates, visited } = await prepareWithCameras(4, undefined, [], { '/health': '/health/' });
-  assert(updates.some(value => Math.round(value) === 63));
+  assert(visited.indexOf('/health') < visited.indexOf('/info'));
+  assert(visited.includes('/house'));
+  assert(visited.includes('/contacts'));
   assert.equal(updates.at(-1), 100);
   assert(visited.includes('/info'));
   assert(visited.includes('/more'));

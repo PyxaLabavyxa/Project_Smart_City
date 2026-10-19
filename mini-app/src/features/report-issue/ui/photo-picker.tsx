@@ -32,14 +32,16 @@ export function PhotoPicker({ photos, onChange, disabled = false }: { photos: Dr
     onChange(next);
     setError([...new Set(errors)].join(" "));
   }
-  return <section className={styles.section} aria-label="Фотографии обращения">
-    <div className={styles.heading}><div><h3>Фотографии</h3><p>{onChange ? "Покажите проблему — так её проще оценить" : "Отправим вместе с обращением"}</p></div><span>{photos.length} / 10</span></div>
+  return <section className={styles.section} data-readonly={!onChange || undefined} data-summary={`Прикреплено фотографий: ${photos.length}`} aria-label="Фотографии обращения">
+    <div className={styles.heading}><div><h3>Фотографии</h3><p>{onChange ? "Необязательно — до 10 фото" : "Отправим вместе с обращением"}</p></div><span>{photos.length} / 10</span></div>
+    <div className={styles.gallery}>
     {photos.length > 0 && <ul className={styles.grid}>{photos.map((photo, index) => <li key={photo.id}><Thumbnail photo={photo} /><span className={styles.number}>{index + 1}</span>{onChange && <button type="button" disabled={disabled} className={styles.remove} aria-label={`Удалить фото ${index + 1}`} onClick={() => { onChange(photos.filter(item => item.id !== photo.id)); setError(""); }}><Icon name="close" size={16} /></button>}<span className={styles.filename}>{photo.file.name}</span></li>)}</ul>}
     {onChange && photos.length < 10 && <div className={styles.drop} data-dragging={dragging || undefined} onDragOver={event => { event.preventDefault(); if (!disabled) setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={event => { event.preventDefault(); setDragging(false); select(Array.from(event.dataTransfer.files)); }}>
       <input ref={input} className={styles.input} type="file" accept="image/jpeg,image/png,image/webp" multiple disabled={disabled} aria-label="Выбрать фотографии" onChange={event => { select(Array.from(event.target.files ?? [])); event.target.value = ""; }} />
-      <button type="button" disabled={disabled} className={styles.add} onClick={() => input.current?.click()}><span className={styles.plus} aria-hidden="true">+</span><span><strong>{photos.length ? "Добавить ещё фото" : "Добавить фотографии"}</strong><small>Из галереи или перетащите сюда</small></span></button>
+      <button type="button" disabled={disabled} className={styles.add} onClick={() => input.current?.click()}><span className={styles.plus} aria-hidden="true">+</span><span><strong>Добавить фото</strong><small>Из галереи или перетащите сюда</small></span></button>
       <p>Необязательно · JPG, PNG, WebP · до 10 МБ каждое</p>
     </div>}
+    </div>
     {error && <p className={styles.error} role="alert">{error}</p>}
   </section>;
 }

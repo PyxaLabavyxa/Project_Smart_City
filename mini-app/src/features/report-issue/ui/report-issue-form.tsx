@@ -6,8 +6,9 @@ import { useIssues, categoriesForFloor, similarIssues, IssueCategoryIcon } from 
 import { LocationSelector, formatLocation, validLocation, useHouseSelection } from "@/entities/house";
 import styles from "./report-issue.module.css";
 import { PhotoPicker } from "./photo-picker";
+import { Icon } from "@/shared/ui/icon";
 
-const steps = ["Место", "Категория", "Описание", "Создание"];
+const steps = ["Место", "Категория", "Описание", "Проверка"];
 const stepTitles = ["Где возникла проблема?", "Что случилось?", "Расскажите о проблеме", "Проверьте обращение"];
 export function ReportIssueForm({ cancelHref = "/issues" }: { cancelHref?: string }) {
   const { addIssue, issues, draft, creating, updateDraft, resetDraft } = useIssues();
@@ -25,7 +26,7 @@ export function ReportIssueForm({ cancelHref = "/issues" }: { cancelHref?: strin
     updateDraft({ step });
     setErrors({});
     setFailure("");
-    formRef.current?.scrollIntoView({ block: "start" });
+    window.scrollTo({ top: 0, behavior: "instant" });
     requestAnimationFrame(() => formRef.current?.querySelector("legend")?.focus({ preventScroll: true }));
   }
   function validate() {
@@ -59,13 +60,14 @@ export function ReportIssueForm({ cancelHref = "/issues" }: { cancelHref?: strin
       submitted.current = false; setNavigating(false);
     }
   }
+  if (navigating) return <div className={styles.review} role="status"><h2>Обращение отправлено</h2><p>Открываем подтверждение…</p></div>;
   const error = (name: string) => errors[name] ? <span className={styles.error} id={name + "-error"} role="alert">{errors[name]}</span> : null;
-  return <form ref={formRef} className={styles.form} onSubmit={submit} noValidate aria-busy={saving}>
+  return <form ref={formRef} data-step={draft.step} className={styles.form} onSubmit={submit} noValidate aria-busy={saving}>
     <p className={styles.note} aria-live="polite">Шаг {draft.step + 1} из {steps.length} · {steps[draft.step]}</p>
-    <ol className={styles.steps} aria-label="Этапы обращения">{steps.map((step, index) => <li key={step} data-reached={index <= draft.step || undefined} aria-current={draft.step === index ? "step" : undefined}><span>{index + 1}</span>{step}</li>)}</ol>
+    <ol className={styles.steps} aria-label="Этапы обращения">{steps.map((step, index) => <li key={step} data-reached={index <= draft.step || undefined} aria-current={draft.step === index ? "step" : undefined}><span>{index < draft.step ? "✓" : index + 1}</span>{step}</li>)}</ol>
     <fieldset key={draft.step} className={styles.fields} disabled={saving}>
       <legend tabIndex={-1}>{stepTitles[draft.step]}</legend>
-      {draft.step > 0 && <p className={styles.context}>{draft.step > 1 && `${draft.category} · `}{formatLocation(draft.place)} <button type="button" onClick={() => goToStep(0)}>Изменить место</button></p>}
+      {draft.step > 0 && draft.step < 3 && <p className={styles.context}>{draft.step > 1 && `${draft.category} · `}{formatLocation(draft.place)} <button type="button" onClick={() => goToStep(0)}>Изменить место</button></p>}
       {draft.step === 0 && <><LocationSelector value={draft.place} onChange={place => updateDraft({ place })} problemPlaces={issues.filter(issue => issue.status !== "completed").flatMap(issue => issue.place ? [issue.place] : [])} />{error("place")}</>}
       {draft.step === 1 && <><div className={styles.categories} role="radiogroup" aria-label="Категория" tabIndex={-1} aria-invalid={!!errors.category} aria-describedby={errors.category ? "category-error" : undefined}>
         {categories.map(category => <label key={category} className={styles.category}>
@@ -80,22 +82,25 @@ export function ReportIssueForm({ cancelHref = "/issues" }: { cancelHref?: strin
         </label>
         <label className={styles.field}>Описание
           <textarea name="description" placeholder="Что вы заметили и когда это началось" value={draft.description} onChange={event => { updateDraft({ description: event.target.value }); setErrors(current => ({ ...current, description: "" })); }} rows={5} maxLength={2000} aria-invalid={!!errors.description} aria-describedby={errors.description ? "description-error" : undefined} />
+          <span className={styles.characterCount}>{draft.description.length}/2000</span>
           {error("description")}
         </label>
         <PhotoPicker photos={draft.photos} disabled={saving} onChange={photos => updateDraft({ photos })} />
       </>}
-      {draft.step === 3 && <div className={styles.review}><h2>{draft.title}</h2><p>{house.address}</p><p>{formatLocation(draft.place)}</p><p>{draft.category}</p><p className={styles.description}>{draft.description}</p></div>}
+      {draft.step === 3 && <div className={styles.review}>
+        {([{icon:"pin",label:"Место",value:`${house.address} · ${formatLocation(draft.place)}`,step:0},{icon:"settings",label:"Категория",value:draft.category,step:1},{icon:"receipt",label:"Заголовок",value:draft.title,step:2},{icon:"messages",label:"Описание",value:draft.description,step:2}] as const).map(item => <div className={styles.reviewRow} key={item.label}><span className={styles.reviewIcon}><Icon name={item.icon} size={29} /></span><span><strong>{item.label}</strong><p>{item.value}</p></span><button type="button" onClick={() => goToStep(item.step)}>Изменить</button></div>)}
+      </div>}
       {draft.step === 3 && draft.photos.length > 0 && <PhotoPicker photos={draft.photos} />}
     </fieldset>
     {matches.length > 0 && draft.step >= 1 && <aside className={styles.similar} aria-label="Похожие обращения"><strong>Возможно, об этой проблеме уже сообщили</strong><p>В этом месте есть активные обращения той же категории. Можно открыть их или продолжить создание.</p>{matches.map(issue => <Link key={issue.id} href={"/issues/" + issue.id}>{issue.title}</Link>)}</aside>}
     {failure && <p role="alert" className={styles.error}>{failure}</p>}
     <div className={styles.actions}>
-      {draft.step > 0 && <button type="button" className={styles.previous} disabled={saving} onClick={() => goToStep(draft.step - 1)}>← Назад</button>}
-      <button type="submit" className={styles.primary} disabled={saving}>{saving ? "Сохраняем…" : draft.step === 3 ? "Создать обращение" : "Продолжить"}</button>
+      {draft.step > 0 ? <button type="button" className={styles.previous} disabled={saving} onClick={() => goToStep(draft.step - 1)}>← Назад</button> : <Link className={styles.previous} href={cancelHref}>← Назад</Link>}
+      <button type="submit" className={styles.primary} disabled={saving}>{saving ? "Сохраняем…" : draft.step === 3 ? "Отправить обращение" : draft.step === 2 ? "Проверить" : "Продолжить"}</button>
     </div>
-    <div className={styles.draftActions}>
-      <Link href={cancelHref} aria-disabled={saving} onClick={event => { if (saving) event.preventDefault(); }}>Сохранить черновик и выйти</Link>
+    {draft.step === 2 && <div className={styles.draftActions}>
+      <Link href={cancelHref} aria-disabled={saving} onClick={event => { if (saving) event.preventDefault(); }}>Сохранить черновик</Link>
       <button type="button" disabled={saving} onClick={() => { if (window.confirm("Удалить черновик обращения?")) { resetDraft(); setErrors({}); } }}>Сбросить черновик</button>
-    </div>
+    </div>}
   </form>;
 }

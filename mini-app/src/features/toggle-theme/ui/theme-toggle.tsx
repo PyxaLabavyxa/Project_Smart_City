@@ -25,11 +25,11 @@ export function ThemeToggle() {
   function toggleTheme() {
     const theme = dark ? "light" : "dark";
     document.documentElement.dataset.theme = theme;
-    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", dark ? "#f2f8ff" : "#0c1626");
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", dark ? "#f1f9fc" : "#091f2c");
     try { localStorage.setItem(preferenceKey, theme); } catch {}
     window.dispatchEvent(new Event(eventName));
   }
-  return <button className={styles.button} type="button" aria-pressed={dark} onClick={toggleTheme}>
+  return <button className={styles.button} type="button" aria-pressed={dark} title={dark ? "Включить светлую тему" : "Включить тёмную тему"} onClick={toggleTheme}>
     <Icon name={dark ? "sun" : "moon"} size={19} /><span>{dark ? "Светлая тема" : "Тёмная тема"}</span>
   </button>;
 }

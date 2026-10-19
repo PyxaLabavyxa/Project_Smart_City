@@ -3,3 +3,5 @@
 .new, .assigned { color: var(--color-info); background: var(--color-info-bg); }
 .accepted, .completed { color: var(--color-success); background: var(--color-success-bg); }
 .in-progress, .awaiting-confirmation { color: var(--color-warning); background: var(--color-warning-bg); }
+
+.badge { font-size:calc(14 * var(--u)); font-weight:400; border-radius:calc(10 * var(--u)); padding:calc(7 * var(--u)) calc(12 * var(--u)); white-space:nowrap; line-height:1.2; }

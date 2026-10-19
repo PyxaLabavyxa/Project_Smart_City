@@ -1,5 +1,5 @@
 type Router = { replace: (href: string, options: { scroll: boolean }) => void; prefetch: (href: string) => void };
-const pages = ["/", "/issues", "/plan", "/messages", "/utilities", "/cameras", "/issues/new", "/health", "/info", "/more"];
+const pages = ["/", "/issues", "/plan", "/messages", "/utilities", "/cameras", "/issues/new", "/health", "/info", "/more", "/house", "/contacts"];
 
 export async function prepareTour(router: Router, signal: AbortSignal, progress: (percent: number) => void, destination = "/") {
   for (const href of pages) router.prefetch(href);

@@ -1,0 +1,28 @@
+.success { max-width:540px; margin:auto; text-align:center; }
+.check { display:grid; place-items:center; width:106px; height:106px; margin:20px auto 26px; color:var(--color-action); background:var(--color-success-bg); border-radius:50%; }
+.success h1 { font-size:29px; }
+.subtitle { color:var(--color-muted); margin:16px 0 24px; }
+.card { padding:20px; margin-bottom:18px; border-radius:var(--radius-card); background:var(--color-surface); text-align:left; }
+.row { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+.card h2 { margin:0; font-size:20px; }
+.card > p { color:var(--color-muted); font-size:13px; }
+.card ol { margin:18px 0 0; padding:18px 0 0; border-top:1px solid var(--color-line); list-style:none; counter-reset:steps; }
+.card li { position:relative; padding:0 0 24px 44px; counter-increment:steps; }
+.card li::before { content:counter(steps); position:absolute; left:0; width:29px; height:29px; display:grid; place-items:center; background:var(--color-soft); border-radius:50%; font-size:13px; }
+.card li:first-child::before { color:var(--color-on-action); background:var(--color-action); }
+.card li:last-child { padding-bottom:0; }
+.card li p { margin:6px 0 0; color:var(--color-muted); font-size:13px; }
+.primary { composes:primary from "@/shared/styles/controls.module.css"; width:100%; }
+.secondary { composes:button from "@/shared/styles/controls.module.css"; margin-top:10px; width:100%; background:transparent; border:1px solid var(--color-line); }
+
+.check { width:calc(128 * var(--u)); height:calc(128 * var(--u)); margin:calc(24 * var(--u)) auto calc(24 * var(--u)); }
+.check svg { width:calc(70 * var(--u)); height:calc(70 * var(--u)); stroke-width:3; }
+.success h1 { font-size:calc(34 * var(--u)); letter-spacing:calc(-1.1 * var(--u)); line-height:1.15; }
+.subtitle { font-size:calc(20 * var(--u)); line-height:1.4; margin:calc(14 * var(--u)) 0 calc(24 * var(--u)); }
+.card { padding:calc(17 * var(--u)); border-radius:calc(18 * var(--u)); }
+.card h2 { font-size:calc(23 * var(--u)); }
+.card > p { font-size:calc(16 * var(--u)); }
+.card li strong { font-size:calc(17 * var(--u)); }
+.card li p { font-size:calc(16 * var(--u)); line-height:1.35; }
+.card li { padding-left:calc(45 * var(--u)); padding-bottom:calc(26 * var(--u)); }
+.primary,.secondary { font-size:calc(20 * var(--u)); min-height:calc(56 * var(--u)); font-weight:400; }

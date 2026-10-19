@@ -14,7 +14,7 @@ export function HouseExplorer({ initialPlace }: { initialPlace?: HouseLocation }
   const [apartment, setApartment] = useState("");
   const [searchError, setSearchError] = useState("");
   function setSelected(place: HouseLocation) { setLocal(place); select(place); }
-  function chooseRoom(place: HouseLocation) { setSelected(place); if (window.matchMedia("(max-width: 900px)").matches) { setSheetOpen(true); sheet.current?.showModal(); } }
+  function chooseRoom(place: HouseLocation) { setSelected(place); setSheetOpen(true); sheet.current?.showModal(); }
   function closeSheet() { sheet.current?.close(); }
   const apartments = floorApartments(house, selected.entrance, selected.floor);
   const floorIssues = issues.filter(issue => issue.place?.houseId === house.id && issue.place.entrance === selected.entrance && issue.place.floor === selected.floor);

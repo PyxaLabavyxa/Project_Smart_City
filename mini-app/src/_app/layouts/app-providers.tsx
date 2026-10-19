@@ -35,7 +35,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
     } finally { setSwitching(false); }
   }
   return <>
-    {localEnabled && <aside className="local-login-bar" aria-label="Режим входа">
+    {localEnabled && process.env.NEXT_PUBLIC_SHOW_LOCAL_LOGIN_CONTROLS === "true" && <aside className="local-login-bar" aria-label="Режим входа">
       <span>{mode === "local" ? "Локальный вход" : "Вход через MAX"}</span>
       <label>Режим <select value={mode} disabled={switching} onChange={event => void switchMode(event.target.value === "local" ? "local" : "max")}>
         <option value="local">Локальный</option><option value="max">MAX</option>

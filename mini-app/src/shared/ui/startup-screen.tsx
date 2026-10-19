@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { BrandMark } from "./brand-mark";
+import { BrandWordmark } from "./brand-mark";
 import { GnomeProgress } from "./gnome-progress";
 import styles from "./startup-screen.module.css";
 
@@ -8,7 +8,7 @@ export function StartupScreen({ percent = 0, status = "Подключаемся 
 }) {
   return <section className={styles.screen} data-complete={complete || undefined} aria-labelledby="preparation-title">
     <div className={styles.content}>
-      <div className={styles.mark} aria-hidden="true"><BrandMark size={62} /></div>
+      <div className={styles.mark} aria-hidden="true"><BrandWordmark /></div>
       <h2 id="preparation-title">Готовим ваш Домовед</h2>
       <p className={styles.description}>Загружаем разделы и фотографии, чтобы знакомство с домом прошло плавно.</p>
       <GnomeProgress value={percent} label="Подготовка приложения" />

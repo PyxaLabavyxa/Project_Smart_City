@@ -2,8 +2,8 @@ import { formatIssueDate, type IssueRecord, type IssueStateStatus } from "@/enti
 import styles from "./issue-details.module.css";
 
 const historyLabels: Record<IssueStateStatus, string> = {
-  new: "Создано",
-  accepted: "Принято",
+  new: "Обращение создано",
+  accepted: "Принято управляющей компанией",
   assigned: "Назначен исполнитель",
   "in-progress": "В работе",
   "awaiting-confirmation": "Ожидает подтверждения",
@@ -18,7 +18,7 @@ export function IssueHistory({ issue }: { issue: IssueRecord }) {
       <ol className={styles.timeline}>
         {issue.history.map((event, index) => (
           <li key={`${event.status}:${event.at}:${index}`} aria-current={index === issue.history.length - 1 ? "step" : undefined}>
-            <span className={styles.marker} aria-hidden="true">{index === issue.history.length - 1 ? "●" : "✓"}</span>
+            <span className={styles.marker} aria-hidden="true">{index + 1}</span>
             <h3>{historyLabels[event.status]}</h3>
             <time dateTime={event.at}>{formatIssueDate(event.at)}</time>
             {index === issue.history.length - 1 ? <span className={styles.current}>Текущий статус</span> : null}

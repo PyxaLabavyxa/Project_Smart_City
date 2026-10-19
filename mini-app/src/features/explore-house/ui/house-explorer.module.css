@@ -41,3 +41,21 @@
 .neighbors h3 { margin: 0; font-size: 14px; }
 @media (max-width: 900px) { .layout { grid-template-columns: minmax(0,1fr); } }
 @media (max-width: 480px) { .canvas { padding: 1px 12px 20px; } .searchRow { display: block; padding: 16px 0; } .range { margin-bottom: 0; } .range small { display: inline; margin-left: 8px; } }
+
+.canvas { background:transparent; padding:0; }
+.searchRow { margin:14px 0; padding:14px; border:0; border-radius:14px; background:var(--color-surface); }
+.search label { font-weight:600; color:var(--color-ink); font-size:14px; }
+.searchButton { background:var(--color-action); color:var(--color-on-action); }
+.sidebar:not(dialog) { padding:20px; border-radius:var(--radius-card); background:var(--color-surface); }
+@media(max-width:900px) { .sidebar:not(dialog) { display:none; } }
+
+.layout { grid-template-columns:minmax(0,1fr); gap:0; }
+.sidebar:not(dialog) { display:none; }
+.searchRow { margin:calc(14 * var(--u)) 0; padding:calc(13 * var(--u)); }
+.search label { font-size:calc(17 * var(--u)); margin-bottom:calc(8 * var(--u)); }
+.search > div { gap:calc(10 * var(--u)); }
+.search input { min-height:calc(46 * var(--u)); padding:calc(10 * var(--u)); }
+.searchButton { min-height:calc(46 * var(--u)); width:calc(96 * var(--u)); font-size:calc(18 * var(--u)); padding:calc(10 * var(--u)); }
+.range { display:none; }
+.otherZones { margin-top:calc(16 * var(--u)); font-size:calc(14 * var(--u)); }
+.sheet { width:min(440px,100%); margin:auto auto 0; border-radius:22px 22px 0 0; }

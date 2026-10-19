@@ -9,7 +9,7 @@ import { number, record } from "@/shared/api/parse";
 import { useRemote } from "@/shared/api/use-remote";
 import { IssueDetailsPage } from "./issue-details-page";
 import { IssueNotFoundPage } from "./issue-not-found-page";
-import styles from "./issue-details.module.css";
+import { IssueCreated } from "./issue-created";
 import { RequestState } from "@/shared/ui/navigation/request-state";
 export function IssueDetailsRoute({ id }: { id: string }) {
   return <IssueDetailsLoader key={id} id={id} />;
@@ -37,8 +37,7 @@ function IssueDetailsLoader({ id }: { id: string }) {
   if (loading || error) return <RequestState loading={loading} error={error} reload={reload} />;
   if (anotherHouse) return <RequestState loading={!!target} error={target ? "" : "Обновите список квартир, чтобы открыть дом этого обращения."} reload={reload} />;
   const issue = data?.issue;
-  return issue ? <>
-    {createdIssueId === id && <div className={styles.success} role="status"><div><strong>Обращение создано</strong><p>Место и описание сохранены. Здесь можно следить за статусом.</p></div><button type="button" aria-label="Закрыть подтверждение" onClick={dismissCreationNotice}>×</button></div>}
-    <IssueDetailsPage issue={issue} />
-  </> : <IssueNotFoundPage />;
+  if (!issue) return <IssueNotFoundPage />;
+  if (createdIssueId === id) return <IssueCreated issue={issue} onOpen={() => { dismissCreationNotice(); window.scrollTo({ top: 0, behavior: "instant" }); }} />;
+  return <IssueDetailsPage issue={issue} />;
 }

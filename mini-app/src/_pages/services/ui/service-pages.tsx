@@ -11,11 +11,11 @@ export function HealthPage() {
 }
 
 export function MessagesPage({ from }: { from?: "plan" | "home" }) {
-  return <RecipientSelector openSelected={!!from} />;
+  return <SectionPage title="Сообщения" description="Переписки с соседями вашего дома"><RecipientSelector openSelected={!!from} /></SectionPage>;
 }
 
 export function HouseInfoPage() {
-  return <SectionPage title="Информация о доме" description="Характеристики вашего дома">
+  return <SectionPage title="Информация о доме">
     <HouseInformation />
   </SectionPage>;
 }

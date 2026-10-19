@@ -84,7 +84,7 @@ export function OnboardingProvider({ userId, children }: { userId: number; child
     let showGuide = true;
     try { showGuide = localStorage.getItem(storageKey) !== "done"; } catch {}
     const timer = window.setInterval(() => {
-      if (!document.querySelector('nav[aria-label="Основная навигация"]')) return;
+      if (!document.querySelector("#main")) return;
       // The initial issue may still be resolving its house. Starting the tour
       // now would navigate away before the house switch captures the return URL.
       if (document.querySelector('#main .request-state[aria-busy="true"]')) return;
@@ -130,7 +130,7 @@ export function OnboardingProvider({ userId, children }: { userId: number; child
       if (!found) return;
       const viewport = { width: window.innerWidth, height: window.innerHeight };
       const cardRect = card.current.getBoundingClientRect();
-      const navigationHeight = viewport.width <= 760 ? document.querySelector('nav[aria-label="Основная навигация"]')?.getBoundingClientRect().height ?? 78 : 0;
+      const navigationHeight = document.querySelector('nav[aria-label="Основная навигация"]')?.getBoundingClientRect().height ?? 78;
       const viewportKey = `${viewport.width}:${viewport.height}`;
       if (found !== fitted || viewportKey !== fittedViewport) {
         restoreFit();

@@ -51,7 +51,7 @@
 .card footer > div { gap:10px; }
 .back { color:var(--color-primary); font-size:14px; min-height:46px; }
 .card footer > div .back { background:var(--color-soft); border-radius:12px; width:46px; }
-.next { background:linear-gradient(110deg,#3674fa,#2863f5); min-height:46px; padding:10px 20px; font-size:15px; border-radius:14px; }
+.next { background:var(--color-action); min-height:46px; padding:10px 20px; font-size:15px; border-radius:14px; }
 .guide { position:fixed; width:166px; height:128px; pointer-events:none; bottom:calc(390px + env(safe-area-inset-bottom)); left:20px; overflow:hidden; }
 .guide img { display:block; width:100%; height:100%; object-fit:cover; object-position:center top; }
 .guide[data-pose="1"] img { transform:scaleX(-1); }
@@ -67,3 +67,10 @@
 .next { background:var(--color-action); }
 .guide { height:128px; }
 .guide img { object-fit:contain; object-position:center bottom; }
+
+.spot { border-color:var(--color-action); background:transparent; box-shadow:0 0 0 4px rgb(45 121 150 / 14%),0 0 0 9999px rgb(5 24 38 / 44%); }
+.card { border:1px solid var(--color-line); border-radius:20px; background:var(--color-surface); }
+.next { color:var(--color-on-action); background:var(--color-action); }
+.top button { min-width:44px; min-height:44px; }
+.back { min-width:44px; }
+@media(prefers-reduced-motion:no-preference) { .card { transition:top .15s ease; } }

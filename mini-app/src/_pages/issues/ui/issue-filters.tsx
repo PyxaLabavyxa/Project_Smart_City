@@ -1,22 +1,27 @@
+import { useState } from "react";
+import { Icon } from "@/shared/ui/icon";
 import { issueStatusLabels, categoriesForFloor, type IssueFilters as Filters } from "@/entities/issue";
 import { commonZones, useHouseSelection } from "@/entities/house";
 import { useOnboarding } from "@/features/onboarding/onboarding";
 import styles from "./issues-page.module.css";
 
-export function IssueFilters({ filters, categories, onChange, onReset }: {
+export function IssueFilters({ filters, categories, onChange, onReset, onRefresh }: {
   filters: Filters;
   categories: readonly string[];
   onChange: (filters: Filters) => void;
   onReset: () => void;
+  onRefresh: () => void;
 }) {
   const { activeTarget } = useOnboarding();
   const { house } = useHouseSelection();
   const statusOptions = { all: "Все статусы", active: "Активные", ...issueStatusLabels };
-  const count = [filters.category, filters.entrance, filters.floor, filters.zone, filters.query, filters.onlyMine].filter(Boolean).length;
+  const count = [filters.category, filters.entrance, filters.floor, filters.zone, filters.onlyMine].filter(Boolean).length;
+  const [expanded,setExpanded]=useState(false);
+  const open=expanded || activeTarget === "issue-controls";
   const upstairs = Number(filters.floor) > 1;
-  return <details className={styles.filterPanel} open={activeTarget === "issue-controls" || count > 0 || undefined}>
-    <summary data-tour="issue-search">Фильтры и поиск {count > 0 && <span>· {count}</span>}</summary>
-    <section aria-label="Фильтры обращений" className={styles.filters}>
+  return <div>
+    <div className={styles.searchRow}><label className={styles.search} data-tour="issue-search"><Icon name="search" /><input type="search" aria-label="Найти обращение" placeholder="Найти обращение" value={filters.query} onChange={event => onChange({...filters,query:event.target.value})} /></label><button className={styles.filterTrigger} type="button" aria-expanded={open} aria-controls="issue-filter-panel" onClick={() => setExpanded(value => !value)}><Icon name="settings" size={20} /><span>Фильтры{count>0 ? ` · ${count}` : ""}</span></button></div>
+    {open &&     <section id="issue-filter-panel" aria-label="Фильтры обращений" className={styles.filters}>
     <label>Статус<select value={filters.status} onChange={event => onChange({ ...filters, status: event.target.value as Filters["status"] })}>
       {Object.entries(statusOptions).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
     </select></label>
@@ -43,6 +48,6 @@ export function IssueFilters({ filters, categories, onChange, onReset }: {
     </select></label>
     <label>Поиск<input type="search" value={filters.query} onChange={event => onChange({ ...filters, query: event.target.value })} placeholder="Название или место" /></label>
     <label>Автор<select value={filters.onlyMine ? "mine" : "all"} onChange={event => onChange({ ...filters, onlyMine: event.target.value === "mine" })}><option value="all">Все обращения</option><option value="mine">Мои обращения</option></select></label>
-    <button type="button" onClick={onReset}>Сбросить фильтры</button>
-  </section></details>;
+    <div className={styles.filterActions}><button type="button" onClick={onReset}>Сбросить фильтры</button><button type="button" onClick={onRefresh}><Icon name="refresh" size={18} />Обновить обращения</button></div>
+  </section>}</div>;
 }

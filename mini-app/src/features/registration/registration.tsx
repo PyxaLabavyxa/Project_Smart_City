@@ -1,5 +1,5 @@
 "use client";
-import { BrandMark } from "@/shared/ui/brand-mark";
+import { BrandWordmark } from "@/shared/ui/brand-mark";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useApi } from "@/shared/api/context";
 import { endpoints } from "@/shared/api/client";
@@ -31,7 +31,7 @@ export function RegistrationScreen({ onComplete, onApproved, additional = false 
   }, [api, additional]);
   useEffect(() => { if (!additional && state.data?.complete) complete.current(); }, [state.data?.complete, additional]);
   return <div className={additional ? styles.embedded : styles.screen}>
-    {!additional && <div className={styles.brand}><BrandMark size={42} />Домовед</div>}
+    {!additional && <div className={styles.brand}><BrandWordmark /></div>}
     {!state.data ? <RequestState {...state} /> : !additional && state.data.complete ? <p role="status">Открываем ваш дом…</p> :
       <RegistrationForm initial={state.data} onComplete={onComplete} refresh={state.reload} additional={additional} onApproved={onApproved} />}
     {state.data && state.error && <p role="alert">{state.error}</p>}

@@ -6,6 +6,7 @@ import "../styles/globals.css";
 
 export const metadata: Metadata = {
   title: "Домовед",
+  icons: { icon: "/images/brand/app-icon.png", apple: "/images/brand/app-icon.png" },
   description: "Ваш дом, обращения и связь с соседями.",
 };
 
@@ -13,7 +14,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#f2f8ff",
+  themeColor: "#f1f9fc",
 };
 
 export function RootLayout({ children, bridge }: Readonly<{ children: React.ReactNode; bridge: React.ReactNode }>) {

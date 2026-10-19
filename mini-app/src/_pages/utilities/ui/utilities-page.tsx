@@ -1,47 +1,42 @@
 "use client";
 import { useState } from "react";
-
 import { findApartment, useHouseSelection } from "@/entities/house";
 import { money, totalCharges, useUtilityAccount, invoiceDue, invoicePeriod } from "@/entities/utilities";
 
-import { SectionPage } from "@/shared/ui/navigation";
 import { Icon } from "@/shared/ui/icon";
+import { HomeAddress } from "@/_pages/home/ui/home-address";
+import { useOnboarding } from "@/features/onboarding/onboarding";
 import { Payment } from "./payment";
 import { Meters } from "./meters";
 import styles from "./utilities.module.css";
 
 export function UtilitiesPage() {
-  const { house } = useHouseSelection();
-
-  const key = `${house.id}:${house.residentApartment}`;
-  const { account, loading, error, reload, saveReading } = useUtilityAccount();
-  const [revealLoaded, setRevealLoaded] = useState(loading || !account);
-  const revealClass = revealLoaded ? styles.loadedReveal : "";
-  if (loading || error || !account) return <SectionPage title="ЖКХ" description="Квитанции и показания вашей квартиры" backHref="/" backLabel="На главную"><section className={styles.panel} aria-busy={loading}><p role={error ? "alert" : "status"}>{loading ? "Загружаем лицевой счёт…" : error || "Лицевой счёт пока не подключён."}</p>{!loading && <button className={styles.secondary} onClick={() => { setRevealLoaded(true); reload(); }}>Повторить</button>}</section></SectionPage>;
-  const total = totalCharges(account.charges);
-  const apartment = findApartment(house, house.residentApartment);
-  return <SectionPage title="ЖКХ" description="Квитанции и показания вашей квартиры" backHref="/" backLabel="На главную">
-    <div className={styles.content}>
-
-    {!apartment ? <section className={styles.panel}><h2>Квартира не найдена</h2><p>Проверьте структуру дома: квартира {house.residentApartment} в ней отсутствует. Начисления и счётчики недоступны.</p></section> : <>
-      <div className={styles.layout}>
-        <section data-tour="utility-bill" className={`${styles.panel} ${revealClass}`} aria-labelledby="bill-title">
-          <div className={styles.row}><h2 id="bill-title">{invoicePeriod(account.period) || "Квитанция пока не выставлена"}</h2></div>
-          {account.invoiceNumber && <p className={styles.muted}>Квитанция № {account.invoiceNumber}</p>}
-          <p className={styles.amount}>{money(total)}</p>
-          {account.due && <p>Оплатить до {invoiceDue(account.due)}</p>}
-          <p className={styles.muted}>Сумма по строкам квитанции</p>
-          {account.invoiceNumber && total > 0 && <Payment amount={total} apartment={house.residentApartment} period={account.period} />}
-        </section>
-        <aside className={`${styles.account} ${revealClass} ${styles.revealSecond}`}><span className={styles.accountIcon}><Icon name="home" size={28} /></span><h2>Квартира {house.residentApartment}</h2><p>{house.address}</p><p className={styles.muted}>Подъезд {apartment.entrance} · этаж {apartment.floor}</p><dl className={styles.totals}><div><dt>Лицевой счёт</dt><dd>{account.number}</dd></div><div><dt>Площадь</dt><dd>{account.area} м²</dd></div><div><dt>Проживающих</dt><dd>{account.residents}</dd></div></dl></aside>
-      </div>
-      <section className={`${styles.panel} ${revealClass} ${styles.revealThird}`} aria-labelledby="charges-title"><div className={styles.sectionHeading}><h2 id="charges-title">Из чего складывается сумма</h2><span className={styles.muted}>Услуг: {account.charges.length}</span></div>
-        <ul className={styles.charges}>{account.charges.map(charge => <li key={charge.title}><div><strong>{charge.title}</strong><span>{charge.quantity} × {charge.tariff}</span></div><b>{money(charge.amount)}</b></li>)}</ul>
-        <div className={styles.total}><strong>Итого к оплате</strong><strong>{money(total)}</strong></div>
-      </section>
-      <div className={`${revealClass} ${styles.revealThird}`}>
-      <Meters key={key} meters={account.meters} apartment={house.residentApartment} period={account.readingPeriod} onSave={saveReading} />
-      </div>
-    </>}
-    </div></SectionPage>;
+ const { house } = useHouseSelection();
+ const { account, loading, error, reload, saveReading } = useUtilityAccount();
+ const { activeTarget } = useOnboarding();
+ const [downloadNotice,setDownloadNotice] = useState("");
+ const [tab,setTab] = useState<"bill" | "meters">("bill");
+ const currentTab = activeTarget === "meter-reading" ? "meters" : activeTarget === "utility-bill" ? "bill" : tab;
+ const apartment = findApartment(house,house.residentApartment);
+ const total = account ? totalCharges(account.charges) : 0;
+ return <div className={styles.page}>
+  <h1>ЖКХ</h1>
+  <HomeAddress compact apartmentOnly />
+  <div className={styles.tabs} role="group" aria-label="Раздел ЖКХ"><button type="button" aria-pressed={currentTab === "bill"} onClick={() => setTab("bill")}>Квитанции</button><button type="button" aria-pressed={currentTab === "meters"} onClick={() => setTab("meters")}>Показания</button></div>
+  {loading || error || !account ? <section className={styles.panel} aria-busy={loading}><p role={error ? "alert" : "status"}>{loading ? "Загружаем лицевой счёт…" : error || "Лицевой счёт пока не подключён."}</p>{!loading && <button className={styles.secondary} onClick={reload}>Повторить</button>}</section> : !apartment ? <section className={styles.panel}><h2>Квартира не найдена</h2><p>Проверьте привязку квартиры к дому.</p></section> : currentTab === "bill" ? <div className={styles.content}>
+   <div className={styles.layout}>
+    <section data-tour="utility-bill" className={styles.panel} aria-labelledby="bill-title">
+     <div className={styles.billHeading}><h2 id="bill-title">{invoicePeriod(account.period) || "Квитанция пока не выставлена"}</h2>{account.invoiceNumber && <span className={styles.badge}>Не оплачено</span>}</div>
+     {account.invoiceNumber && <p className={styles.muted}>Квитанция № {account.invoiceNumber}</p>}
+     <p className={styles.amount}>{money(total)}</p>{account.due && <p>Оплатить до {invoiceDue(account.due)}</p>}
+     <ul className={styles.charges}>{account.charges.slice(0,4).map(charge => <li key={charge.title}><div><strong>{charge.title}</strong></div><b>{money(charge.amount)}</b></li>)}</ul>
+     {account.charges.length > 4 && <details className={styles.chargeDetails}><summary>Все начисления · {account.charges.length}</summary><ul className={styles.charges}>{account.charges.slice(4).map(charge => <li key={charge.title}><strong>{charge.title}</strong><b>{money(charge.amount)}</b></li>)}</ul></details>}
+     {account.invoiceNumber && total > 0 && <Payment amount={total} apartment={house.residentApartment} period={account.period} invoiceNumber={account.invoiceNumber} address={house.address} entrance={apartment.entrance} floor={apartment.floor} />}
+     <button type="button" className={styles.download} onClick={() => setDownloadNotice("PDF-квитанции пока не подключены. Начисления доступны на этом экране.")}><Icon name="download" />Скачать квитанцию</button>
+     {downloadNotice && <p className={styles.feedback} role="status">{downloadNotice}</p>}
+    </section>
+    <aside className={styles.account}><div className={styles.accountHeading}><span className={styles.accountIcon}><Icon name="building" size={28} /></span><div><h2>Квартира {house.residentApartment}</h2><p>{house.address}</p><p className={styles.muted}>Подъезд {apartment.entrance} · Этаж {apartment.floor}</p></div></div><dl className={styles.totals}><div><dt>Лицевой счёт</dt><dd>{account.number}</dd></div></dl></aside>
+   </div>
+  </div> : <Meters key={`${house.id}:${house.residentApartment}`} meters={account.meters} apartment={house.residentApartment} period={account.readingPeriod} onSave={saveReading} />}
+ </div>;
 }

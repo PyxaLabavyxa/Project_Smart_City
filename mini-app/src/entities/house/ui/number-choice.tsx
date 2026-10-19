@@ -8,10 +8,10 @@ export function NumberChoice({ label, value, count, onChange }: { label: string;
   const title = useId();
   function close() { dialog.current?.close(); trigger.current?.focus(); }
   return <>
-    <button ref={trigger} type="button" className={styles.trigger} aria-label={`${label}: ${value}`} aria-haspopup="dialog" onClick={() => {
+    <button ref={trigger} data-number-choice type="button" className={styles.trigger} aria-label={`${label}: ${value}`} aria-haspopup="dialog" onClick={() => {
       dialog.current?.showModal();
       dialog.current?.querySelector<HTMLButtonElement>('[aria-pressed="true"]')?.focus();
-    }}><span>{label}<strong>{value}</strong></span><span aria-hidden="true">⌄</span></button>
+    }}><span><small>{label}</small><strong>{value}</strong></span><span aria-hidden="true">⌄</span></button>
     <dialog ref={dialog} aria-labelledby={title} className={styles.dialog} onClose={() => trigger.current?.focus()} onClick={event => {
       if (event.target !== event.currentTarget) return;
       const box = event.currentTarget.getBoundingClientRect();

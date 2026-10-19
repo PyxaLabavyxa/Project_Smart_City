@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { formatIssueDate, type IssueRecord } from "../model/issue";
+import { type IssueRecord } from "../model/issue";
 import { IssueStatus } from "./issue-status";
 import { IssueCategoryIcon } from "./issue-category-icon";
 import styles from "./issue-list.module.css";
@@ -16,7 +16,7 @@ export function IssueList({ issues, wide = false }: { issues: readonly IssueReco
                 <div className={styles.state}>
                   <IssueStatus status={issue.status} />
                   {issue.priority === "high" && <span className={styles.priority}>Высокий приоритет</span>}
-                  <time dateTime={issue.createdAt}>{formatIssueDate(issue.createdAt)}</time>
+                  <time dateTime={issue.createdAt}>{new Date(issue.createdAt).toLocaleDateString("ru-RU", { day:"numeric", month:"short", timeZone:"Europe/Moscow" })}</time>
                 </div>
               </div>
               <svg className={styles.chevron} width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>

@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { HouseArt } from "@/shared/ui/house-art";
+import { BrandWordmark } from "@/shared/ui/brand-mark";
+import { Icon } from "@/shared/ui/icon";
 import { ReportIssueForm } from "@/features/report-issue";
 import styles from "@/features/report-issue/ui/report-issue.module.css";
 
@@ -11,5 +12,5 @@ export default async function NewIssuePage({ searchParams }: {
   const back = from === "plan" ? { href: "/plan", label: "К плану дома" }
     : sourceCamera ? { href: `/cameras/${sourceCamera}`, label: "К камере" }
     : { href: "/issues", label: "Все обращения" };
-  return <div className={styles.page}><Link href={back.href} className={styles.back}>← {back.label}</Link><header className={styles.heading}><HouseArt className={styles.heroArt} /><h1>Сообщить о проблеме</h1><p>Опишите проблему в вашем доме</p></header><ReportIssueForm cancelHref={back.href} /></div>;
+  return <div className={styles.page}><header className={styles.pageHeader}><Link href={back.href} aria-label={`Назад: ${back.label}`}><Icon name="back" size={24} /></Link><BrandWordmark /><Link href={back.href} aria-label="Закрыть создание обращения"><Icon name="close" size={24} /></Link></header><h1 className={styles.srOnly}>Создать обращение</h1><ReportIssueForm cancelHref={back.href} /></div>;
 }

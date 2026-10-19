@@ -1,12 +1,13 @@
 "use client";
 import { useHouseSelection } from "../model/selection-provider";
-import { commonZones, floorApartments, type HouseLocation, type CommonZone } from "../model/house";
+import { commonZones, floorApartments, formatLocation, type HouseLocation, type CommonZone } from "../model/house";
+import { Icon } from "@/shared/ui/icon";
 import { FloorControls } from "./floor-controls";
 import { FloorPlan } from "./floor-plan";
 import styles from "./house-controls.module.css";
 export function LocationSelector({ value, onChange, problemPlaces }: { value: HouseLocation; onChange: (place: HouseLocation) => void; problemPlaces?: readonly HouseLocation[] }) {
   const { house } = useHouseSelection();
-  return <div>
+  return <div data-location-selector>
     <FloorControls house={house} entrance={value.entrance} floor={value.floor} onChange={(entrance, floor) => onChange({ houseId: house.id, entrance, floor, zone: "corridor" })} />
     <label className={styles.locationField}>Помещение
       <select value={value.zone === "apartment" ? "apartment:" + value.apartment : value.zone} onChange={event => {
@@ -19,5 +20,6 @@ export function LocationSelector({ value, onChange, problemPlaces }: { value: Ho
       </select>
     </label>
     <FloorPlan house={house} selected={value} onSelect={onChange} problemPlaces={problemPlaces} />
+    <p className={styles.selectedLocation}><Icon name="pin" size={24} />{formatLocation(value)}</p>
   </div>;
 }

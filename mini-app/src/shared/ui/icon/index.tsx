@@ -1,5 +1,20 @@
 import type { CSSProperties } from "react";
 const paths = {
+  clock:"M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM12 6v6l4 2",
+  people:"M14 7a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM3 22v-4a6 6 0 0 1 12 0v4M18 4a3 3 0 0 1 0 6m1 4a5 5 0 0 1 3 4v4",
+  info:"M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM12 11v6m0-10h.01",
+  card: "M3 4h18v16H3ZM3 8h18M7 15h5",
+  heat: "M6 3c-6 7 6 9 0 18M12 3c-6 7 6 9 0 18M18 3c-6 7 6 9 0 18",
+  electricity: "m13 2-9 12h7l-1 8 10-13h-8Z",
+  download: "M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5",
+  building: "M3 21h18M5 21V7h7V3h7v18M8 10v2m0 3v2m7-11v2m0 3v2m0 3v2",
+  tree: "M12 22v-9m0 5-4-3m4 0 4-3M7 16a5 5 0 0 1-2-9 5 5 0 0 1 10-1 5 5 0 0 1 2 10Z",
+  search: "M16 10a6 6 0 1 1-12 0 6 6 0 0 1 12 0Zm-2 5 7 6",
+  back: "M20 12H4m7-7-7 7 7 7",
+  pin: "M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0ZM15 10a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z",
+  phone: "m7 3 3 5-3 3c2 3 3 4 6 6l3-3 5 3c0 3-2 5-5 4C9 19 5 15 3 8 2 5 4 3 7 3Z",
+  mail: "M3 5h18v14H3Zm0 0 9 8 9-8",
+  plus: "M12 4v16M4 12h16",
   receipt: "M5 3h14v18l-3-2-4 2-4-2-3 2ZM8 7h8M8 11h8M8 15h4",
   home: "m3 10 9-7 9 7v11h-6v-7H9v7H3Z",
   issues: "M9 4H5v17h14V4h-4M9 2h6v5H9ZM8 12h8M8 16h6",
@@ -28,6 +43,14 @@ const paths = {
   door: "M4 21h16M7 21V4l10-2v19M13 12h.01",
   trend: "m3 17 6-6 4 4 8-10m-6 0h6v6",
 } as const;
-export function Icon({ name, size = 21, style }: { name: keyof typeof paths; size?: number; style?: CSSProperties }) {
+export function Icon({ name, size = 21, style, active = false }: { name: keyof typeof paths; size?: number; style?: CSSProperties; active?: boolean }) {
+  const filled: Partial<Record<keyof typeof paths,string>> = {
+    home:"M12 2 1 10v12h8v-7h6v7h8V10L12 2Z",
+    receipt:"M4 1h16v22l-4-2-4 2-4-2-4 2V1Zm4 4v2h8V5H8Zm0 5v2h8v-2H8Zm0 5v2h5v-2H8Z",
+    messages:"M3 2h18v17H10l-7 4V2Zm4 4v2h10V6H7Zm0 5v2h7v-2H7Z",
+    camera:"M8 2h8l2 4h5v16H1V6h5l2-4Zm9 12a5 5 0 1 0-10 0 5 5 0 0 0 10 0Z",
+    more:paths.more,
+  };
+  if (active && filled[name]) return <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" fillRule="evenodd" aria-hidden="true" style={style}><path d={filled[name]} /></svg>;
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={style}><path d={paths[name]} /></svg>;
 }

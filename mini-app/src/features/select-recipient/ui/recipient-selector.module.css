@@ -74,3 +74,9 @@
 .recipient h2 { font-size: 16px; }
 .recipient .place { flex-shrink: 0; gap: 4px; font-size: 11px; }
 @media (max-width: 360px) { .recipient { gap: 6px; } .recipient .avatar { width: 32px; height: 32px; font-size: 13px; } .recipient h2 { font-size: 14px; } .recipient p { font-size: 11px; } }
+
+.chatLayout { background:var(--color-surface); border-radius:var(--radius-card); }
+.inbox { background:var(--color-surface); }
+.chatThread { background:var(--color-bg); }
+.dialog { background:var(--color-surface); border:1px solid var(--color-line); }
+.dialog::backdrop { background:rgb(5 24 38 / 58%); }

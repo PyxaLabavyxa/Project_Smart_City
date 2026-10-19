@@ -1,0 +1,5 @@
+.wordmark { position:relative; display:block; width:220px; max-width:100%; aspect-ratio:3 / 1; }
+.wordmark img { display:block; width:100%; height:100%; object-fit:contain; }
+.wordmark .dark { display:none; }
+:global(:root[data-theme="dark"]) .wordmark .light { display:none; }
+:global(:root[data-theme="dark"]) .wordmark .dark { display:block; }
