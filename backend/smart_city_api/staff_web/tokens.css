@@ -1,1 +1,12 @@
-:root{--canvas:#f5f6f1;--ink:#28362d;--muted:#68746a;--forest:#233c36;--green:#436854;--lime:#d6eea7;--line:#e5e9e0}
+:root {
+  --canvas: #eef7fc;
+  --ink: #101b42;
+  --muted: #63769a;
+  --teal: #0b4861;
+  --teal-dark: #073449;
+  --blue: #165dff;
+  --blue-soft: #eaf2ff;
+  --line: #e1ebf3;
+  --surface: #fff;
+  --shadow: 0 4px 22px #134a6907;
+}

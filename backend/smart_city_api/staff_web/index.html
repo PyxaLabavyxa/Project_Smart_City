@@ -3,74 +3,74 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#233c36">
+  <meta name="theme-color" content="#edf7fc">
   <meta name="description" content="Домовед — кабинет сотрудника управляющей компании">
   <title>Кабинет сотрудника · Домовед</title>
-  <link rel="icon" href="/staff/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="/staff/style.css">
-  <script src="/staff/app.js?v=20261018-chat-presence" defer></script>
+  <link rel="icon" href="/staff/assets/domoved-symbol.png" type="image/png">
+  <link rel="preload" href="/staff/assets/onest-regular.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="stylesheet" href="/staff/style.css?v=20261019-blue">
+  <script src="/staff/app.js?v=20261019-blue" defer></script>
 </head>
 <body>
   <section id="login-screen" class="login-screen" hidden>
     <div class="login-story">
-      <a class="brand light" href="/staff/" aria-label="Домовед, кабинет сотрудника"><span class="brand-mark">д.</span>домовед</a>
-      <div class="story-copy"><span class="eyebrow">КАБИНЕТ СОТРУДНИКА</span><h1>Хороший дом<br>начинается<br>с внимания.</h1><p>Обращения жителей, фотографии и диалог —<br>в одном рабочем пространстве.</p></div>
-      <div class="city-art" aria-hidden="true"><div class="building b1"></div><div class="building b2"></div><div class="building b3"></div><div class="city-line"></div><span class="city-sun"></span></div>
-      <span class="story-footer"><span class="pulse-dot"></span> На связи с вашим домом</span>
+      <a class="brand" href="/staff/" aria-label="Домовед, кабинет сотрудника"><img src="/staff/assets/domoved-wordmark.png" alt="Домовед" width="2172" height="724"></a>
+      <div class="story-copy"><span class="eyebrow">ДЛЯ ТЕХ, КТО ЗАБОТИТСЯ О ДОМЕ</span><h1>Хороший дом<br> начинается<br> <span>с внимания.</span></h1><p>Замечать проблемы. Быть на связи с жителями.<br>Вместе делать дом лучше каждый день.</p></div>
+      <div class="login-preview" aria-hidden="true"><div class="preview-top"><span class="preview-symbol" data-icon="building"></span><span>Всё важное — рядом</span><span class="preview-live"></span></div><div class="preview-row"><span class="preview-icon" data-icon="message"></span><div><strong>Обращения жителей</strong><small>От первого сообщения до решения</small></div><span class="preview-check" data-icon="check"></span></div><div class="preview-row"><span class="preview-icon warm" data-icon="bulb"></span><div><strong>Забота в каждом ответе</strong><small>Понятные статусы и живой диалог</small></div><span class="preview-check" data-icon="check"></span></div></div>
+      <span class="story-footer"><span class="pulse-dot"></span> Домовед объединяет жителей и управляющую компанию</span>
     </div>
     <main class="login-area">
-      <div class="login-box"><span class="eyebrow">ДОБРО ПОЖАЛОВАТЬ</span><h2>Войти в кабинет</h2><p class="muted">Используйте учётную запись, которую вам<br>выдал администратор управляющей компании.</p>
+      <div class="login-box"><span class="eyebrow">КАБИНЕТ УПРАВЛЯЮЩЕЙ КОМПАНИИ</span><h2>Рады вас видеть</h2><p class="muted">Войдите, чтобы быть на связи с жителями<br>и управлять обращениями ваших домов.</p>
         <form id="login-form">
           <label for="login">Логин</label><input id="login" name="username" autocomplete="username" placeholder="Например, manager" maxlength="80" required>
           <label for="password">Пароль</label><div class="password-field"><input id="password" name="password" type="password" autocomplete="current-password" maxlength="256" required placeholder="Введите пароль"><button type="button" id="toggle-password" class="text-button" aria-label="Показать пароль">Показать</button></div>
-          <p id="login-error" class="error" role="alert" hidden></p><button class="primary login-submit" type="submit">Войти <span aria-hidden="true">↗</span></button>
+          <p id="login-error" class="error" role="alert" hidden></p><button class="primary login-submit" type="submit">Войти в кабинет</button>
         </form>
-        <p class="login-help">Нет доступа или забыли пароль?<br>Обратитесь к администратору вашей УК.</p>
-      </div><span class="login-footnote">Доступ только к назначенным вам домам</span>
+      </div><span class="login-footnote"><span data-icon="shield" aria-hidden="true"></span> Доступ только к назначенным вам домам</span>
     </main>
   </section>
 
   <div id="workspace" class="workspace" hidden>
-    <aside class="sidebar"><a class="brand light" href="/staff/"><span class="brand-mark">д.</span>домовед</a><span class="sidebar-label">УПРАВЛЯЮЩАЯ КОМПАНИЯ</span>
-      <a id="nav-issues" class="nav-item active" href="#issues" aria-current="page"><span aria-hidden="true">▤</span> Обращения <span id="nav-count" class="nav-count">0</span></a>
-      <a id="nav-registrations" class="nav-item" href="#registrations"><span aria-hidden="true">♙</span> Заявки</a>
-      <a id="nav-contacts" class="nav-item" href="#contacts"><span aria-hidden="true">☎</span> Контакты</a>
-      <div class="sidebar-note"><span class="note-icon" aria-hidden="true">↗</span><strong>Ближе к жителям</strong><p>Уведомления приходят в MAX, а переписка с жителем остаётся в чате обращения.</p></div>
-      <div class="employee"><span id="avatar" class="avatar">УК</span><div><strong id="staff-name"></strong><small>Сотрудник УК</small></div><button id="logout" class="logout" title="Выйти" aria-label="Выйти из кабинета">⇥</button></div>
+    <aside class="sidebar" aria-label="Разделы кабинета"><a class="brand" href="/staff/" aria-label="Домовед, главная"><img src="/staff/assets/domoved-wordmark.png" alt="Домовед" width="2172" height="724"></a><span class="sidebar-label">КАБИНЕТ УК</span>
+      <a id="nav-issues" class="nav-item active" href="#issues" aria-current="page"><span data-icon="inbox" aria-hidden="true"></span> Обращения <span id="nav-count" class="nav-count">0</span></a>
+      <a id="nav-registrations" class="nav-item" href="#registrations"><span data-icon="users" aria-hidden="true"></span> Заявки</a>
+      <a id="nav-contacts" class="nav-item" href="#contacts"><span data-icon="phone" aria-hidden="true"></span> Контакты УК</a>
+      <div class="sidebar-note"><span class="note-icon" data-icon="message" aria-hidden="true"></span><strong>Давайте будем ближе</strong><p>Жители пишут в Домоведе.<br>Вы помогаете дому здесь.</p><span class="note-caption"><span class="pulse-dot"></span> Вместе заботимся о доме</span></div>
+      <div class="employee"><span id="avatar" class="avatar">УК</span><div><strong id="staff-name"></strong><small>Сотрудник УК</small></div><button id="logout" class="logout" title="Выйти" aria-label="Выйти из кабинета"><span data-icon="logout" aria-hidden="true"></span></button></div>
     </aside>
     <main class="main">
-      <header class="topbar"><span>Рабочее пространство <span class="slash">/</span> <strong id="section-name">Обращения</strong></span><span class="live-indicator"><span class="pulse-dot"></span><span id="sync-label">Обновляем данные</span></span></header>
+      <header class="topbar"><span><span class="topbar-home" data-icon="building" aria-hidden="true"></span> Кабинет УК <span class="slash">/</span> <strong id="section-name">Обращения</strong></span><span class="live-indicator"><span class="pulse-dot"></span><span id="sync-label">Обновляем данные</span></span></header>
       <div id="issues-section" class="content">
-        <div class="page-heading"><div><span class="eyebrow">ЗАБОТА О ДОМЕ</span><h1>Обращения жителей<span class="heading-dot">.</span></h1><p class="muted">Замечать проблемы. Быть на связи. Доводить до решения.</p></div><button id="refresh" class="secondary"><span aria-hidden="true">↻</span> Обновить</button></div>
+        <div class="page-heading"><div><span class="eyebrow">ВАШ ДОМ ПОД ПРИСМОТРОМ</span><h1>Обращения жителей</h1><p class="muted">Помогайте с важным. Будьте рядом в деталях.</p></div><button id="refresh" class="secondary"><span data-icon="refresh" aria-hidden="true"></span> Обновить</button></div>
         <div id="no-houses" class="notice" hidden>Пока вам не назначены дома. Попросите администратора добавить доступ.</div>
         <section class="stats" aria-label="Статистика обращений">
-          <button class="stat selected" data-status="" aria-pressed="true"><span>Все обращения <span aria-hidden="true">↗</span></span><strong id="count-all">—</strong><small>В выбранных домах</small></button>
-          <button class="stat" data-status="new" aria-pressed="false"><span><i class="status-dot new"></i> Новые</span><strong id="count-new">—</strong><small>Ожидают вашего внимания</small></button>
-          <button class="stat" data-status="in_progress" aria-pressed="false"><span><i class="status-dot in_progress"></i> В работе</span><strong id="count-progress">—</strong><small>Занимаемся решением</small></button>
-          <button class="stat" data-status="resolved" aria-pressed="false"><span><i class="status-dot resolved"></i> Решены</span><strong id="count-resolved">—</strong><small>Забота в действии</small></button>
+          <button class="stat selected" data-status="" aria-pressed="true"><span class="stat-label">Все обращения</span><span class="stat-icon" data-icon="inbox" aria-hidden="true"></span><strong id="count-all">—</strong><small>В ваших домах</small></button>
+          <button class="stat" data-status="new" aria-pressed="false"><span class="stat-label">Новые</span><span class="stat-icon blue" data-icon="message" aria-hidden="true"></span><strong id="count-new">—</strong><small>Ждут вашего внимания</small></button>
+          <button class="stat" data-status="in_progress" aria-pressed="false"><span class="stat-label">В работе</span><span class="stat-icon warm" data-icon="tool" aria-hidden="true"></span><strong id="count-progress">—</strong><small>Становимся ближе к решению</small></button>
+          <button class="stat" data-status="resolved" aria-pressed="false"><span class="stat-label">Решены</span><span class="stat-icon mint" data-icon="check-circle" aria-hidden="true"></span><strong id="count-resolved">—</strong><small>Спасибо за вашу заботу</small></button>
         </section>
         <section class="inbox" aria-label="Список обращений">
-          <div class="inbox-heading"><div><h2>Все обращения <span id="total-label" class="count-pill">0</span></h2><p>Выберите обращение, чтобы посмотреть детали и ответить жителю</p></div><span class="table-caption">Сначала новые по дате</span></div>
-          <div class="filters"><label class="search-field"><span aria-hidden="true">⌕</span><span class="sr-only">Поиск по номеру, заголовку или описанию</span><input id="search" type="search" placeholder="Номер или текст обращения" maxlength="200"></label><label><span class="sr-only">Дом</span><select id="house-filter"><option value="">Все мои дома</option></select></label><label><span class="sr-only">Приоритет</span><select id="priority-filter"><option value="">Любой приоритет</option><option value="1">Высокий приоритет</option><option value="2">Средний приоритет</option><option value="3">Низкий приоритет</option></select></label></div>
+          <div class="inbox-heading"><div><h2><span id="list-title">Все обращения</span> <span id="total-label" class="count-pill">0</span></h2><p>Каждое обращение — возможность сделать дом лучше</p></div><span class="table-caption"><span data-icon="clock" aria-hidden="true"></span> Сначала новые</span></div>
+          <div class="filters"><label class="search-field"><span data-icon="search" aria-hidden="true"></span><span class="sr-only">Поиск по номеру, заголовку или описанию</span><input id="search" type="search" placeholder="Найти обращение" maxlength="200"></label><label><span class="sr-only">Дом</span><select id="house-filter"><option value="">Все мои дома</option></select></label><label><span class="sr-only">Приоритет</span><select id="priority-filter"><option value="">Любой приоритет</option><option value="1">Высокий приоритет</option><option value="2">Средний приоритет</option><option value="3">Низкий приоритет</option></select></label></div>
           <p id="list-error" class="error list-error" role="alert" hidden></p>
           <div class="table-scroll"><table><thead><tr><th scope="col">Обращение</th><th scope="col">Дом / автор</th><th scope="col">Приоритет</th><th scope="col">Статус</th><th scope="col">Получено</th><th scope="col"><span class="sr-only">Открыть</span></th></tr></thead><tbody id="issues-body"></tbody></table></div>
-          <div id="empty" class="empty" hidden><span aria-hidden="true">✓</span><h3>Здесь пока тихо</h3><p>Обращения жителей появятся автоматически.<br>Если включены фильтры, попробуйте их изменить.</p></div>
-          <footer class="pagination"><span id="page-label">Загружаем обращения…</span><div><button id="prev-page" class="icon-button" aria-label="Предыдущая страница" disabled>←</button><button id="next-page" class="icon-button" aria-label="Следующая страница" disabled>→</button></div></footer>
+          <div id="empty" class="empty" hidden><span data-icon="check-circle" aria-hidden="true"></span><h3>Здесь пока тихо</h3><p>Обращения жителей появятся автоматически.<br>Если включены фильтры, попробуйте их изменить.</p></div>
+          <footer class="pagination"><span id="page-label" role="status">Загружаем обращения…</span><div><button id="prev-page" class="secondary" aria-label="Предыдущая страница" disabled>Назад</button><button id="next-page" class="secondary" aria-label="Следующая страница" disabled>Далее</button></div></footer>
         </section>
         <footer class="workspace-footer"><span>Домовед · кабинет сотрудника</span><span>Данные обновляются каждые 20 секунд</span></footer>
       </div>
       <div id="registrations-section" class="content" hidden>
-        <div class="page-heading"><div><span class="eyebrow">НОВЫЕ СОСЕДИ</span><h1>Заявки на привязку квартиры<span class="heading-dot">.</span></h1><p class="muted">ФИО, адрес и результат регистрации жителей.</p></div><button id="refresh-registrations" class="secondary">↻ Обновить</button></div>
+        <div class="page-heading"><div><span class="eyebrow">ЗНАКОМИМСЯ С СОСЕДЯМИ</span><h1>Заявки на квартиры</h1><p class="muted">Новые жители и их адреса — всё в одном месте.</p></div><button id="refresh-registrations" class="secondary"><span data-icon="refresh" aria-hidden="true"></span> Обновить</button></div>
         <div class="notice">В тестовом режиме заявки принимаются автоматически. Для ожидающих заявок доступны принятие и отклонение. В принятых заявках можно удалить аккаунт жителя вместе с его обращениями.</div>
         <section class="inbox" aria-label="Заявки жителей">
           <p id="registrations-error" class="error list-error" role="alert" hidden></p>
           <div class="table-scroll"><table><thead><tr><th>Житель</th><th>Адрес</th><th>Источник</th><th>Статус</th><th>Получено</th><th>Действия</th></tr></thead><tbody id="registrations-body"></tbody></table></div>
           <p id="registrations-empty" class="empty" hidden>Заявок пока нет. Новые регистрации появятся здесь автоматически.</p>
-          <footer class="pagination"><span id="registrations-page" role="status">Загружаем заявки…</span><div><button id="registrations-prev" class="icon-button" aria-label="Предыдущая страница заявок">←</button><button id="registrations-next" class="icon-button" aria-label="Следующая страница заявок">→</button></div></footer>
+          <footer class="pagination"><span id="registrations-page" role="status">Загружаем заявки…</span><div><button id="registrations-prev" class="secondary" aria-label="Предыдущая страница заявок">Назад</button><button id="registrations-next" class="secondary" aria-label="Следующая страница заявок">Далее</button></div></footer>
         </section>
       </div>
       <div id="contacts-section" class="content" hidden>
-        <div class="page-heading"><div><span class="eyebrow">НА СВЯЗИ С ЖИТЕЛЯМИ</span><h1>Контакты УК<span class="heading-dot">.</span></h1><p class="muted">Жители увидят эти контакты в разделе «Ещё» своего дома.</p></div><button id="refresh-contacts" class="secondary"><span aria-hidden="true">↻</span> Обновить</button></div>
+        <div class="page-heading"><div><span class="eyebrow">ВСЕГДА НА СВЯЗИ</span><h1>Контакты УК</h1><p class="muted">Подскажите жителям, где вас найти и как связаться.</p></div><button id="refresh-contacts" class="secondary"><span data-icon="refresh" aria-hidden="true"></span> Обновить</button></div>
         <section class="inbox contacts-panel" aria-label="Редактор контактов">
           <label class="contact-house-label" for="contact-house">Дом</label><select id="contact-house"></select>
           <p id="contact-company" class="muted"></p>
@@ -80,7 +80,7 @@
             <fieldset id="contacts-fields"><legend class="sr-only">Контакты для жителей</legend>
               <div id="contact-rows" class="contact-rows"></div>
               <p id="contacts-empty" class="muted" hidden>Контактов пока нет. Добавьте телефон диспетчерской, почту или адрес приёмной.</p>
-              <button id="add-contact" type="button" class="secondary">＋ Добавить контакт</button>
+              <button id="add-contact" type="button" class="secondary"><span data-icon="plus" aria-hidden="true"></span> Добавить контакт</button>
               <p class="form-help">Можно добавить до 12 контактов. В примечании укажите часы работы или пояснение. Чтобы убрать контакт из приложения, удалите строку и сохраните изменения.</p>
               <button id="save-contacts" type="submit" class="primary">Сохранить контакты</button>
             </fieldset>
@@ -90,9 +90,9 @@
     </main>
   </div>
 
-  <dialog id="issue-dialog" class="issue-dialog" aria-labelledby="detail-title"><div class="detail-top"><span id="detail-number" class="eyebrow">ОБРАЩЕНИЕ</span><div><button id="refresh-detail" class="icon-button" aria-label="Обновить обращение">↻</button><button id="close-detail" class="icon-button" aria-label="Закрыть обращение">×</button></div></div><div id="detail-content"></div></dialog>
-  <dialog id="photo-dialog" class="photo-dialog" aria-label="Фотография обращения"><button id="close-photo" class="photo-close" aria-label="Закрыть фотографию">×</button><img id="full-photo" alt="Прикреплённая к обращению фотография"></dialog>
+  <dialog id="issue-dialog" class="issue-dialog" aria-labelledby="detail-title"><div class="detail-top"><span id="detail-number" class="eyebrow">ОБРАЩЕНИЕ</span><div><button id="refresh-detail" class="icon-button" aria-label="Обновить обращение"><span data-icon="refresh" aria-hidden="true"></span></button><button id="close-detail" class="icon-button" aria-label="Закрыть обращение"><span data-icon="close" aria-hidden="true"></span></button></div></div><div id="detail-content"></div></dialog>
+  <dialog id="photo-dialog" class="photo-dialog" aria-label="Фотография обращения"><button id="close-photo" class="photo-close" aria-label="Закрыть фотографию"><span data-icon="close" aria-hidden="true"></span></button><img id="full-photo" alt="Прикреплённая к обращению фотография"></dialog>
   <div id="toast" class="toast" role="status" hidden></div>
-  <div id="boot" class="boot"><span class="brand-mark">д.</span><p>Открываем кабинет…</p></div>
+  <div id="boot" class="boot" role="status"><img src="/staff/assets/domoved-symbol.png" alt="" width="72" height="72"><p>Открываем ваш Домовед…</p></div>
 </body>
 </html>

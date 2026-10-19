@@ -10,6 +10,35 @@ const categories = {
   security: "Безопасность", other: "Другое",
 };
 const zones = { apartment: "Квартира", corridor: "Коридор", elevator: "Лифт", stairs: "Лестница", entrance: "Подъезд", yard: "Двор", roof: "Крыша", basement: "Подвал" };
+const iconPaths = {
+  inbox: '<path d="M5 3h14v18H5zM8 7h8M8 11h8M8 15h5"/>',
+  users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/><circle cx="9" cy="7" r="4"/>',
+  phone: '<path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.79 19.79 0 0 1 11.19 19a19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-2.91-8.67A2 2 0 0 1 4.27 2.14h3a2 2 0 0 1 2 1.72c.12.96.35 1.9.69 2.79a2 2 0 0 1-.45 2.11L8.24 10a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.89.34 1.83.57 2.79.69A2 2 0 0 1 22 16.92z"/>',
+  message: '<path d="M21 15a3 3 0 0 1-3 3H8l-5 4V6a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3zM7 8h10M7 12h6"/>',
+  building: '<path d="M4 21V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v16M2 21h20M9 21v-4h6v4M8 7h1m6 0h1M8 11h1m6 0h1"/>',
+  refresh: '<path d="M20 7v5h-5M4 17v-5h5"/><path d="M6 7a7 7 0 0 1 11.6-1L20 9M4 15l2.4 3A7 7 0 0 0 18 17"/>',
+  search: '<circle cx="10.5" cy="10.5" r="7.5"/><path d="m16 16 5 5"/>',
+  tool: '<path d="M14.7 6.3a5 5 0 0 0-6.3 6.3l-5.7 5.7a2.1 2.1 0 0 0 3 3l5.7-5.7a5 5 0 0 0 6.3-6.3l-3 3-3-3z"/>',
+  "check-circle": '<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>',
+  check: '<path d="m5 12 4 4L19 6"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M10 12h11m-4-4 4 4-4 4"/>',
+  shield: '<path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6zM8 12l3 3 5-6"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  close: '<path d="m6 6 12 12M18 6 6 18"/>',
+  bulb: '<path d="M9 18h6M10 22h4M9 18v-2a6 6 0 1 1 6 0v2"/>',
+  water: '<path d="M12 3S5 10 5 14a7 7 0 0 0 14 0c0-4-7-11-7-11zM8 14a4 4 0 0 0 4 4"/>',
+  elevator: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M12 3v18M9 11v2m6-2v2"/>',
+  door: '<path d="M4 21h16M6 21V4h12v17M14 12h.01"/>',
+  tree: '<path d="M12 22v-7M7 18a5 5 0 0 1-3-9 6 6 0 1 1 16 0 5 5 0 0 1-3 9z"/>',
+  trash: '<path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7"/>',
+  send: '<path d="m22 2-7 20-4-9-9-4zM22 2 11 13"/>',
+};
+function icon(name) {
+  return `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${iconPaths[name] || iconPaths.inbox}</svg>`;
+}
+document.querySelectorAll("[data-icon]").forEach(node => { node.innerHTML = icon(node.dataset.icon); });
+const categoryIcons = { water: "water", heating: "bulb", electricity: "bulb", elevator: "elevator", entrance: "door", yard: "tree", garbage: "trash", security: "shield", other: "tool" };
 const state = { profile: null, status: "", page: 1, total: 0, detail: null, listRequest: 0, detailRequest: 0, busy: false };
 const contactState = { request: 0, house: "", loaded: false, dirty: false, loading: false, saving: false };
 let searchTimer, toastTimer, messageAction, statusAction, rejectionAction;
@@ -73,11 +102,13 @@ async function enterWorkspace() {
   $("priority-filter").value = ""; $("search").value = "";
   $("no-houses").hidden = state.profile.houses.length > 0;
   $("login-screen").hidden = true; $("workspace").hidden = false; $("boot").hidden = true;
+  window.scrollTo(0, 0);
   updateStatSelection();
   await loadList();
   switchSection();
 }
 function updateStatSelection() {
+  $("list-title").textContent = { "": "Все обращения", new: "Новые обращения", in_progress: "Обращения в работе", resolved: "Решённые обращения" }[state.status];
   document.querySelectorAll(".stat").forEach((button) => {
     const selected = button.dataset.status === state.status;
     button.classList.toggle("selected", selected); button.setAttribute("aria-pressed", String(selected));
@@ -100,11 +131,11 @@ async function loadList() {
     $("count-resolved").textContent = data.counts.resolved; $("nav-count").textContent = data.counts.new;
     $("total-label").textContent = data.total;
     $("issues-body").innerHTML = data.items.map((issue) => `<tr>
-      <td><button class="issue-title" data-open="${issue.id}">${esc(issue.title)}</button><span class="row-meta">№ ${issue.id} · ${esc(categories[issue.category])}${issue.photo_count ? ` · Фото: ${issue.photo_count}` : ""}</span></td>
+      <td><div class="issue-summary"><span class="category-icon ${esc(issue.category)}">${icon(categoryIcons[issue.category])}</span><div><button class="issue-title" data-open="${issue.id}">${esc(issue.title)}</button><span class="row-meta">№ ${issue.id} · ${esc(categories[issue.category])}${issue.photo_count ? ` · Фото: ${issue.photo_count}` : ""}</span></div></div></td>
       <td class="address-cell">${esc(issue.address)}<span class="row-meta">${esc(issue.author)}</span></td>
       <td class="priority-cell"><span class="priority p${issue.priority}">${esc(priorities[issue.priority])}</span></td>
       <td class="status-cell">${badge(issue.status)}</td><td class="date-cell">${esc(date(issue.created_at, true))}</td>
-      <td class="open-cell"><button class="row-open" data-open="${issue.id}" aria-label="Открыть обращение №${issue.id}">↗</button></td></tr>`).join("");
+      <td class="open-cell"><button class="row-open" data-open="${issue.id}" aria-label="Открыть обращение №${issue.id}">Открыть</button></td></tr>`).join("");
     $("empty").hidden = data.total !== 0;
     $("prev-page").disabled = state.page <= 1; $("next-page").disabled = state.page * 25 >= data.total;
     $("page-label").textContent = data.total ? `${(state.page - 1) * 25 + 1}–${Math.min(state.page * 25, data.total)} из ${data.total} обращений` : "Нет обращений";
@@ -126,10 +157,10 @@ function renderConversation(detail) {
   }).join("") : '<p class="conversation-empty">Здесь можно уточнить детали у жителя. Он ответит в чате обращения мини-приложения. Если чат закрыт, бот пришлёт уведомление.</p>';
   conversation.scrollTop = atEnd ? conversation.scrollHeight : oldTop;
   const pending = detail.notifications.filter((notice) => !["sent", "read"].includes(notice.delivery)).length;
-  $("delivery-summary").textContent = pending ? `Уведомлений в очереди: ${pending}. Бот отправит их автоматически. При сбое доставка повторится.` : "Уведомления отправляются автору обращения в MAX.";
+  $("delivery-summary").textContent = pending ? `Уведомлений в очереди: ${pending}. Бот доставит их автоматически. Прочитанные в чате сообщения не дублируются.` : "Ответы и уточнения сохраняются в чате обращения.";
   $("history").innerHTML = detail.history.length ? detail.history.map((event) => `<li>${badge(event.status)}<time>${esc(date(event.created_at))}</time></li>`).join("") : `<li>${badge(detail.status)}<span class="muted">История изменений пока пуста</span></li>`;
   $("live-status").innerHTML = badge(detail.status);
-  if (state.detail && detail.status !== state.detail.status) showError("detail-error", "Статус изменил другой сотрудник. Нажмите ↻ вверху, чтобы обновить обращение.");
+  if (state.detail && detail.status !== state.detail.status) showError("detail-error", "Статус изменил другой сотрудник. Нажмите «Обновить обращение» вверху, чтобы загрузить изменения.");
 }
 async function openDetail(id) {
   if (state.busy) return;
@@ -145,9 +176,9 @@ async function openDetail(id) {
       <div class="detail-meta"><span>${esc(detail.author)}</span><span>·</span><time>${esc(date(detail.created_at))}</time><span class="priority p${detail.priority}">${esc(priorities[detail.priority])} приоритет</span></div>
       <section class="section"><h3>Что произошло</h3><p class="description">${esc(detail.description)}</p>${detail.photos.length ? `<div class="photos">${detail.photos.map((photo, index) => `<button class="photo-thumb" data-photo="${photo.id}" aria-label="Открыть фото ${index + 1}"><img src="${esc(photo.url)}" alt="Фото ${index + 1}" loading="lazy"></button>`).join("")}</div><p class="form-help">Нажмите на фото, чтобы рассмотреть его</p>` : '<p class="form-help">Житель не прикрепил фотографии</p>'}</section>
       <section class="section"><h3>Статус обращения</h3><form id="status-form" class="status-form"><label class="sr-only" for="status-select">Новый статус</label><select id="status-select">${Object.entries(statuses).map(([value, label]) => `<option value="${value}"${value === detail.status ? " selected" : ""}>${label}</option>`).join("")}</select><button class="primary" type="submit">Сохранить статус</button></form><p class="form-help">Автор получит уведомление в боте. Отмечайте обращение решённым после устранения проблемы.</p><p id="detail-error" class="error detail-error" role="alert" hidden></p><div id="delivery-summary" class="delivery-summary"></div></section>
-      <section class="section"><h3>Отклонить обращение</h3><form id="reject-form" class="message-form"><label for="reject-reason">Причина отклонения</label><textarea id="reject-reason" minlength="3" maxlength="1500" required placeholder="Объясните жителю, почему обращение отклонено"></textarea><p class="form-help">Обращение исчезнет из списков. Бот отправит автору указанную причину.</p><button class="danger" type="submit">Отклонить обращение</button></form><p id="reject-error" class="error detail-error" role="alert" hidden></p></section>
-      <section class="section"><h3>Диалог с жителем</h3><div id="conversation" class="conversation" aria-live="polite"></div><form id="message-form" class="message-form"><label for="message-text">Уточните детали</label><textarea id="message-text" maxlength="1500" required placeholder="Здравствуйте! Подскажите, пожалуйста, где именно находится неисправность?"></textarea><div class="composer-footer"><span id="message-count">0 / 1500</span><button class="primary" type="submit">Отправить в чат ↗</button></div></form><p id="message-error" class="error detail-error" role="alert" hidden></p><p class="form-help">Сообщение появится в чате обращения. Если житель не читает чат, бот уведомит его. Ответ жителя появится здесь автоматически. Показаны последние 200 сообщений.</p></section>
-      <section class="section"><h3>История статусов</h3><ol id="history" class="timeline"></ol></section></div>`;
+      <section class="section"><h3>Чат с жителем</h3><div id="conversation" class="conversation" aria-live="polite"></div><form id="message-form" class="message-form"><label for="message-text">Сообщение жителю</label><textarea id="message-text" maxlength="1500" required placeholder="Здравствуйте! Подскажите, пожалуйста, где именно находится неисправность?"></textarea><div class="composer-footer"><span id="message-count">0 / 1500</span><button class="primary" type="submit">${icon("send")} Отправить в чат</button></div></form><p id="message-error" class="error detail-error" role="alert" hidden></p><p class="form-help">Сообщение появится в чате обращения. Если житель не читает чат, бот уведомит его. Ответ жителя появится здесь автоматически. Показаны последние 200 сообщений.</p></section>
+      <section class="section"><h3>История статусов</h3><ol id="history" class="timeline"></ol></section>
+      <details class="section rejection-section"><summary>${icon("close")} Отклонить обращение</summary><form id="reject-form" class="message-form"><label for="reject-reason">Причина отклонения</label><textarea id="reject-reason" minlength="3" maxlength="1500" required placeholder="Объясните жителю, почему обращение отклонено"></textarea><p class="form-help">Обращение исчезнет из списков. Бот отправит автору указанную причину.</p><button class="danger" type="submit">Отклонить обращение</button></form><p id="reject-error" class="error detail-error" role="alert" hidden></p></details></div>`;
     renderConversation(detail);
     if (!$("issue-dialog").open) $("issue-dialog").showModal();
     $("status-form").addEventListener("submit", saveStatus);
@@ -202,7 +233,7 @@ async function sendMessage(event) {
   try {
     await api(`/issues/${detail.id}/messages`, { method: "POST", body: JSON.stringify({ text, request_id: messageAction.id }) });
     $("message-text").value = ""; $("message-count").textContent = "0 / 1500"; messageAction = null;
-    toast("Сообщение сохранено. Бот отправит его жителю в MAX.");
+    toast("Сообщение добавлено в чат обращения.");
     const updated = await api(`/issues/${detail.id}`); renderConversation(updated);
   } catch (error) { if ($("message-error")) showError("message-error", error.message); }
   finally { setBusy(false); }
@@ -291,10 +322,10 @@ async function loadRegistrations() {
     showError("registrations-error", "");
     $("registrations-body").innerHTML = data.items.map(item => `<tr>
       <td><strong>${esc(item.full_name)}</strong><span class="row-meta">Заявка № ${item.id}</span></td>
-      <td>${esc(item.address)}, кв. ${item.apartment}<span class="row-meta">${esc(item.company)}</span></td>
-      <td>${item.source === "bot" ? "Чатбот" : "Мини-приложение"}</td>
-      <td>${esc({ pending: "Ожидает решения", approved: "Принята", rejected: "Отклонена" }[item.status])}${item.auto_approved ? '<span class="row-meta">Автоматически · тестовый режим</span>' : ""}</td>
-      <td>${esc(date(item.created_at, true))}</td>
+      <td data-label="Адрес">${esc(item.address)}, кв. ${item.apartment}<span class="row-meta">${esc(item.company)}</span></td>
+      <td data-label="Источник">${item.source === "bot" ? "Чатбот" : "Мини-приложение"}</td>
+      <td data-label="Статус">${esc({ pending: "Ожидает решения", approved: "Принята", rejected: "Отклонена" }[item.status])}${item.auto_approved ? '<span class="row-meta">Автоматически · тестовый режим</span>' : ""}</td>
+      <td data-label="Получено">${esc(date(item.created_at, true))}</td>
       <td>${item.status === "approved" ? `<button class="danger" data-delete-user="${item.id}" data-resident="${esc(item.full_name)}">Удалить пользователя</button>` : item.status === "pending" ? `<button class="secondary" data-registration="${item.id}" data-decision="approve">Принять</button> <button class="text-button" data-registration="${item.id}" data-decision="reject">Отклонить</button>` : `<span class="muted">${item.auto_approved ? "Принято автоматически" : "Рассмотрено"}</span>`}</td></tr>`).join("");
     $("registrations-empty").hidden = data.total !== 0;
     $("registrations-page").textContent = data.total ? `Страница ${registrationPage} · всего заявок: ${data.total}` : "Нет заявок";
