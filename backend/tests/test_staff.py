@@ -15,6 +15,7 @@ from app.database.models import (
     StaffUser,
 )
 from sqlalchemy import func, select
+from sqlalchemy import text as sql_text
 from sqlalchemy.orm import Session
 
 from smart_city_api.core.staff_auth import hash_password, token_hash, verify_password
@@ -88,6 +89,16 @@ def staff_api(api, password_hash, tmp_path):
             ]
         )
         session.commit()
+    if engine.dialect.name == "postgresql":
+        # Explicit fixture IDs do not advance PostgreSQL sequences.
+        with engine.begin() as connection:
+            for table in ("issues", "issue_photos"):
+                connection.execute(
+                    sql_text(
+                        f"SELECT setval(pg_get_serial_sequence('{table}', 'id'), "
+                        f"(SELECT max(id) FROM {table}))"
+                    )
+                )
     return api
 
 
