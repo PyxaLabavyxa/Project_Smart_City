@@ -6,7 +6,7 @@ import styles from "./house-elevation.module.css";
 export function HouseElevation({ house, selected, onSelect, problemPlaces = [] }: { house: House; selected: HouseLocation; onSelect: (place: HouseLocation) => void; problemPlaces?: readonly HouseLocation[] }) {
   return <div className={styles.viewport} role="region" aria-label="Схема дома: подъезды и этажи">
     <div className={styles.landscape} aria-hidden="true">
-      <Image src="/images/domoved/house-landscape.webp" alt="" fill sizes="440px" unoptimized loading="eager" />
+      <Image src="/images/zhorik/house-landscape.png" alt="" fill sizes="440px" unoptimized loading="eager" />
     </div>
     <div className={styles.building}>
       <div className={styles.crown} aria-hidden="true" />
@@ -21,10 +21,11 @@ export function HouseElevation({ house, selected, onSelect, problemPlaces = [] }
           </span>
           {floor === 1 && <span className={styles.door} aria-hidden="true"><i /><small>{selected.entrance}</small></span>}
           {problem && <span className={styles.problem} aria-hidden="true">!</span>}
-          <span className={styles.pin}>{floor}</span>
+          {selected.floor === floor && <span className={styles.pin} aria-hidden="true">{floor}</span>}
         </button>;
       })}</div>
     </div>
-    <div className={styles.base} aria-hidden="true" /><div className={styles.label}>Подъезд {selected.entrance}<span>{selected.entrance} из {house.entrances}</span></div>
+    <div className={styles.base} aria-hidden="true" />
+    <div className={styles.label}>Подъезд {selected.entrance}<span>{selected.entrance} из {house.entrances}</span></div>
   </div>;
 }

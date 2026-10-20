@@ -1,3 +1,6 @@
 .art { pointer-events:none; }
 .art img { object-fit:contain; object-position:right bottom; }
-:global(:root[data-theme="dark"]) .art img { filter:brightness(.73) saturate(.85) drop-shadow(0 0 10px rgb(102 192 224 / 12%)); }
+.night { display:none; }
+:global(:root[data-theme="dark"]) .art { opacity:1; mask-image:none; }
+:global(:root[data-theme="dark"]) .day { display:none; }
+:global(:root[data-theme="dark"]) .night { display:block; }

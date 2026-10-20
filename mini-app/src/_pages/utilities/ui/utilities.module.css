@@ -82,3 +82,5 @@
 .paymentTotal div + div { margin-top:5px; }
 .dialog > .primary { width:100%; }
 .paymentFootnote { display:flex; align-items:center; justify-content:center; gap:8px; margin:16px 0 0; color:var(--color-muted); font-size:12px; }
+
+.sbpIcon { width:30px; height:35px; flex-shrink:0; object-fit:contain; }

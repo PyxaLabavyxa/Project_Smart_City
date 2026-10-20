@@ -36,5 +36,5 @@
 .panel[data-guide] .card footer { padding-top:10px; }
 .panel[data-guide="hanging"] { --tour-guide-height:clamp(72px,calc((100dvh - 300px) / 2),230px); }
 .panel[data-guide="hanging"] .guide { top:calc(100% - 8px); bottom:auto; left:50%; right:auto; width:calc(var(--tour-guide-height) * .75); height:var(--tour-guide-height); transform:translateX(-50%); z-index:1; }
-.panel[data-guide="inset"] .guide { top:auto; bottom:calc(100% - 8px); left:50%; right:auto; width:74px; height:56px; transform:translateX(-50%); z-index:1; }
+.panel[data-guide="inset"] .guide { top:auto; bottom:calc(100% - 4px); left:50%; right:auto; width:104px; height:78px; transform:translateX(-50%); z-index:1; }
 .panel[style] { bottom:auto; }

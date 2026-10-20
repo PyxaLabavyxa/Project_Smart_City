@@ -69,7 +69,7 @@
 .info,.history { padding:calc(15 * var(--u)); border-radius:calc(17 * var(--u)); }
 .description { margin:0; padding:0; border:0; }
 .description h2 { font-size:calc(16 * var(--u)); margin:0 0 calc(5 * var(--u)); color:var(--color-muted); }
-.description p { color:var(--color-muted); font-size:calc(16 * var(--u)); line-height:1.4; }
+.description p { color:var(--color-ink); font-size:calc(16 * var(--u)); line-height:1.4; }
 .layout h2 { font-size:calc(21 * var(--u)); margin-bottom:calc(12 * var(--u)); }
 .description h2 { font-size:calc(16 * var(--u)); margin-bottom:6px; }
 .timeline li { padding-left:calc(43 * var(--u)); padding-bottom:calc(22 * var(--u)); }
