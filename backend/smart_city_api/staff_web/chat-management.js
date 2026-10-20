@@ -147,8 +147,10 @@ $("max-chats-body").addEventListener("click", async event => {
   const house = maxChatRows.find(chat => chat.house_id === Number(button.dataset.house));
   if (!house) return;
   const action = button.dataset.chatAction;
-  if (action === "disconnect" && !confirm(`Отключить чат дома «${house.address}»? Новые объявления и ещё не начавшиеся отправки в эту группу прекратятся.`)) return;
-  if (action === "menu" && !confirm(house.menu_status === "uncertain" ? "Предыдущая отправка меню могла пройти. Проверьте закреп в группе. Продолжить восстановление?" : "Восстановить закреплённое меню? Бот обновит и закрепит прежнее сообщение с кнопками, а если оно удалено — создаст новое. Объявления отправляться не будут.")) return;
+  const profile = state.profile;
+  if (action === "disconnect" && !await confirmAction({ title: "Отключить домовой чат?", description: `Дом «${house.address}». Новые объявления и ещё не начавшиеся отправки в эту группу прекратятся.`, confirmLabel: "Отключить", destructive: true })) return;
+  if (action === "menu" && !await confirmAction({ title: "Восстановить меню?", description: house.menu_status === "uncertain" ? "Предыдущая отправка меню могла пройти. Проверьте закреп в группе перед восстановлением." : "Бот обновит и закрепит прежнее сообщение с кнопками, а если оно удалено — создаст новое. Объявления отправляться не будут.", confirmLabel: "Восстановить" })) return;
+  if (maxChatBusy || state.profile !== profile || !button.isConnected) return;
   maxChatBusy = true; button.disabled = true;
   try {
     const result = await api(`/max-chats/${house.house_id}/${action}`, { method: "POST" });
@@ -251,8 +253,9 @@ function resetAnnouncement() {
   $("announcement-save-state").textContent = ""; showError("announcement-form-error", "");
   $("announcement-fields").disabled = announcementBusy;
 }
-$("new-announcement").addEventListener("click", () => {
-  if (announcementBusy || (announcementIsDirty() && !confirm("Открыть новый черновик? Несохранённые изменения будут потеряны."))) return;
+$("new-announcement").addEventListener("click", async () => {
+  if (announcementBusy || (announcementIsDirty() && !await confirmAction({ title: "Начать новый черновик?", description: "Несохранённые изменения текущего объявления будут потеряны.", confirmLabel: "Начать заново", destructive: true }))) return;
+  if (announcementBusy || !state.profile) return;
   resetAnnouncement(); $("announcement-title").focus();
 });
 $("announcement-history").addEventListener("click", async event => {
@@ -262,7 +265,8 @@ $("announcement-history").addEventListener("click", async event => {
   try {
     const item = await api(`/announcements/${Number(button.dataset.announcement)}`);
     if (item.status === "draft") {
-      if (announcementIsDirty() && !confirm("Загрузить этот черновик вместо несохранённых изменений?")) return;
+      if (announcementIsDirty() && !await confirmAction({ title: "Загрузить черновик?", description: "Он заменит несохранённые изменения в текущем объявлении.", confirmLabel: "Загрузить", destructive: true })) return;
+      if (!state.profile) return;
       editingAnnouncement = item;
       $("announcement-topic").value = item.topic; $("announcement-title").value = item.title; $("announcement-text").value = item.text;
       selectedResidentIds = new Set(item.resident_ids || []);
@@ -300,7 +304,7 @@ $("announcement-prev").addEventListener("click", () => { if (announcementPage > 
 $("announcement-next").addEventListener("click", () => { if (announcementPage * 20 < announcementTotal) { announcementPage++; void loadAnnouncements(); } });
 window.addEventListener("beforeunload", event => { if (announcementIsDirty()) { event.preventDefault(); event.returnValue = ""; } });
 setInterval(async () => {
-  if (!state.profile || document.hidden || announcementBusy || maxChatBusy) return;
+  if (!state.profile || document.hidden || announcementBusy || maxChatBusy || confirmationDialog.open) return;
   if (!$("max-chats-section").hidden) await loadMaxChats();
   if (!$("announcements-section").hidden) {
     await loadAnnouncements();

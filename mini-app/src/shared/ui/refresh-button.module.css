@@ -1,0 +1,5 @@
+.button { display:inline-flex; align-items:center; justify-content:center; gap:8px; }
+.icon { display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; vertical-align:middle; }
+.spinning { animation:refresh-turn 800ms linear infinite; }
+@keyframes refresh-turn { to { transform:rotate(360deg); } }
+@media (prefers-reduced-motion:reduce) { .spinning { animation:none; } }

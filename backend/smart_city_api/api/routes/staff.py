@@ -80,6 +80,14 @@ async def review_camera(
     return await camera_service.moderate_camera(session, employee.id, camera_id, data)
 
 
+@router.get("/cameras/{camera_id}/frame")
+async def camera_frame(camera_id: int, request: Request, session: Session, employee: Staff):
+    data = await camera_service.staff_preview(
+        session, employee.id, camera_id, request.app.state.settings
+    )
+    return Response(data, media_type="image/jpeg", headers={"X-Content-Type-Options": "nosniff"})
+
+
 @router.delete("/cameras/{camera_id}", status_code=204)
 async def remove_camera(camera_id: int, session: Session, employee: Staff):
     await camera_service.delete_camera(session, employee.id, camera_id)

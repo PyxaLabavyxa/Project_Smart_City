@@ -1,3 +1,5 @@
+import hashlib
+import json
 import re
 from datetime import UTC, datetime
 from urllib.parse import urlsplit
@@ -8,13 +10,17 @@ from sqlalchemy import and_, func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from smart_city_api.core.camera_source import CameraSource
 from smart_city_api.schemas.app import CameraFrame, CameraResponse, Location
 from smart_city_api.schemas.cameras import (
+    CameraSettings,
     CreateCamera,
     ModerateCamera,
     StaffCameraPage,
     StaffCameraResponse,
+    UpdateCamera,
 )
+from smart_city_api.services import camera_media
 from smart_city_api.services.access import require_house
 from smart_city_api.services.locations import OUTDOOR_ZONES, validate_location
 from smart_city_api.services.staff import house_scope
@@ -33,6 +39,8 @@ def camera_response(camera: HouseCamera, user_id: int | None) -> CameraResponse:
         name=camera.name,
         status=camera.status,
         note=camera.note,
+        source_type=camera.source_type,
+        live_available=camera.source_config is not None and camera.source_type != "snapshot",
         mine=user_id is not None and camera.owner_id == user_id,
         visibility=camera.visibility,
         moderation_status=camera.moderation_status,
@@ -62,14 +70,16 @@ async def list_cameras(session: AsyncSession, user_id: int, house_id: int):
     return [camera_response(camera, user_id) for camera in cameras]
 
 
-async def create_camera(session: AsyncSession, user_id: int, house_id: int, data: CreateCamera):
+async def create_camera(
+    session: AsyncSession, user_id: int, house_id: int, data: CreateCamera, settings
+):
     house = await require_house(session, user_id, house_id)
     await validate_location(session, user_id, house, data.place)
     values = {
         "house_id": house_id,
         "name": data.name,
         "note": data.note,
-        "preview_url": data.source_url,
+        "source_type": data.source_type,
         "visibility": "public" if data.is_public else "private",
         **data.place.model_dump(),
     }
@@ -83,15 +93,25 @@ async def create_camera(session: AsyncSession, user_id: int, house_id: int, data
             raise HTTPException(409, "Эта камера удалена. Создайте новую заявку")
         if any(getattr(camera, key) != value for key, value in values.items()):
             raise HTTPException(409, "Этот ключ запроса уже использован для другой камеры")
+        stored = (
+            camera_media.decode(camera.source_config, settings).private_dict()
+            if camera.source_config
+            else {"source_url": camera.preview_url}
+        )
+        expected = data.connection().private_dict()
+        if any(expected[key] != value for key, value in stored.items()):
+            raise HTTPException(409, "Этот ключ запроса уже использован для другой камеры")
         return camera_response(camera, user_id)
 
     existing = await session.scalar(query)
     if existing:
         return previous(existing)
+    await camera_media.frame(data.connection(), settings)
     camera = HouseCamera(
         **values,
         owner_id=user_id,
         request_id=str(data.request_id),
+        source_config=camera_media.encode(data.connection(), settings),
         status="online",
         moderation_status="pending" if data.is_public else "approved",
         captured_at=datetime.now(UTC),
@@ -108,7 +128,7 @@ async def create_camera(session: AsyncSession, user_id: int, house_id: int, data
     return camera_response(camera, user_id)
 
 
-async def preview_camera(session: AsyncSession, user_id: int, camera_id: int, now: datetime):
+async def accessible_camera(session: AsyncSession, user_id: int, camera_id: int):
     camera = await session.scalar(
         select(HouseCamera).where(
             HouseCamera.id == camera_id,
@@ -119,6 +139,133 @@ async def preview_camera(session: AsyncSession, user_id: int, camera_id: int, no
     if camera is None:
         raise HTTPException(404, "Камера не найдена")
     await require_house(session, user_id, camera.house_id)
+    return camera
+
+
+def camera_version(camera):
+    values = [
+        camera.name,
+        camera.note,
+        camera.source_config,
+        camera.preview_url,
+        camera.visibility,
+        camera.moderation_status,
+        camera.moderation_reason,
+        str(camera.reviewed_at),
+        str(camera.deleted_at),
+    ]
+    return hashlib.sha256(json.dumps(values, ensure_ascii=False).encode()).hexdigest()
+
+
+async def owned_camera(session, user_id, camera_id, *, lock=False):
+    query = select(HouseCamera).where(
+        HouseCamera.id == camera_id,
+        HouseCamera.owner_id == user_id,
+        HouseCamera.deleted_at.is_(None),
+    )
+    if lock:
+        query = query.with_for_update().execution_options(populate_existing=True)
+    camera = await session.scalar(query)
+    if camera is None:
+        raise HTTPException(404, "Камера не найдена")
+    await require_house(session, user_id, camera.house_id)
+    return camera
+
+
+def stored_source(camera, settings):
+    if camera.source_config:
+        return camera_media.decode(camera.source_config, settings)
+    # Legacy owner-added HTTPS stills; demo photographs have no editable remote URL.
+    if camera.preview_url and camera.preview_url.startswith("https://"):
+        return CameraSource(source_url=camera.preview_url)
+    return None
+
+
+async def camera_settings(session, user_id, camera_id, settings):
+    camera = await owned_camera(session, user_id, camera_id)
+    source = stored_source(camera, settings)
+    connection = (
+        source.private_dict()
+        if source
+        else {
+            "source_type": "snapshot",
+            "source_url": "",
+            "username": "",
+            "password": "",
+            "auth_type": "digest",
+            "profile": "",
+            "rtsp_port": None,
+        }
+    )
+    password = connection.pop("password")
+    return CameraSettings(
+        **connection,
+        id=str(camera.id),
+        house_id=camera.house_id,
+        name=camera.name,
+        note=camera.note,
+        password_set=bool(password),
+        is_public=camera.visibility == "public",
+        version=camera_version(camera),
+    )
+
+
+async def update_camera(session, user_id, camera_id, data: UpdateCamera, settings):
+    camera = await owned_camera(session, user_id, camera_id)
+    original = stored_source(camera, settings)
+    source = data.connection()
+    if data.keep_password and original:
+        source.password = original.password
+    visibility = "public" if data.is_public else "private"
+
+    def unchanged(row):
+        current = stored_source(row, settings)
+        return (
+            row.name == data.name
+            and row.note == data.note
+            and row.visibility == visibility
+            and current is not None
+            and current.private_dict() == source.private_dict()
+        )
+
+    if unchanged(camera):
+        return camera_response(camera, user_id)
+    if camera_version(camera) != data.expected_version:
+        raise HTTPException(409, "Камера уже изменена. Откройте настройки заново")
+    if original is None or original.private_dict() != source.private_dict():
+        await camera_media.frame(source, settings)
+    # Probe runs without a row lock; recheck under lock to avoid lost updates and
+    # races with moderation/deletion while the camera was responding.
+    camera = await owned_camera(session, user_id, camera_id, lock=True)
+    if unchanged(camera):
+        return camera_response(camera, user_id)
+    if camera_version(camera) != data.expected_version:
+        raise HTTPException(409, "Камера уже изменена. Откройте настройки заново")
+    camera.name, camera.note, camera.visibility = data.name, data.note, visibility
+    camera.source_type = source.source_type
+    camera.source_config = camera_media.encode(source, settings)
+    camera.preview_url = None
+    camera.moderation_status = "pending" if data.is_public else "approved"
+    camera.moderation_reason = camera.reviewed_at = camera.reviewed_by = None
+    camera.captured_at = datetime.now(UTC)
+    await session.commit()
+    return camera_response(camera, user_id)
+
+
+async def delete_owned_camera(session, user_id, camera_id):
+    camera = await owned_camera(session, user_id, camera_id, lock=True)
+    camera.deleted_at = datetime.now(UTC)
+    await session.commit()
+
+
+async def preview_camera(
+    session: AsyncSession, user_id: int, camera_id: int, now: datetime, settings
+):
+    camera = await accessible_camera(session, user_id, camera_id)
+    if camera.source_config:
+        source = camera_media.decode(camera.source_config, settings)
+        frame = await camera_media.frame(source, settings)
+        return CameraFrame(src=camera_media.data_url(frame), capturedAt=now)
     if camera.status != "online" or not camera.preview_url or not camera.captured_at:
         raise HTTPException(503, "Изображение камеры пока недоступно")
     if re.fullmatch(r"/images/cameras/(entrance-[12]|yard)-1\.png", camera.preview_url):
@@ -186,6 +333,7 @@ async def list_moderation(
                 address=house.address,
                 owner_name=owner.name if owner else "Камера дома",
                 source_url=camera.preview_url,
+                connection_available=camera.source_config is not None,
             )
             for camera, house, owner in rows
         ],
@@ -241,3 +389,19 @@ async def delete_camera(session: AsyncSession, staff_id: int, camera_id: int):
         # Keep the record so demo provisioning cannot recreate a removed camera.
         camera.deleted_at = datetime.now(UTC)
         await session.commit()
+
+
+async def staff_preview(session: AsyncSession, staff_id: int, camera_id: int, settings):
+    camera = await session.scalar(
+        select(HouseCamera).where(
+            HouseCamera.id == camera_id,
+            HouseCamera.deleted_at.is_(None),
+            HouseCamera.house_id.in_(house_scope(staff_id)),
+            HouseCamera.visibility == "public",
+        )
+    )
+    if camera is None:
+        raise HTTPException(404, "Камера не найдена")
+    if not camera.source_config:
+        raise HTTPException(404, "Серверное подключение для этой камеры не настроено")
+    return await camera_media.frame(camera_media.decode(camera.source_config, settings), settings)

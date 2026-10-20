@@ -118,7 +118,6 @@ export function OnboardingProvider({ userId, children }: { userId: number; child
   }, [router]);
   useEffect(() => {
     if (step === null || pathname !== destination) return;
-    heading.current?.focus({ preventScroll: true });
     let target: HTMLElement | null = null;
     let lastSize = "";
     let fitted: HTMLElement | null = null;
@@ -164,7 +163,7 @@ export function OnboardingProvider({ userId, children }: { userId: number; child
         originalMaxHeight = found.style.maxHeight;
         originalOverflow = found.style.overflowY;
         const natural = found.getBoundingClientRect();
-        const available = Math.max(120, viewport.height - cardRect.height - navigationHeight - 48);
+        const available = Math.max(120, viewport.height - cardRect.height - navigationHeight - 48 - (steps[step].target === "utility-bill" ? guideHeight : 0));
         if (steps[step].target === "message-panel") {
           found.style.maxHeight = `${Math.max(120, available - guideHeight)}px`;
           found.style.overflowY = "auto";
@@ -177,7 +176,7 @@ export function OnboardingProvider({ userId, children }: { userId: number; child
             found.style.width = `${natural.width / scale}px`;
           }
         }
-        if (["issue-controls", "plan-map"].includes(steps[step].target) && natural.height > available) {
+        if (["issue-controls", "plan-map", "utility-bill"].includes(steps[step].target) && natural.height > available) {
           const scale = available / natural.height;
           found.style.zoom = String(scale);
           found.style.width = `${natural.width / scale}px`;
@@ -219,6 +218,8 @@ export function OnboardingProvider({ userId, children }: { userId: number; child
   const visibleIndex = visibleSteps.findIndex(item => item.target === current?.target);
   const previousStep = step === null ? null : nextTourIndex(steps, step, -1, excluded);
   const nextStep = step === null ? null : nextTourIndex(steps, step, 1, excluded);
+  const ready = position !== null && pathname === destination;
+  useEffect(() => { if (ready) heading.current?.focus({ preventScroll: true }); }, [ready, step]);
   return <Context value={{ start, activeTarget: current?.target ?? null, preparing: preparation !== null }}><span hidden data-app-loading={issues.loading || messages.loading || utilities.loading} />{children}{isOpen && <dialog ref={dialog} className={styles.overlay} aria-labelledby={preparation ? "preparation-title" : "tour-title"} aria-describedby={preparation ? undefined : "tour-description"} onCancel={event => { event.preventDefault(); finish(); }}>
     {preparation ? <StartupScreen percent={preparation.percent} error={preparation.error}
       complete={preparation.percent === 100 && !preparation.error}
@@ -226,14 +227,14 @@ export function OnboardingProvider({ userId, children }: { userId: number; child
       actions={preparation.error ? <><button type="button" onClick={() => void prepare(guideAfterPreparation.current)}>Попробовать снова</button><button type="button" onClick={finish}>Открыть приложение без подготовки</button></> : undefined}
     /> : current && <>
     {position ? <div aria-hidden="true" className={styles.spot} data-tour-spot={current.target} style={position.spot} /> : <div className={styles.shade} />}
-    <div className={styles.panel} data-guide={current.guide} style={position?.card}>
+    <div key={current.target} className={styles.panel} data-ready={ready} data-guide={current.guide} style={position?.card}>
       <Zhorik pose={current.pose} mirrored={current.side === "right" && current.pose === "point"} className={`${styles.guide} ${current.side === "right" ? styles.guideRight : ""}`} />
     <section ref={card} className={styles.card}>
       <div className={styles.top}><span>Подсказка {visibleIndex + 1} из {visibleSteps.length}</span><button type="button" onClick={finish} aria-label="Закрыть обучение" title="Пропустить обучение"><Icon name="close" size={17} /></button></div>
       <div className={styles.segments} role="progressbar" aria-valuemin={1} aria-valuemax={visibleSteps.length} aria-valuenow={visibleIndex + 1} aria-label={`Шаг ${visibleIndex + 1} из ${visibleSteps.length}`}>{visibleSteps.map((item, index) => <span key={item.target} data-filled={index <= visibleIndex || undefined} />)}</div>
       <h2 id="tour-title" tabIndex={-1} ref={heading}>{current.title}</h2>
       <p id="tour-description">{current.text}</p>
-      <footer><button type="button" className={styles.back} onClick={finish}>Пропустить</button><div>{previousStep !== null && <button type="button" className={styles.back} onClick={() => move(previousStep!)} aria-label="Предыдущая подсказка"><Icon name="arrow" size={16} style={{ transform: "rotate(180deg)" }} /></button>}<button type="button" disabled={!position} className={styles.next} onClick={() => nextStep === null ? finish() : move(nextStep)}>{nextStep === null ? "Готово" : "Далее"}<Icon name="arrow" size={15} /></button></div></footer>
+      <footer><button type="button" className={styles.back} onClick={finish}>Пропустить</button><div>{previousStep !== null && <button type="button" className={styles.back} onClick={() => move(previousStep!)} aria-label="Предыдущая подсказка"><Icon name="arrow" size={16} style={{ transform: "rotate(180deg)" }} /></button>}<button type="button" disabled={!ready} className={styles.next} onClick={() => nextStep === null ? finish() : move(nextStep)}>{nextStep === null ? "Готово" : "Далее"}<Icon name="arrow" size={15} /></button></div></footer>
     </section>
     </div>
     </>}

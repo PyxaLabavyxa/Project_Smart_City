@@ -6,6 +6,7 @@ import { endpoints } from "@/shared/api/client";
 import { useApi } from "@/shared/api/context";
 import { array, number, record } from "@/shared/api/parse";
 import { Icon } from "@/shared/ui/icon";
+import { RefreshButton } from "@/shared/ui/refresh-button";
 import { useOnboarding } from "@/features/onboarding/onboarding";
 import { mergeMessages, parseChatMessage, type IssueChatMessage } from "./model";
 import styles from "@/shared/ui/chat-screen.module.css";
@@ -123,7 +124,7 @@ export function IssueConversation({ issueId }: { issueId: string }) {
 
   return <section id="issue-chat" ref={section} className={styles.conversation} aria-label="Чат с управляющей компанией">
     <div ref={list} className={styles.scrollArea} role="region" tabIndex={0} aria-label="Переписка с УК" onScroll={event => { const history = event.currentTarget; pinBottom.current = history.scrollHeight - history.scrollTop - history.clientHeight < 80; }}>
-      <div className={styles.privacy}><Icon name="lock" size={14} /><span>Переписку по обращению видите только вы и сотрудники вашей УК.</span><button className={styles.headerAction} type="button" onClick={() => void refresh()} aria-label="Обновить переписку"><Icon name="refresh" size={18} /></button></div>
+      <div className={styles.privacy}><Icon name="lock" size={14} /><span>Переписку по обращению видите только вы и сотрудники вашей УК.</span><RefreshButton className={styles.headerAction} onRefresh={() => refresh()} aria-label="Обновить переписку" /></div>
       {loading && !messages.length && <p className={styles.privacy} role="status">Загружаем переписку…</p>}
       {!loading && !loadError && !messages.length && <div className={styles.empty}><Icon name="messages" size={30} /><h3>Есть вопрос по обращению?</h3><p>Уточните детали или спросите о ходе работ.<br />Если чат закрыт, бот пришлёт уведомление об ответе.</p></div>}
       <ol className={styles.history} aria-label="Сообщения по обращению" aria-live="polite" aria-relevant="additions">
@@ -133,7 +134,7 @@ export function IssueConversation({ issueId }: { issueId: string }) {
           <time dateTime={message.createdAt}>{new Date(message.createdAt).toLocaleString("ru-RU", { timeZone: "Europe/Moscow", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</time>
         </li>)}
       </ol>
-      {loadError && <p className={styles.error} role="alert">{loadError} <button type="button" onClick={() => void refresh()}>Повторить загрузку</button></p>}
+      {loadError && <p className={styles.error} role="alert">{loadError} <RefreshButton onRefresh={() => refresh()}>Повторить загрузку</RefreshButton></p>}
     </div>
     <form onSubmit={submit} className={styles.composer}>
       <label className={styles.field}><span className={styles.srOnly}>Сообщение в УК</span><textarea ref={input} value={text} onChange={event => { setText(event.target.value); setSendError(""); }} maxLength={1500} rows={2} placeholder="Напишите сотруднику УК…" disabled={sending} aria-invalid={!!sendError} aria-describedby={sendError ? "issue-chat-send-error" : "issue-chat-hint"} /></label>

@@ -4,6 +4,7 @@ import { findApartment, useHouseSelection } from "@/entities/house";
 import { money, totalCharges, useUtilityAccount, invoiceDue, invoicePeriod } from "@/entities/utilities";
 
 import { Icon } from "@/shared/ui/icon";
+import { RefreshButton } from "@/shared/ui/refresh-button";
 import { HomeAddress } from "@/_pages/home/ui/home-address";
 import { useOnboarding } from "@/features/onboarding/onboarding";
 import { Payment } from "./payment";
@@ -23,7 +24,7 @@ export function UtilitiesPage() {
   <h1>ЖКХ</h1>
   <HomeAddress compact apartmentOnly />
   <div className={styles.tabs} role="group" aria-label="Раздел ЖКХ"><button type="button" aria-pressed={currentTab === "bill"} onClick={() => setTab("bill")}>Квитанции</button><button type="button" aria-pressed={currentTab === "meters"} onClick={() => setTab("meters")}>Показания</button></div>
-  {loading || error || !account ? <section className={styles.panel} aria-busy={loading}><p role={error ? "alert" : "status"}>{loading ? "Загружаем лицевой счёт…" : error || "Лицевой счёт пока не подключён."}</p>{!loading && <button className={styles.secondary} onClick={reload}>Повторить</button>}</section> : !apartment ? <section className={styles.panel}><h2>Квартира не найдена</h2><p>Проверьте привязку квартиры к дому.</p></section> : currentTab === "bill" ? <div className={styles.content}>
+  {loading || error || !account ? <section className={styles.panel} aria-busy={loading}><p role={error ? "alert" : "status"}>{loading ? "Загружаем лицевой счёт…" : error || "Лицевой счёт пока не подключён."}</p>{!loading && <RefreshButton className={styles.secondary} onRefresh={reload} loading={loading}>Повторить</RefreshButton>}</section> : !apartment ? <section className={styles.panel}><h2>Квартира не найдена</h2><p>Проверьте привязку квартиры к дому.</p></section> : currentTab === "bill" ? <div className={styles.content}>
    <div className={styles.layout}>
     <section data-tour="utility-bill" className={styles.panel} aria-labelledby="bill-title">
      <div className={styles.billHeading}><h2 id="bill-title">{invoicePeriod(account.period) || "Квитанция пока не выставлена"}</h2>{account.invoiceNumber && <span className={styles.badge}>Не оплачено</span>}</div>

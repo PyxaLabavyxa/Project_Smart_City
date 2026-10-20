@@ -10,11 +10,12 @@ export function IssuesPage({ initialCategory = "" }: { initialCategory?: string 
   const { issues, loading, error, reload } = useIssues();
   const [filters, setFilters] = useState({ ...initialIssueFilters, category: initialCategory });
   const visible = filterIssues(issues, filters);
-  if (loading || error) return <RequestState loading={loading} error={error} reload={reload} />;
-  return <><HomeAddress compact /><header className={styles.heading}><h1>Обращения</h1></header>
+  if ((loading || error) && !issues.length) return <RequestState loading={loading} error={error} reload={reload} />;
+  return <div className={styles.content}><HomeAddress compact /><header className={styles.heading}><h1>Обращения</h1></header>
     <div data-tour="issue-controls"><div data-tour="issue-status" className={styles.statusRow}><nav className={styles.tabs} aria-label="Статус обращений">{([{ value: "active", label: "Активные" }, { value: "completed", label: "Решённые" }, { value: "all", label: "Все" }] as const).map(tab => <button key={tab.value} type="button" aria-pressed={filters.status === tab.value} onClick={() => setFilters({ ...filters, status: tab.value })}>{tab.label}<span>{issues.filter(issue => tab.value === "all" || (tab.value === "active" ? issue.status !== "completed" : issue.status === "completed")).length}</span></button>)}</nav></div>
 
-    <IssueFilters filters={filters} categories={issues.map(issue => issue.category)} onChange={setFilters} onReset={() => setFilters(initialIssueFilters)} onRefresh={reload} /></div>
+    <IssueFilters filters={filters} categories={issues.map(issue => issue.category)} onChange={setFilters} onReset={() => setFilters(initialIssueFilters)} onRefresh={reload} refreshing={loading} /></div>
+    <RequestState loading={false} error={error} reload={reload} />
     <div className={styles.summary} role="status"><span>Найдено: <b>{visible.length}</b> из {issues.length}</span></div>
     {visible.length ? <IssueList issues={visible} wide /> : <div className={styles.empty}>
       <h2>{issues.length ? "Обращения не найдены" : "Обращений ещё нет"}</h2>
@@ -22,5 +23,5 @@ export function IssuesPage({ initialCategory = "" }: { initialCategory?: string 
       {issues.length > 0 && <button type="button" className={styles.emptyButton} onClick={() => setFilters(initialIssueFilters)}>Сбросить фильтры</button>}
     </div>}
     <div className={styles.create}><ReportIssueLink /></div>
-  </>;
+  </div>;
 }

@@ -37,6 +37,7 @@ const paths = {
   refresh: "M20 8a8 8 0 1 0 0 8M20 3v5h-5",
   play: "m9 5 11 7-11 7Z",
   warning: "m12 3 10 18H2ZM12 9v5m0 3h.01",
+  trash: "M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7",
   close: "m6 6 12 12M6 18 18 6",
   lift: "M8 3v18m-4-4 4 4 4-4M16 21V3m-4 4 4-4 4 4",
   stairs: "m12 3 9 5-9 5-9-5Zm-7 9-2 1 9 5 9-5-2-1M5 17l-2 1 9 5 9-5-2-1",

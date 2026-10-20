@@ -6,6 +6,7 @@ import { endpoints } from "@/shared/api/client";
 import { useRemote } from "@/shared/api/use-remote";
 import { SectionPage } from "@/shared/ui/navigation";
 import { Icon } from "@/shared/ui/icon";
+import { RefreshButton } from "@/shared/ui/refresh-button";
 import { setTheme, useThemePreference, type ThemePreference } from "./theme";
 import { parseNotificationPreferences, type NotificationPreferences } from "./notifications";
 import styles from "./settings.module.css";
@@ -71,7 +72,7 @@ function NotificationSettings() {
     <h2 className={styles.heading}>Уведомления в MAX</h2>
     <p className={styles.note}>Выберите, о чём бот будет вам писать. Сами сообщения и история обращений останутся в приложении.</p>
     {state.loading && !current && <p role="status">Загрузка настроек…</p>}
-    {state.error && !current && <div role="alert"><p>{state.error}</p><button type="button" className={styles.retry} onClick={state.reload}>Повторить</button></div>}
+    {state.error && !current && <div role="alert"><p>{state.error}</p><RefreshButton className={styles.retry} onRefresh={state.reload} loading={state.loading}>Повторить</RefreshButton></div>}
     {current && <div className={styles.notifications} aria-busy={saving}>{notifications.map(item => <label key={item.key} className={styles.notification}>
       <span><strong>{item.title}</strong><small id={`hint-${item.key}`}>{item.text}</small></span>
       <input type="checkbox" role="switch" aria-label={item.title} aria-describedby={`hint-${item.key}`} checked={current[item.key]} disabled={saving} onChange={() => void toggle(item.key)} />

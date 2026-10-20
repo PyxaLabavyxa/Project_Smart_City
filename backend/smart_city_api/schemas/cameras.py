@@ -1,30 +1,52 @@
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from smart_city_api.core.camera_source import CameraSource
 from smart_city_api.schemas.app import CameraResponse, Location
 
 
-class CreateCamera(BaseModel):
-    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+class CameraInput(CameraSource):
     name: str = Field(min_length=1, max_length=200)
     note: str = Field(default="", max_length=1000)
-    source_url: str = Field(min_length=1, max_length=2000)
     is_public: bool = Field(default=False, strict=True)
+
+    @field_validator("name", "note", mode="before")
+    @classmethod
+    def trim_text(cls, value):
+        return value.strip() if isinstance(value, str) else value
+
+    def connection(self):
+        return CameraSource.model_validate(
+            {key: getattr(self, key) for key in CameraSource.model_fields}
+        )
+
+
+class CreateCamera(CameraInput):
     place: Location
     request_id: UUID
 
-    @field_validator("source_url")
-    @classmethod
-    def https_snapshot(cls, value: str) -> str:
-        url = HttpUrl(value)
-        if url.scheme != "https" or url.username or url.password or url.fragment:
-            raise ValueError("Укажите HTTPS-ссылку на снимок без логина, пароля и фрагмента")
-        normalized = str(url)
-        if len(normalized) > 2000:
-            raise ValueError("Ссылка слишком длинная")
-        return normalized
+
+class UpdateCamera(CameraInput):
+    expected_version: str = Field(pattern=r"^[a-f0-9]{64}$")
+    keep_password: bool = Field(default=True, strict=True)
+
+
+class CameraSettings(BaseModel):
+    id: str
+    house_id: int
+    name: str
+    note: str
+    source_type: str
+    source_url: str
+    username: str
+    auth_type: str
+    profile: str
+    rtsp_port: int | None
+    password_set: bool
+    is_public: bool
+    version: str
 
 
 class ModerateCamera(BaseModel):
@@ -44,6 +66,7 @@ class StaffCameraResponse(CameraResponse):
     address: str
     owner_name: str
     source_url: str | None = None
+    connection_available: bool = False
 
 
 class StaffCameraPage(BaseModel):

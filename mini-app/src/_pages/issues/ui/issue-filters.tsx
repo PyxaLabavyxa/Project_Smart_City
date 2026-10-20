@@ -1,16 +1,18 @@
 import { useState } from "react";
 import { Icon } from "@/shared/ui/icon";
+import { RefreshButton } from "@/shared/ui/refresh-button";
 import { issueStatusLabels, issueCategories, type IssueFilters as Filters } from "@/entities/issue";
 import { commonZones, useHouseSelection } from "@/entities/house";
 import { useOnboarding } from "@/features/onboarding/onboarding";
 import styles from "./issues-page.module.css";
 
-export function IssueFilters({ filters, categories, onChange, onReset, onRefresh }: {
+export function IssueFilters({ filters, categories, onChange, onReset, onRefresh, refreshing = false }: {
   filters: Filters;
   categories: readonly string[];
   onChange: (filters: Filters) => void;
   onReset: () => void;
   onRefresh: () => void;
+  refreshing?: boolean;
 }) {
   const { activeTarget } = useOnboarding();
   const { house } = useHouseSelection();
@@ -21,7 +23,7 @@ export function IssueFilters({ filters, categories, onChange, onReset, onRefresh
   const upstairs = Number(filters.floor) > 1;
   return <div>
     <div className={styles.searchRow}><label className={styles.search} data-tour="issue-search"><Icon name="search" /><input type="search" aria-label="Найти обращение" placeholder="Найти обращение" value={filters.query} onChange={event => onChange({...filters,query:event.target.value})} /></label><button className={styles.filterTrigger} type="button" aria-expanded={open} aria-controls="issue-filter-panel" onClick={() => setExpanded(value => !value)}><Icon name="settings" size={20} /><span>Фильтры{count>0 ? ` · ${count}` : ""}</span></button></div>
-    {open &&     <section id="issue-filter-panel" aria-label="Фильтры обращений" className={styles.filters}>
+    {open &&     <section id="issue-filter-panel" aria-label="Фильтры обращений" className={styles.filters} data-motion-panel>
     <label>Статус<select value={filters.status} onChange={event => onChange({ ...filters, status: event.target.value as Filters["status"] })}>
       {Object.entries(statusOptions).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
     </select></label>
@@ -46,8 +48,7 @@ export function IssueFilters({ filters, categories, onChange, onReset, onRefresh
       {Object.entries(commonZones).filter(([value]) => !upstairs || !["entrance", "courtyard", "parking", "house"].includes(value)).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
       <option value="apartment">Квартира</option>
     </select></label>
-    <label>Поиск<input type="search" value={filters.query} onChange={event => onChange({ ...filters, query: event.target.value })} placeholder="Название или место" /></label>
     <label>Автор<select value={filters.onlyMine ? "mine" : "all"} onChange={event => onChange({ ...filters, onlyMine: event.target.value === "mine" })}><option value="all">Все обращения</option><option value="mine">Мои обращения</option></select></label>
-    <div className={styles.filterActions}><button type="button" onClick={onReset}>Сбросить фильтры</button><button type="button" onClick={onRefresh}><Icon name="refresh" size={18} />Обновить обращения</button></div>
+    <div className={styles.filterActions}><button type="button" onClick={onReset}>Сбросить фильтры</button><RefreshButton onRefresh={onRefresh} loading={refreshing}>Обновить обращения</RefreshButton></div>
   </section>}</div>;
 }

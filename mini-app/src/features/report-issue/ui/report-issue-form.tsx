@@ -11,10 +11,12 @@ import { initialReportStep } from "@/entities/issue/model/issue-draft";
 import { PhotoPicker } from "./photo-picker";
 import { Icon } from "@/shared/ui/icon";
 import { BrandWordmark } from "@/shared/ui/brand-mark";
+import { useConfirmation } from "@/shared/ui/confirmation";
 
 const categorySteps = [{ id: 1, label: "Категория" }, { id: 2, label: "Описание" }, { id: 3, label: "Проверка" }];
 const stepTitles = ["Уточните место на плане", "Что случилось?", "Расскажите о проблеме", "Проверьте обращение"];
 export function ReportIssueForm({ cancelHref = "/issues", cancelLabel = "Все обращения" }: { cancelHref?: string; cancelLabel?: string }) {
+  const confirm = useConfirmation();
   const { addIssue, issues, draft, creating, updateDraft, resetDraft } = useIssues();
   const { house, choices } = useHouseSelection();
   const router = useRouter();
@@ -77,7 +79,7 @@ export function ReportIssueForm({ cancelHref = "/issues", cancelLabel = "Все 
   </header><h1 className={styles.srOnly}>Создать обращение</h1><form ref={formRef} data-step={draft.step} className={styles.form} onSubmit={submit} noValidate aria-busy={saving}>
     <p className={styles.note} aria-live="polite">{stepIndex < 0 ? "Выбор места проблемы" : `Шаг ${stepIndex + 1} из ${steps.length} · ${steps[stepIndex].label}`}</p>
     {draft.step >= 0 && <ol className={styles.steps} style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` }} aria-label="Этапы обращения">{steps.map((step, index) => <li key={step.id} data-reached={step.id <= draft.step || undefined} aria-current={draft.step === step.id ? "step" : undefined}><span>{step.id < draft.step ? "✓" : index + 1}</span>{step.label}</li>)}</ol>}
-    <fieldset key={draft.step} className={styles.fields} disabled={saving}>
+    <fieldset key={draft.step} className={styles.fields} disabled={saving} data-motion-panel>
       <legend tabIndex={-1}>{draft.step < 0 ? "Где возникла проблема?" : stepTitles[draft.step]}</legend>
       {draft.step > 0 && draft.step < 3 && <p className={styles.context}>{draft.step > 1 && `${categoryLabel} · `}{formatLocation(draft.place)} <button type="button" onClick={() => goToStep(-1)}>Изменить место</button></p>}
       {draft.step <= 0 && <><ReportLocationPicker value={draft.place} onChange={place => updateDraft({ place })} details={draft.step === 0} showScopes={draft.step < 0} />{error("place")}</>}
@@ -112,7 +114,7 @@ export function ReportIssueForm({ cancelHref = "/issues", cancelLabel = "Все 
     </div>
     {draft.step === 2 && <div className={styles.draftActions}>
       <Link href={cancelHref} aria-disabled={saving} onClick={event => { if (saving) event.preventDefault(); }}>Сохранить черновик</Link>
-      <button type="button" disabled={saving} onClick={() => { if (window.confirm("Удалить черновик обращения?")) { resetDraft(); setErrors({}); } }}>Сбросить черновик</button>
+      <button type="button" disabled={saving} onClick={async () => { if (await confirm({ title: "Удалить черновик?", description: "Описание и прикреплённые фотографии будут удалены. Восстановить черновик не получится.", confirmLabel: "Удалить", destructive: true })) { resetDraft(); setErrors({}); } }}>Сбросить черновик</button>
     </div>}
   </form></>;
 }

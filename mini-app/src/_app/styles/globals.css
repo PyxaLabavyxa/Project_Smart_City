@@ -17,6 +17,18 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 [aria-disabled="true"] { opacity: .55; cursor: not-allowed; }
 body:has(dialog[open]) { overflow: hidden; }
 dialog { overscroll-behavior: contain; }
+:root { --ease-out:cubic-bezier(.23,1,.32,1); --motion-press:120ms; --motion-panel:160ms; --motion-dialog:200ms; }
+@media(prefers-reduced-motion:no-preference) {
+  :root:not([data-motion-input="keyboard"]) button:not(:disabled) { transition:scale var(--motion-press) var(--ease-out),background-color 150ms ease,border-color 150ms ease; }
+  :root:not([data-motion-input="keyboard"]) button:active:not(:disabled):not([aria-disabled="true"]) { scale:.98; }
+  :root:not([data-motion-input="keyboard"]) dialog[open], :root:not([data-motion-input="keyboard"]) dialog[open]::backdrop { animation:dialog-appear var(--motion-dialog) var(--ease-out); }
+  :root:not([data-motion-input="keyboard"]) [data-motion-panel] { transition:opacity var(--motion-panel) var(--ease-out); }
+  @starting-style { :root:not([data-motion-input="keyboard"]) [data-motion-panel] { opacity:0; } }
+  :root:not([data-motion-input="keyboard"]) ::picker(select) { transition:opacity var(--motion-panel) var(--ease-out); }
+  @starting-style { :root:not([data-motion-input="keyboard"]) ::picker(select) { opacity:0; } }
+}
+:root[data-motion-input="keyboard"] dialog[open] { animation:none; }
+@keyframes dialog-appear { from { opacity:0; } to { opacity:1; } }
 :where(input:not([type="radio"]):not([type="checkbox"])), select, textarea {
   min-width: 0; max-width: 100%; min-height: var(--control-height);
   padding: 12px 14px; border: 1px solid var(--color-line); border-radius: var(--radius-input);
@@ -47,3 +59,33 @@ body { background:var(--color-bg); }
 .connection-screen .request-state { width: 100%; }
 
 :root[data-theme="dark"] dialog::backdrop { background:rgb(2 8 18 / 68%); }
+
+select:not([multiple]) {
+  min-height:max(46px,var(--control-height));
+  padding:11px 14px;
+  border:1px solid var(--color-line);
+  border-radius:var(--radius-button);
+  color:var(--color-ink);
+  background:var(--color-surface);
+  box-shadow:var(--shadow-surface);
+  cursor:pointer;
+}
+select:not([multiple]):focus-visible { border-color:var(--color-action); outline:3px solid color-mix(in srgb,var(--color-action) 20%,transparent); outline-offset:2px; }
+select:not([multiple])[aria-invalid="true"] { border-color:var(--color-danger); }
+select:not([multiple]):disabled { opacity:.55; cursor:not-allowed; }
+@media(hover:hover) { select:not([multiple]):hover:not(:disabled) { border-color:var(--color-action); } }
+
+@supports(appearance:base-select) {
+  select:not([multiple]), ::picker(select) { appearance:base-select; }
+  select:not([multiple]) { align-items:center; gap:12px; }
+  select:not([multiple])::picker-icon { content:""; flex-shrink:0; width:8px; height:8px; margin-inline-start:auto; margin-inline-end:2px; border-right:1.5px solid var(--color-muted); border-bottom:1.5px solid var(--color-muted); rotate:45deg; translate:0 -2px; }
+  select:not([multiple]):open { border-color:var(--color-action); }
+  select:not([multiple]):open::picker-icon { rotate:225deg; translate:0 2px; }
+  ::picker(select) { padding:5px; margin-block:6px; max-height:min(320px,45dvh); overflow-y:auto; border:1px solid var(--color-line); border-radius:var(--radius-button); color:var(--color-ink); background:var(--color-surface); box-shadow:0 8px 28px color-mix(in srgb,var(--color-ink) 14%,transparent); }
+  select:not([multiple]) option { display:flex; align-items:center; gap:10px; min-height:44px; padding:10px 12px; border:0; border-radius:9px; color:var(--color-ink); background:var(--color-surface); white-space:normal; overflow-wrap:anywhere; cursor:pointer; }
+  select:not([multiple]) option:checked { color:var(--color-action); background:var(--color-soft); }
+  select:not([multiple]) option:focus-visible { outline:0; background:var(--color-soft); }
+  select:not([multiple]) option:disabled { color:var(--color-muted); cursor:not-allowed; }
+  select:not([multiple]) option::checkmark { order:1; margin-inline-start:auto; color:var(--color-action); }
+  @media(hover:hover) { select:not([multiple]) option:hover:not(:disabled) { background:var(--color-soft); } }
+}

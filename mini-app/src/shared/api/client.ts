@@ -6,16 +6,16 @@ export type ApiClient = ReturnType<typeof createApiClient>;
 export function createApiClient() {
   const cache = new Map<string, { data: unknown; expires: number }>();
   const base = (process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api/v1").replace(/\/$/, "");
-  return async (path: string, options: { body?: unknown; signal?: AbortSignal; keepalive?: boolean; cacheFor?: number } = {}): Promise<unknown> => {
+  return async (path: string, options: { body?: unknown; method?: "DELETE"; signal?: AbortSignal; keepalive?: boolean; cacheFor?: number } = {}): Promise<unknown> => {
     const cached = cache.get(path);
     options.signal?.throwIfAborted();
-    if (options.body === undefined && options.cacheFor && cached && cached.expires > Date.now()) return cached.data;
+    if (!options.method && options.body === undefined && options.cacheFor && cached && cached.expires > Date.now()) return cached.data;
     const multipart = options.body instanceof FormData;
-    const timeout = AbortSignal.timeout(multipart ? 120000 : 15000);
+    const timeout = AbortSignal.timeout(multipart ? 120000 : /\/cameras(?:\/|$)/.test(path) ? 30000 : 15000);
     const signal = options.signal ? AbortSignal.any([options.signal, timeout]) : timeout;
     try {
       const response = await fetch(`${base}${path}`, {
-        method: options.body === undefined ? "GET" : "POST",
+        method: options.method ?? (options.body === undefined ? "GET" : "POST"),
         headers: options.body === undefined || multipart ? {} : { "Content-Type": "application/json" },
         credentials: "include",
         body: multipart ? options.body as FormData : options.body === undefined ? undefined : JSON.stringify(options.body),
@@ -28,7 +28,7 @@ export function createApiClient() {
         const detail = data && typeof data === "object" && "detail" in data ? data.detail : undefined;
         throw new ApiError(typeof detail === "string" ? detail : response.status === 422 ? "Проверьте заполненные поля." : "Не удалось выполнить запрос. Повторите попытку.", response.status);
       }
-      if (options.body !== undefined && path !== endpoints.presence && !/^\/issues\/[1-9]\d*\/presence$/.test(path)) cache.clear();
+      if ((options.method || options.body !== undefined) && path !== endpoints.presence && !/^\/issues\/[1-9]\d*\/presence$/.test(path)) cache.clear();
       else if (options.cacheFor) cache.set(path, { data, expires: Date.now() + options.cacheFor });
       return data;
     } catch (error) {

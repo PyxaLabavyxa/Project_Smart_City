@@ -1421,6 +1421,193 @@
         }
       }
     },
+    "/api/v1/cameras/{camera_id}/settings": {
+      "get": {
+        "tags": [
+          "services"
+        ],
+        "summary": "Camera Settings",
+        "operationId": "camera_settings_api_v1_cameras__camera_id__settings_get",
+        "security": [
+          {
+            "MAXLaunchData": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "camera_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Camera Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CameraSettings"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "services"
+        ],
+        "summary": "Update Camera",
+        "operationId": "update_camera_api_v1_cameras__camera_id__settings_post",
+        "security": [
+          {
+            "MAXLaunchData": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "camera_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Camera Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCamera"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CameraResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cameras/{camera_id}": {
+      "delete": {
+        "tags": [
+          "services"
+        ],
+        "summary": "Delete Camera",
+        "operationId": "delete_camera_api_v1_cameras__camera_id__delete",
+        "security": [
+          {
+            "MAXLaunchData": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "camera_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Camera Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cameras/{camera_id}/live": {
+      "get": {
+        "tags": [
+          "services"
+        ],
+        "summary": "Camera Live",
+        "operationId": "camera_live_api_v1_cameras__camera_id__live_get",
+        "security": [
+          {
+            "MAXLaunchData": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "camera_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Camera Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/houses/{house_id}/works": {
       "get": {
         "tags": [
@@ -1661,6 +1848,51 @@
                 "schema": {
                   "$ref": "#/components/schemas/CameraResponse"
                 }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/staff/cameras/{camera_id}/frame": {
+      "get": {
+        "tags": [
+          "Staff"
+        ],
+        "summary": "Camera Frame",
+        "operationId": "camera_frame_api_v1_staff_cameras__camera_id__frame_get",
+        "security": [
+          {
+            "StaffSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "camera_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Camera Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
               }
             }
           },
@@ -3625,6 +3857,25 @@
             "type": "string",
             "title": "Note"
           },
+          "source_type": {
+            "type": "string",
+            "enum": [
+              "snapshot",
+              "mjpeg",
+              "hls",
+              "rtsp",
+              "rtmp",
+              "onvif",
+              "http_video"
+            ],
+            "title": "Source Type",
+            "default": "snapshot"
+          },
+          "live_available": {
+            "type": "boolean",
+            "title": "Live Available",
+            "default": false
+          },
           "mine": {
             "type": "boolean",
             "title": "Mine",
@@ -3679,6 +3930,86 @@
           "note"
         ],
         "title": "CameraResponse"
+      },
+      "CameraSettings": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "house_id": {
+            "type": "integer",
+            "title": "House Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "note": {
+            "type": "string",
+            "title": "Note"
+          },
+          "source_type": {
+            "type": "string",
+            "title": "Source Type"
+          },
+          "source_url": {
+            "type": "string",
+            "title": "Source Url"
+          },
+          "username": {
+            "type": "string",
+            "title": "Username"
+          },
+          "auth_type": {
+            "type": "string",
+            "title": "Auth Type"
+          },
+          "profile": {
+            "type": "string",
+            "title": "Profile"
+          },
+          "rtsp_port": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rtsp Port"
+          },
+          "password_set": {
+            "type": "boolean",
+            "title": "Password Set"
+          },
+          "is_public": {
+            "type": "boolean",
+            "title": "Is Public"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "house_id",
+          "name",
+          "note",
+          "source_type",
+          "source_url",
+          "username",
+          "auth_type",
+          "profile",
+          "rtsp_port",
+          "password_set",
+          "is_public",
+          "version"
+        ],
+        "title": "CameraSettings"
       },
       "Charge": {
         "properties": {
@@ -3887,6 +4218,69 @@
       },
       "CreateCamera": {
         "properties": {
+          "source_type": {
+            "type": "string",
+            "enum": [
+              "snapshot",
+              "mjpeg",
+              "hls",
+              "rtsp",
+              "rtmp",
+              "onvif",
+              "http_video"
+            ],
+            "title": "Source Type",
+            "default": "snapshot"
+          },
+          "source_url": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Source Url"
+          },
+          "username": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Username",
+            "default": ""
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 500,
+            "format": "password",
+            "title": "Password",
+            "default": "",
+            "writeOnly": true
+          },
+          "auth_type": {
+            "type": "string",
+            "enum": [
+              "digest",
+              "basic"
+            ],
+            "title": "Auth Type",
+            "default": "digest"
+          },
+          "profile": {
+            "type": "string",
+            "maxLength": 128,
+            "pattern": "^[\\w.\\-]*$",
+            "title": "Profile",
+            "default": ""
+          },
+          "rtsp_port": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 65535.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rtsp Port"
+          },
           "name": {
             "type": "string",
             "maxLength": 200,
@@ -3898,12 +4292,6 @@
             "maxLength": 1000,
             "title": "Note",
             "default": ""
-          },
-          "source_url": {
-            "type": "string",
-            "maxLength": 2000,
-            "minLength": 1,
-            "title": "Source Url"
           },
           "is_public": {
             "type": "boolean",
@@ -3922,8 +4310,8 @@
         "additionalProperties": false,
         "type": "object",
         "required": [
-          "name",
           "source_url",
+          "name",
           "place",
           "request_id"
         ],
@@ -5439,6 +5827,25 @@
             "type": "string",
             "title": "Note"
           },
+          "source_type": {
+            "type": "string",
+            "enum": [
+              "snapshot",
+              "mjpeg",
+              "hls",
+              "rtsp",
+              "rtmp",
+              "onvif",
+              "http_video"
+            ],
+            "title": "Source Type",
+            "default": "snapshot"
+          },
+          "live_available": {
+            "type": "boolean",
+            "title": "Live Available",
+            "default": false
+          },
           "mine": {
             "type": "boolean",
             "title": "Mine",
@@ -5506,6 +5913,11 @@
               }
             ],
             "title": "Source Url"
+          },
+          "connection_available": {
+            "type": "boolean",
+            "title": "Connection Available",
+            "default": false
           }
         },
         "type": "object",
@@ -5605,6 +6017,108 @@
           "request_id"
         ],
         "title": "StatusInput"
+      },
+      "UpdateCamera": {
+        "properties": {
+          "source_type": {
+            "type": "string",
+            "enum": [
+              "snapshot",
+              "mjpeg",
+              "hls",
+              "rtsp",
+              "rtmp",
+              "onvif",
+              "http_video"
+            ],
+            "title": "Source Type",
+            "default": "snapshot"
+          },
+          "source_url": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Source Url"
+          },
+          "username": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Username",
+            "default": ""
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 500,
+            "format": "password",
+            "title": "Password",
+            "default": "",
+            "writeOnly": true
+          },
+          "auth_type": {
+            "type": "string",
+            "enum": [
+              "digest",
+              "basic"
+            ],
+            "title": "Auth Type",
+            "default": "digest"
+          },
+          "profile": {
+            "type": "string",
+            "maxLength": 128,
+            "pattern": "^[\\w.\\-]*$",
+            "title": "Profile",
+            "default": ""
+          },
+          "rtsp_port": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 65535.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rtsp Port"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 1000,
+            "title": "Note",
+            "default": ""
+          },
+          "is_public": {
+            "type": "boolean",
+            "title": "Is Public",
+            "default": false
+          },
+          "expected_version": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Expected Version"
+          },
+          "keep_password": {
+            "type": "boolean",
+            "title": "Keep Password",
+            "default": true
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "source_url",
+          "name",
+          "expected_version"
+        ],
+        "title": "UpdateCamera"
       },
       "ValidationError": {
         "properties": {

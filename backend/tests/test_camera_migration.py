@@ -6,6 +6,36 @@ from alembic.config import Config
 from sqlalchemy import create_engine, text
 
 
+def test_camera_source_rollback_refuses_to_lose_encrypted_connections(monkeypatch, tmp_path):
+    url = "sqlite:///" + (tmp_path / "sources.db").as_posix()
+    monkeypatch.setenv("DATABASE_URL", url.replace("sqlite:///", "sqlite+aiosqlite:///"))
+    config = Config(str(Path(__file__).resolve().parents[1] / "alembic.ini"))
+    command.upgrade(config, "head")
+    engine = create_engine(url)
+    try:
+        with engine.begin() as connection:
+            connection.execute(
+                text(
+                    "INSERT INTO houses (id,address,entrances_count,floors_count,"
+                    "apartments_per_floor) "
+                    "VALUES (1,'house',1,1,1)"
+                )
+            )
+            connection.execute(
+                text(
+                    "INSERT INTO house_cameras (house_id,name,status,note,"
+                    "source_config,source_type) "
+                    "VALUES (1,'camera','online','','encrypted','rtsp')"
+                )
+            )
+        with pytest.raises(RuntimeError, match="encrypted connections"):
+            command.downgrade(config, "0015")
+        with engine.connect() as connection:
+            assert connection.scalar(text("SELECT source_config FROM house_cameras")) == "encrypted"
+    finally:
+        engine.dispose()
+
+
 def test_camera_migration_preserves_existing_stills_and_protects_private_rollback(
     monkeypatch, tmp_path
 ):

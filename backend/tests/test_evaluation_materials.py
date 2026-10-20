@@ -74,6 +74,11 @@ def test_materials_are_valid_and_match_documented_application_routes():
             assert contract["paths"][path][method] == operation
     for name, schema in public_contract["components"]["schemas"].items():
         current = dict(contract["components"]["schemas"][name])
+        schema = dict(schema)
+        # JSON Schema required fields are a set; inheritance may change their order.
+        if "required" in schema:
+            current["required"] = sorted(current["required"])
+            schema["required"] = sorted(schema["required"])
         if "properties" in schema:
             current["properties"] = {
                 key: current["properties"][key] for key in schema["properties"]

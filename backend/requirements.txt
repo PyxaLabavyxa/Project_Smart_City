@@ -24,3 +24,6 @@ Mako==1.4.3
 MarkupSafe==3.0.3
 Pillow==12.3.0
 python-multipart==0.0.22
+httpx==0.28.1
+cryptography==46.0.5
+defusedxml==0.7.1

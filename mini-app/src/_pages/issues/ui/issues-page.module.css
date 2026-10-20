@@ -1,3 +1,4 @@
+.content { padding-bottom:calc(70 * var(--u) + 16px); }
 .heading { margin:calc(20 * var(--u)) 0 calc(18 * var(--u)); }
 .heading h1 { font-size:calc(38 * var(--u)); font-weight:750; line-height:1.15; }
 .statusRow { margin-bottom:calc(14 * var(--u)); }

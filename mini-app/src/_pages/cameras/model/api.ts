@@ -35,14 +35,14 @@ export function parseCamera(value: unknown, house: House): Camera {
     if (!validLocation(house, place)) throw new Error("Место камеры отсутствует в доме");
   }
   return { id: string(c.id), name: string(c.name), status: c.status, note: string(c.note),
-    mine: c.mine, visibility: c.visibility, moderationStatus: c.moderation_status,
+    mine: c.mine, visibility: c.visibility, moderationStatus: c.moderation_status, liveAvailable: c.live_available === true,
     moderationReason: c.moderation_reason == null ? null : string(c.moderation_reason), place };
 }
 export function createCameraGateway(api: ApiClient): CameraGateway {
   return { async preview(camera, attempt = 0) {
     const frame = record(await api(endpoints.preview(camera.id), { cacheFor: attempt === 0 ? 60000 : 0 }));
     const src = string(frame.src);
-    if (!/^\/images\/cameras\/(entrance-[12]|yard)-[12]\.png$/.test(src) && new URL(src).protocol !== "https:") throw new Error("Недопустимый адрес изображения");
+    if (!/^data:image\/jpeg;base64,[A-Za-z0-9+/]+=*$/.test(src) && !/^\/images\/cameras\/(entrance-[12]|yard)-[12]\.png$/.test(src) && new URL(src).protocol !== "https:") throw new Error("Недопустимый адрес изображения");
     return { src, capturedAt: string(frame.capturedAt) };
   } };
 }

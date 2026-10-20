@@ -125,6 +125,8 @@
 .form[data-step="3"] .actions .previous { flex-basis:32%; }
 .form[data-step="3"] .actions .primary { font-size:calc(18 * var(--u)); padding:calc(10 * var(--u)); }
 .sheet[open]:not(:modal) { z-index:60; }
+.sheet[data-tour-preview] { bottom:calc(83 * var(--u) + env(safe-area-inset-bottom) + 12px); }
+.sheet[data-tour-preview] > :is(.locationNote,.primary) { display:none; }
 
 .placeDetails { display:grid; gap:20px; }
 .placeDetails :global([data-number-choice]) { min-height:max(44px,calc(54 * var(--u))); padding:calc(8 * var(--u)) calc(12 * var(--u)); border-radius:calc(10 * var(--u)); }

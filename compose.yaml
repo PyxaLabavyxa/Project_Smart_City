@@ -46,17 +46,48 @@ services:
       LOCAL_LOGIN_ENABLED: "false"
       ONBOARDING_TEST_MODE: ${ONBOARDING_TEST_MODE:-true}
       MEDIA_ROOT: /srv/data/media
+      CAMERA_WORKER_URL: http://camera-worker:8001
     volumes:
       - media:/srv/data/media
+    networks:
+      - default
+      - camera_control
     ports:
       - "127.0.0.1:${API_PORT:-8000}:8000"
     depends_on:
+      camera-worker:
+        condition: service_healthy
       migrate:
         condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready', timeout=5)"]
       interval: 10s
       timeout: 6s
+      retries: 6
+      start_period: 10s
+
+  camera-worker:
+    build:
+      context: .
+      dockerfile: backend/camera_worker/Dockerfile
+    restart: unless-stopped
+    init: true
+    cap_drop: [ALL]
+    cap_add: [NET_ADMIN, SETUID, SETGID, SETPCAP]
+    security_opt: [no-new-privileges:true]
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,noexec,nosuid
+    mem_limit: 768m
+    cpus: 2
+    pids_limit: 96
+    networks:
+      - camera_control
+      - camera_egress
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/health', timeout=3)"]
+      interval: 10s
+      timeout: 4s
       retries: 6
       start_period: 10s
 
@@ -106,3 +137,8 @@ services:
 volumes:
   postgres_data:
   media:
+
+networks:
+  camera_control:
+    internal: true
+  camera_egress:

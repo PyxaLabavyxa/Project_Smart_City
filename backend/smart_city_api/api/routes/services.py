@@ -2,7 +2,7 @@ from datetime import UTC, datetime
 
 from app.database.models import ApartmentMessage, ChatPhoto, HouseWork
 from fastapi import APIRouter, HTTPException, Request
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from sqlalchemy import or_, select
 
 from smart_city_api.api.dependencies import Resident, Session
@@ -17,9 +17,9 @@ from smart_city_api.schemas.app import (
     SendMessage,
     WorkResponse,
 )
-from smart_city_api.schemas.cameras import CreateCamera
+from smart_city_api.schemas.cameras import CameraSettings, CreateCamera, UpdateCamera
+from smart_city_api.services import camera_media, chat_photos
 from smart_city_api.services import cameras as camera_service
-from smart_city_api.services import chat_photos
 from smart_city_api.services.access import own_apartment_ids, require_apartment, require_house
 from smart_city_api.services.messages import message_response, send_message
 from smart_city_api.services.utilities import load_account, save_reading
@@ -114,13 +114,53 @@ async def cameras(house_id: int, session: Session, user: Resident):
 
 
 @router.post("/houses/{house_id}/cameras", response_model=CameraResponse, status_code=201)
-async def add_camera(house_id: int, data: CreateCamera, session: Session, user: Resident):
-    return await camera_service.create_camera(session, user.id, house_id, data)
+async def add_camera(
+    house_id: int, data: CreateCamera, request: Request, session: Session, user: Resident
+):
+    return await camera_service.create_camera(
+        session, user.id, house_id, data, request.app.state.settings
+    )
 
 
 @router.get("/cameras/{camera_id}/preview", response_model=CameraFrame)
-async def preview(camera_id: int, session: Session, user: Resident):
-    return await camera_service.preview_camera(session, user.id, camera_id, datetime.now(UTC))
+async def preview(camera_id: int, request: Request, session: Session, user: Resident):
+    return await camera_service.preview_camera(
+        session, user.id, camera_id, datetime.now(UTC), request.app.state.settings
+    )
+
+
+@router.get("/cameras/{camera_id}/settings", response_model=CameraSettings)
+async def camera_settings(camera_id: int, request: Request, session: Session, user: Resident):
+    return await camera_service.camera_settings(
+        session, user.id, camera_id, request.app.state.settings
+    )
+
+
+@router.post("/cameras/{camera_id}/settings", response_model=CameraResponse)
+async def update_camera(
+    camera_id: int, data: UpdateCamera, request: Request, session: Session, user: Resident
+):
+    return await camera_service.update_camera(
+        session, user.id, camera_id, data, request.app.state.settings
+    )
+
+
+@router.delete("/cameras/{camera_id}", status_code=204)
+async def delete_camera(camera_id: int, session: Session, user: Resident):
+    await camera_service.delete_owned_camera(session, user.id, camera_id)
+
+
+@router.get("/cameras/{camera_id}/live")
+async def camera_live(camera_id: int, request: Request, session: Session, user: Resident):
+    camera = await camera_service.accessible_camera(session, user.id, camera_id)
+    if not camera.source_config or camera.source_type == "snapshot":
+        raise HTTPException(422, "Эта камера предоставляет только снимки")
+    source = camera_media.decode(camera.source_config, request.app.state.settings)
+    return StreamingResponse(
+        camera_media.live_chunks(source, request.app.state.settings),
+        media_type="multipart/x-mixed-replace; boundary=camera",
+        headers={"X-Accel-Buffering": "no"},
+    )
 
 
 @router.get("/houses/{house_id}/works", response_model=list[WorkResponse])

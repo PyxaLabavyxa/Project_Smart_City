@@ -140,7 +140,27 @@ textarea{resize:vertical;min-height:112px;padding:13px 15px;width:100%;line-heig
 .camera-filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;padding:22px 24px}
 .camera-filters label{display:grid;gap:8px;min-width:0;font-size:12px;font-weight:600}
 .camera-filters select{width:100%;font-size:12px;font-weight:400}
-.camera-management select{width:150px;min-height:40px;font-size:12px}
+.camera-filters select:disabled{background:#f3f7fa;color:var(--muted);cursor:not-allowed;box-shadow:none}
+.camera-menu-trigger{display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%;min-width:118px;min-height:42px;padding:10px 12px;border:1px solid #cbdde9;border-radius:10px;background:#f7fbfe;color:#254c70;font-size:12px;font-weight:500}
+.camera-menu-trigger:hover,.camera-menu-trigger[aria-expanded="true"]{background:#edf5fc;border-color:#87b7d8}
+.camera-menu-trigger .icon{width:16px;height:16px;flex-shrink:0}
+.camera-action-menu{position:fixed;inset:auto;margin:0;width:208px;padding:6px;background:#fff;border:1px solid #dbe6ef;border-radius:13px;box-shadow:0 10px 30px #173b5720;color:var(--ink)}
+.camera-action-menu:popover-open{display:grid;gap:3px}
+.camera-action-menu button{display:flex;align-items:center;gap:10px;width:100%;min-height:43px;padding:10px;border:0;border-radius:8px;background:transparent;color:#315273;text-align:left;font-size:12px}
+.camera-action-menu button:hover,.camera-action-menu button:focus-visible{background:#edf5fc}
+.camera-action-menu .camera-delete{color:#b1443f}
+.camera-action-menu .icon{width:16px;height:16px}
+.badge.camera-pending{background:#e5efff;color:#1557e9}
+.badge.camera-approved{background:#e9f6ee;color:#287255}
+.badge.camera-rejected{background:#fff0ed;color:#ad463e}
+#cameras-section table{table-layout:fixed}
+#cameras-section th:nth-child(1){width:20%}#cameras-section th:nth-child(2){width:22%}#cameras-section th:nth-child(3){width:18%}#cameras-section th:nth-child(4){width:14%}#cameras-section th:nth-child(5){width:12%}#cameras-section th:nth-child(6){width:14%}
+.message-form .chat-photo-label{position:relative;display:inline-flex;align-items:center;gap:9px;min-height:42px;margin:12px 0 6px;padding:10px 14px;background:#f4f9fe;border:1px solid #cbdde9;border-radius:10px;color:#315a80;cursor:pointer;font-size:12px;font-weight:500}
+.chat-photo-label .icon{width:18px;height:18px;flex-shrink:0}
+.chat-photo-label:hover{background:#eaf4fc;border-color:#91b8d5}
+.chat-photo-label:focus-within{outline:3px solid #8fc8f4;outline-offset:3px}
+.chat-photo-label:has(input:disabled){opacity:.55;cursor:wait}
+#chat-photo-hint{display:block;color:var(--muted);font-size:11px;line-height:1.6}
 #cameras-body td{overflow-wrap:anywhere}
 .search-field{display:flex;align-items:center;position:relative;flex:1;min-width:150px}
 .search-field [data-icon]{position:absolute;left:13px;color:#637e9f}
@@ -266,3 +286,30 @@ dialog::backdrop{background:#152a486b;backdrop-filter:blur(3px)}
   .detail-main{padding:22px 18px}.detail-top{padding:13px 17px}.detail-main h2{font-size:23px}.detail-meta{font-size:10px;gap:7px}.status-form{flex-wrap:wrap}.status-form select{min-width:150px}.status-form .primary{flex:1;font-size:11px}.photos{grid-template-columns:repeat(3,1fr)}.timeline li{align-items:flex-start}.message-top{flex-wrap:wrap;gap:3px 12px}.conversation{padding:10px;max-height:370px}.bubble{max-width:95%;font-size:12px}.bubble .message-top{font-size:9px}.composer-footer .primary{padding:10px 12px;font-size:11px}.toast{font-size:11px;text-align:center;width:max-content;bottom:18px}.detail-main textarea{font-size:16px}.contacts-panel{padding:18px}.contact-row{grid-template-columns:minmax(0,1fr);padding:16px}.contact-value,.contact-note{grid-column:auto}.contact-row input,.contact-row select,.contacts-panel>select{font-size:16px}#registrations-body tr{grid-template-columns:1fr;gap:10px;padding:18px}#registrations-body td{grid-column:1;overflow-wrap:anywhere}#registrations-body td[data-label]::before{content:attr(data-label);display:block;color:var(--muted);font-size:9px;margin-bottom:3px}#registrations-body td:last-child{display:flex;gap:8px;align-items:center;flex-wrap:wrap}#registrations-body .danger{min-height:38px}
 }
 @media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}.login-preview{transform:none}}
+
+/* Shared confirmation surface; native dialog keeps focus and the background inert. */
+body:has(dialog[open]){overflow:hidden}
+.confirmation-dialog{width:min(440px,calc(100% - 32px));max-height:calc(100dvh - 48px);margin:auto;padding:26px;border:1px solid var(--line);border-radius:20px;background:var(--surface);box-shadow:0 24px 80px #0a23402e;overflow-y:auto;overscroll-behavior:contain}
+.confirmation-dialog::backdrop{background:rgb(8 20 36 / 44%)}
+.confirmation-heading{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px}
+.confirmation-heading .icon-button{margin:-8px -8px 0 0;font-size:24px}
+.confirmation-symbol{display:grid;place-items:center;width:48px;height:48px;border-radius:14px;background:var(--blue-soft);color:var(--teal)}
+.confirmation-dialog[data-destructive="true"] .confirmation-symbol{background:#fff0ed;color:#b33129}
+.confirmation-dialog h2{margin:0 0 10px;font-size:23px;line-height:1.25;letter-spacing:-.5px}
+#confirmation-description{color:var(--muted);line-height:1.65;overflow-wrap:anywhere}
+.confirmation-actions{display:flex;gap:10px;margin-top:24px}
+.confirmation-actions button{flex:1;min-height:46px;border-radius:12px;font-size:14px}
+.confirmation-dialog[data-destructive="true"] [data-confirm]{background:#b33129;border-color:#b33129;color:#fff}
+.confirmation-reason{margin-top:20px;font-size:13px;font-weight:600}
+.confirmation-reason textarea{display:block;margin:8px 0 5px;font-weight:400;font-size:16px}
+.camera-explanation{font-size:12px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--muted)}
+@media(hover:hover){.confirmation-dialog[data-destructive="true"] [data-confirm]:hover{background:#972a24;border-color:#972a24}}
+@media(max-width:360px){.confirmation-dialog{padding:20px}.confirmation-actions{flex-direction:column-reverse}}
+:root{--ease-out:cubic-bezier(.23,1,.32,1)}
+@media(prefers-reduced-motion:no-preference){
+  :root:not([data-motion-input="keyboard"]) .confirmation-dialog[open],:root:not([data-motion-input="keyboard"]) .confirmation-dialog[open]::backdrop{animation:confirmation-appear 200ms var(--ease-out)}
+  :root:not([data-motion-input="keyboard"]) button:not(:disabled){transition:scale 120ms var(--ease-out),background-color 160ms ease,border-color 160ms ease,color 160ms ease}
+  :root:not([data-motion-input="keyboard"]) button:active:not(:disabled){scale:.98}
+}
+@keyframes confirmation-appear{from{opacity:0}to{opacity:1}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}

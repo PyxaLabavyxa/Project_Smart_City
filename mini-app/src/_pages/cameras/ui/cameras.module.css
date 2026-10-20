@@ -14,8 +14,17 @@
 .maintenance { background:var(--color-warning-bg); color:var(--color-warning); }
 .unavailable { background:var(--color-danger-bg); color:var(--color-danger); }
 .detail { display:grid; grid-template-columns:minmax(0,1.7fr) minmax(0,1fr); gap:40px; align-items:start; }
-.previewSection { min-width:0; }
+.previewSection { position:relative; min-width:0; }
+.checking { background:var(--color-neutral); color:var(--color-muted); }
+.previewAvailability { margin-top:12px; }
 .preview { margin:0; }
+.playerSurface { position:relative; }
+.playbackControl { position:absolute; display:grid; place-items:center; border:1px solid rgb(255 255 255 / 35%); background:rgb(8 20 30 / 78%); color:#fff; cursor:pointer; touch-action:manipulation; }
+.playbackControl:hover { background:rgb(8 20 30 / 95%); }
+.playbackControl:focus-visible { outline:3px solid var(--color-action); outline-offset:4px; }
+.playControl { left:50%; top:50%; transform:translate(-50%,-50%); width:76px; height:54px; border-radius:15px; }
+.playControl svg { margin-left:-3px; }
+.pauseControl { right:12px; bottom:12px; width:44px; height:44px; border-radius:12px; }
 .preview img { display:block; width:100%; height:auto; border-radius:var(--radius-card); }
 .preview figcaption { margin-top:12px; font-size:var(--font-meta); color:var(--color-muted); }
 .previewPlaceholder { position:relative; display:grid; place-items:center; width:100%; min-width:0; min-height:260px; padding:24px; border-radius:var(--radius-card); overflow:hidden; background:var(--color-neutral); text-align:center; }
@@ -71,14 +80,14 @@
 .previewFooter .retry { width:100%; min-height:calc(54 * var(--u)); border-radius:var(--radius-button); font-size:calc(19 * var(--u)); }
 .about { padding:0; background:transparent; }
 .about > a { width:100%; min-height:calc(54 * var(--u)); margin-top:0; gap:14px; border-radius:var(--radius-button); font-size:calc(19 * var(--u)); color:var(--color-muted); border-color:#a4bedb; }
-.toolbar { display:flex; gap:10px; margin-bottom:18px; }
+.toolbar { display:flex; gap:8px; margin-bottom:18px; }
 .addButton { composes:primary from "@/shared/styles/controls.module.css"; min-height:max(48px,calc(54 * var(--u))); font-size:clamp(15px,calc(19 * var(--u)),19px); font-weight:400; }
-.toolbar .addButton { flex:1; padding:12px; min-width:0; }
-.filterToggle { composes:filterTrigger from "@/shared/styles/controls.module.css"; flex-shrink:0; width:clamp(106px,calc(128 * var(--u)),128px); min-height:max(48px,calc(54 * var(--u))); font-size:clamp(14px,calc(17 * var(--u)),17px); }
+.toolbar .addButton { flex:1; padding:10px 6px; min-width:0; font-size:clamp(13px,calc(16 * var(--u)),16px); white-space:nowrap; }
+.filterToggle { composes:filterTrigger from "@/shared/styles/controls.module.css"; position:relative; flex-shrink:0; width:clamp(112px,calc(128 * var(--u)),128px); min-height:max(48px,calc(54 * var(--u))); padding:10px 12px; gap:8px; font-size:clamp(14px,calc(17 * var(--u)),17px); white-space:nowrap; }
 .filterToggle svg { flex-shrink:0; }
-.results { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; }
-.results p { margin:0; }
-.refreshList { composes:button from "@/shared/styles/controls.module.css"; padding:12px; }
+.filterCount { position:absolute; top:-6px; right:-3px; display:grid; place-items:center; min-width:18px; height:18px; padding-inline:4px; border-radius:50%; color:var(--color-on-action); background:var(--color-action); font-size:11px; }
+.refreshList { composes:filterTrigger from "@/shared/styles/controls.module.css"; flex-shrink:0; width:max(44px,calc(48 * var(--u))); min-height:max(48px,calc(54 * var(--u))); padding:10px; }
+.refreshList:disabled { opacity:.55; cursor:not-allowed; }
 .filters { min-width:0; margin:0 0 20px; padding:14px; border:1px solid var(--color-line); border-radius:var(--radius-card); }
 .filters legend { padding-inline:6px; font-size:15px; }
 .radio input { width:20px; height:20px; accent-color:var(--color-primary); flex-shrink:0; }
@@ -105,5 +114,35 @@
 .radio small { color:var(--color-muted); font-size:14px; line-height:1.4; }
 .error { color:var(--color-danger); font-size:14px; overflow-wrap:anywhere; }
 .cancel { display:grid; place-items:center; min-height:44px; color:var(--color-muted); }
+.deleteCamera { min-height:48px; padding:12px; border:1px solid var(--color-danger); border-radius:var(--radius-button); background:transparent; color:var(--color-danger); font:inherit; cursor:pointer; }
+.deleteCamera:disabled { opacity:.6; cursor:wait; }
+.cameraSettings { display:flex; align-items:center; justify-content:center; gap:8px; min-height:44px; margin-bottom:14px; color:var(--color-action); }
 .accessNotice { padding:14px; margin-bottom:18px; border:1px solid var(--color-line); border-radius:var(--radius-card); overflow-wrap:anywhere; }
 .accessNotice p { font-size:15px; line-height:1.45; color:var(--color-muted); margin:8px 0 0; }
+.connectionOptions{border:1px solid var(--color-line);border-radius:var(--radius-input);padding:12px}
+.connectionOptions summary{cursor:pointer;font-size:14px;min-height:24px}
+.connectionOptions[open] summary{margin-bottom:14px}
+.connectionOptions label+label{margin-top:12px}
+.form legend > svg { vertical-align:middle; margin-right:9px; color:var(--color-muted); }
+.connectionOptions summary { display:flex; align-items:center; gap:9px; list-style:none; }
+.connectionOptions summary::-webkit-details-marker { display:none; }
+.connectionOptions summary > span { flex:1; }
+.connectionOptions summary > svg:last-child { rotate:90deg; }
+.connectionOptions[open] summary > svg:last-child { rotate:-90deg; }
+.about > .cameraSettings { margin-top:12px; margin-bottom:0; }
+.formActions { display:grid; gap:10px; }
+.settingsForm { gap:24px; }
+.settingsForm fieldset { padding-bottom:24px; border-bottom:1px solid var(--color-line); gap:14px; }
+.settingsForm legend { font-size:18px; margin-bottom:18px; }
+.settingsForm label:not(.radio) { gap:8px; font-size:14px; }
+.settingsForm :is(input,textarea,select) { font-size:16px; min-width:0; }
+.settingsForm :is(input:not([type="radio"]),select) { min-height:48px; }
+.settingsForm textarea { resize:vertical; min-height:88px; }
+.settingsForm .connectionOptions { padding:12px 14px; background:var(--color-surface); }
+.settingsForm .radio { padding:14px; align-items:center; border-radius:var(--radius-input); }
+.settingsForm .radio input { margin:0; accent-color:var(--color-action); }
+.settingsForm .radio strong { font-size:15px; }
+.settingsForm .radio small { font-size:13px; }
+.settingsForm .formActions :is(button,a) { min-height:48px; border-radius:var(--radius-button); font-size:16px; }
+.settingsForm .deleteCamera { background:var(--color-surface); border-color:color-mix(in srgb,var(--color-danger) 35%,var(--color-line)); }
+@media (hover:hover) and (pointer:fine) { .settingsForm .deleteCamera:hover { background:color-mix(in srgb,var(--color-danger) 7%,var(--color-surface)); } }

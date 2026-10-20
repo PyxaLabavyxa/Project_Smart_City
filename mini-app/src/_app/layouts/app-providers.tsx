@@ -12,12 +12,15 @@ import { ApiContext, useApi } from "@/shared/api/context";
 import { createApiClient, endpoints, maxLaunchData } from "@/shared/api/client";
 import { readPages } from "@/shared/api/pagination";
 import { useRemote } from "@/shared/api/use-remote";
+import { RefreshButton } from "@/shared/ui/refresh-button";
 import { RegistrationScreen } from "@/features/registration/registration";
 import { MiniAppPresence } from "@/features/mini-app-presence";
 import { LaunchNavigation } from "@/features/launch-navigation";
 import { OnboardingProvider } from "@/features/onboarding/onboarding";
 import { ThemeSync } from "@/features/settings/theme-sync";
 import { StartupScreen } from "@/shared/ui/startup-screen";
+import { ConfirmationProvider } from "@/shared/ui/confirmation";
+import { InteractionMode } from "@/shared/ui/interaction-mode";
 
 export function AppProviders({ children }: { children: ReactNode }) {
   const localEnabled = process.env.NEXT_PUBLIC_ENABLE_LOCAL_LOGIN === "true";
@@ -37,6 +40,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
   }
   return <>
     <ThemeSync />
+    <InteractionMode />
     {localEnabled && process.env.NEXT_PUBLIC_SHOW_LOCAL_LOGIN_CONTROLS === "true" && <aside className="local-login-bar" aria-label="Режим входа">
       <span>{mode === "local" ? "Локальный вход" : "Вход через MAX"}</span>
       <label>Режим <select value={mode} disabled={switching} onChange={event => void switchMode(event.target.value === "local" ? "local" : "max")}>
@@ -44,7 +48,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
       </select></label>
       {switchError && <p role="alert">{switchError}</p>}
     </aside>}
-    <AuthenticatedApp key={mode} mode={mode}>{children}</AuthenticatedApp>
+    <ConfirmationProvider key={mode}><AuthenticatedApp mode={mode}>{children}</AuthenticatedApp></ConfirmationProvider>
   </>;
 }
 
@@ -57,7 +61,7 @@ function AuthenticatedApp({ children, mode }: { children: ReactNode; mode: "loca
     return api;
   }, [mode]);
   const state = useRemote(load);
-  if (!state.data) return <StartupScreen error={state.error} actions={state.error ? <button type="button" onClick={state.reload}>Повторить</button> : undefined} />;
+  if (!state.data) return <StartupScreen error={state.error} actions={state.error ? <RefreshButton onRefresh={state.reload} loading={state.loading}>Повторить</RefreshButton> : undefined} />;
   return <ApiContext value={state.data}>{mode === "max" && <LaunchNavigation />}<MiniAppPresence /><ResidentProfileView>{children}</ResidentProfileView></ApiContext>;
 }
 
@@ -65,8 +69,8 @@ function ResidentProfileView({ children }: { children: ReactNode }) {
   const api = useApi();
   const load = useCallback(async (signal: AbortSignal) => parseProfile(await api(endpoints.me, { signal })), [api]);
   const state = useRemote(load);
-  if (!state.data) return <StartupScreen error={state.error} actions={state.error ? <button type="button" onClick={state.reload}>Повторить</button> : undefined} />;
-  return <>{state.error && <div role="alert"><p>{state.error}</p><button onClick={state.reload}>Обновить квартиры</button></div>}{state.data.apartments.length ? <ResidentHomes profile={state.data} refreshHomes={state.reload}>{children}</ResidentHomes> : <RegistrationScreen onComplete={state.reload} />}</>;
+  if (!state.data) return <StartupScreen error={state.error} actions={state.error ? <RefreshButton onRefresh={state.reload} loading={state.loading}>Повторить</RefreshButton> : undefined} />;
+  return <>{state.error && <div role="alert"><p>{state.error}</p><RefreshButton onRefresh={state.reload} loading={state.loading}>Обновить квартиры</RefreshButton></div>}{state.data.apartments.length ? <ResidentHomes profile={state.data} refreshHomes={state.reload}>{children}</ResidentHomes> : <RegistrationScreen onComplete={state.reload} />}</>;
 }
 
 function ResidentHomes({ profile, children, refreshHomes }: { profile: ResidentProfile; children: ReactNode; refreshHomes: () => void }) {
@@ -86,7 +90,7 @@ function ConnectedHouse({ userId, house, choices, choose, children, refreshHomes
   const issueGateway = useMemo(() => createIssueGateway(api, currentHouse), [api, currentHouse]);
   const messageGateway = useMemo(() => createMessageGateway(api, currentHouse), [api, currentHouse]);
   const utilitiesGateway = useMemo(() => createUtilitiesGateway(api, house.residentApartmentId!), [api, house.residentApartmentId]);
-  if (!state.data) return <StartupScreen error={state.error} actions={state.error ? <button type="button" onClick={state.reload}>Повторить</button> : undefined} />;
+  if (!state.data) return <StartupScreen error={state.error} actions={state.error ? <RefreshButton onRefresh={state.reload} loading={state.loading}>Повторить</RefreshButton> : undefined} />;
   return <HouseSelectionProvider house={currentHouse} choices={choices} choose={choose} refreshHomes={refreshHomes}>
     <IssueProvider gateway={issueGateway}><MessageProvider gateway={messageGateway}>
       <UtilitiesProvider gateway={utilitiesGateway}><OnboardingProvider userId={userId}>{children}</OnboardingProvider></UtilitiesProvider>

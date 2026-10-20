@@ -1,0 +1,14 @@
+.dialog { width:min(420px,calc(100% - 32px)); max-height:calc(100dvh - 48px); margin:auto; padding:24px; overflow-y:auto; border:1px solid var(--color-line); border-radius:var(--radius-card); background:var(--color-surface); color:var(--color-ink); box-shadow:0 20px 70px rgb(0 0 0 / 18%); }
+.dialog::backdrop { background:rgb(8 20 36 / 44%); }
+.heading { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:18px; }
+.symbol { display:grid; place-items:center; width:48px; height:48px; border-radius:14px; background:var(--color-soft); color:var(--color-action); }
+.symbol[data-destructive] { background:var(--color-danger-bg); color:var(--color-danger); }
+.close { display:grid; place-items:center; width:40px; height:40px; margin:-8px -8px 0 0; border:0; border-radius:var(--radius-button); background:transparent; color:var(--color-muted); }
+.dialog h2 { margin:0 0 10px; font-size:22px; font-weight:650; line-height:1.25; letter-spacing:-.4px; }
+.dialog p { margin:0; color:var(--color-muted); font-size:15px; line-height:1.6; overflow-wrap:anywhere; }
+.actions { display:flex; gap:10px; margin-top:24px; }
+.button { composes:button from "@/shared/styles/controls.module.css"; flex:1; min-height:46px; padding:11px 14px; font-size:15px; }
+.actions .confirm { background:var(--color-action); color:var(--color-on-action); }
+.actions .confirm[data-destructive] { background:#b33129; color:#fff; }
+@media(hover:hover) { .close:hover { background:var(--color-neutral); } .actions .confirm:hover:not(:disabled) { background:color-mix(in srgb,var(--color-action) 88%,#000); color:var(--color-on-action); } .actions .confirm[data-destructive]:hover:not(:disabled) { background:#972a24; color:#fff; } }
+@media(max-width:360px) { .dialog { padding:20px; } .actions { flex-direction:column-reverse; } }

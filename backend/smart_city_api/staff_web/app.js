@@ -26,6 +26,8 @@ const iconPaths = {
   logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M10 12h11m-4-4 4 4-4 4"/>',
   shield: '<path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6zM8 12l3 3 5-6"/>',
   plus: '<path d="M12 5v14M5 12h14"/>',
+  chevron: '<path d="m6 9 6 6 6-6"/>',
+  photo: '<rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8" cy="8" r="2"/><path d="m21 15-5-5L5 21"/>',
   close: '<path d="m6 6 12 12M18 6 6 18"/>',
   bulb: '<path d="M9 18h6M10 22h4M9 18v-2a6 6 0 1 1 6 0v2"/>',
   water: '<path d="M12 3S5 10 5 14a7 7 0 0 0 14 0c0-4-7-11-7-11zM8 14a4 4 0 0 0 4 4"/>',
@@ -67,6 +69,8 @@ function toast(text) {
   toastTimer = setTimeout(() => { $("toast").hidden = true; }, 5000);
 }
 function showLogin() {
+  confirmationDialog.close("cancel");
+  $("camera-action-menu").hidePopover();
   window.resetChatManagement?.();
   state.profile = null; state.detail = null; state.listRequest++; state.detailRequest++;
   $("issue-dialog").close(); $("photo-dialog").close();
@@ -183,7 +187,7 @@ async function openDetail(id) {
       <div class="detail-meta"><span>${esc(detail.author)}</span><span>·</span><time>${esc(date(detail.created_at))}</time><span class="priority p${detail.priority}">${esc(priorities[detail.priority])} приоритет</span></div>
       <section class="section"><h3>Что произошло</h3><p class="description">${esc(detail.description)}</p>${detail.photos.length ? `<div class="photos">${detail.photos.map((photo, index) => `<button class="photo-thumb" data-photo="${photo.id}" aria-label="Открыть фото ${index + 1}"><img src="${esc(photo.url)}" alt="Фото ${index + 1}" loading="lazy"></button>`).join("")}</div><p class="form-help">Нажмите на фото, чтобы рассмотреть его</p>` : '<p class="form-help">Житель не прикрепил фотографии</p>'}</section>
       <section class="section"><h3>Статус обращения</h3><form id="status-form" class="status-form"><label class="sr-only" for="status-select">Новый статус</label><select id="status-select">${Object.entries(statuses).map(([value, label]) => `<option value="${value}"${value === detail.status ? " selected" : ""}>${label}</option>`).join("")}</select><button class="primary" type="submit">Сохранить статус</button></form><p class="form-help">Автор получит уведомление в боте. Отмечайте обращение решённым после устранения проблемы.</p><p id="detail-error" class="error detail-error" role="alert" hidden></p><div id="delivery-summary" class="delivery-summary"></div></section>
-      <section class="section"><h3>Чат с жителем</h3><div id="conversation" class="conversation" aria-live="polite"></div><form id="message-form" class="message-form"><label for="message-text">Сообщение жителю</label><textarea id="message-text" maxlength="1500" placeholder="Здравствуйте! Подскажите, пожалуйста, где именно находится неисправность?"></textarea><label class="chat-photo-label">Прикрепить фотографии<input id="message-photos" type="file" accept="image/jpeg,image/png,image/webp" multiple></label><small id="chat-photo-hint">До 10 фото · JPG, PNG, WebP · до 10 МБ каждое</small><div class="composer-footer"><span id="message-count">0 / 1500</span><button class="primary" type="submit">${icon("send")} Отправить в чат</button></div></form><p id="message-error" class="error detail-error" role="alert" hidden></p><p class="form-help">Сообщение появится в чате обращения. Если житель не читает чат, бот уведомит его. Ответ жителя появится здесь автоматически. Показаны последние 200 сообщений.</p></section>
+      <section class="section"><h3>Чат с жителем</h3><div id="conversation" class="conversation" aria-live="polite"></div><form id="message-form" class="message-form"><label for="message-text">Сообщение жителю</label><textarea id="message-text" maxlength="1500" placeholder="Здравствуйте! Подскажите, пожалуйста, где именно находится неисправность?"></textarea><label class="chat-photo-label">${icon("photo")}<span>Прикрепить фотографии</span><input id="message-photos" class="sr-only" type="file" accept="image/jpeg,image/png,image/webp" aria-describedby="chat-photo-hint" multiple></label><small id="chat-photo-hint">До 10 фото · JPG, PNG, WebP · до 10 МБ каждое</small><div class="composer-footer"><span id="message-count">0 / 1500</span><button class="primary" type="submit">${icon("send")} Отправить в чат</button></div></form><p id="message-error" class="error detail-error" role="alert" hidden></p><p class="form-help">Сообщение появится в чате обращения. Если житель не читает чат, бот уведомит его. Ответ жителя появится здесь автоматически. Показаны последние 200 сообщений.</p></section>
       <section class="section"><h3>История статусов</h3><ol id="history" class="timeline"></ol></section>
       <details class="section rejection-section"><summary>${icon("close")} Отклонить обращение</summary><form id="reject-form" class="message-form"><label for="reject-reason">Причина отклонения</label><textarea id="reject-reason" minlength="3" maxlength="1500" required placeholder="Объясните жителю, почему обращение отклонено"></textarea><p class="form-help">Обращение исчезнет из списков. Бот отправит автору указанную причину.</p><button class="danger" type="submit">Отклонить обращение</button></form><p id="reject-error" class="error detail-error" role="alert" hidden></p></details></div>`;
     renderConversation(detail);
@@ -300,7 +304,7 @@ $("detail-content").addEventListener("click", (event) => {
 $("close-photo").addEventListener("click", () => $("photo-dialog").close());
 $("photo-dialog").addEventListener("close", () => $("full-photo").removeAttribute("src"));
 setInterval(async () => {
-  if (!state.profile || document.hidden || state.busy || document.activeElement?.matches("#cameras-body select")) return;
+  if (!state.profile || document.hidden || state.busy || confirmationDialog.open || $("camera-action-menu").matches(":popover-open")) return;
   if (window.location.hash === "#registrations") await loadRegistrations();
   else if (window.location.hash === "#cameras") await loadCameras();
   else if (window.location.hash !== "#contacts") await loadList();
@@ -317,11 +321,24 @@ let registrationPage = 1, registrationTotal = 0, registrationRequest = 0;
 let cameraPage = 1, cameraTotal = 0, cameraRequest = 0;
 function updateCameraLocationOptions() {
   const houses = state.profile.houses.filter(house => !$("camera-house").value || String(house.id) === $("camera-house").value);
+  const zone = $("camera-zone").value;
+  const outdoor = ["courtyard", "parking", "house"].includes(zone);
   for (const [id, property, label, all] of [["camera-entrance", "entrances_count", "Подъезд", "Все подъезды"], ["camera-floor", "floors_count", "Этаж", "Все этажи"]]) {
-    const select = $(id), previous = select.value;
+    const select = $(id), previous = select.disabled ? "" : select.value;
+    if (outdoor) {
+      select.innerHTML = `<option value="">${id === "camera-floor" ? "Нет этажей" : "Нет подъездов"}</option>`;
+      select.disabled = true;
+      continue;
+    }
+    if (zone === "entrance" && id === "camera-floor") {
+      select.innerHTML = '<option value="1">Этаж 1</option>';
+      select.disabled = true;
+      continue;
+    }
     const count = Math.max(0, ...houses.map(house => house[property] || 0));
     select.innerHTML = `<option value="">${all}</option>` + Array.from({ length: count }, (_, index) => `<option value="${index + 1}">${label} ${index + 1}</option>`).join("");
     select.value = Number(previous) >= 1 && Number(previous) <= count ? previous : "";
+    select.disabled = count === 0;
   }
 }
 async function loadCameras() {
@@ -336,18 +353,22 @@ async function loadCameras() {
     if (!state.profile || request !== cameraRequest) return;
     cameraTotal = data.total;
     showError("cameras-error", "");
+    $("camera-action-menu").hidePopover();
     $("cameras-body").innerHTML = data.items.map(camera => {
       const place = camera.place;
       const location = !place ? "Место не указано" : ["house", "courtyard", "parking"].includes(place.zone) ? zones[place.zone] : `Подъезд ${place.entrance} · этаж ${place.floor} · ${zones[place.zone] || place.zone}`;
-      const snapshot = camera.source_url?.startsWith("https://")
+      const snapshot = camera.connection_available
+        ? `<a class="row-meta" href="${apiRoot}/cameras/${Number(camera.id)}/frame" target="_blank" rel="noopener noreferrer">Проверить кадр ↗</a>`
+        : camera.source_url?.startsWith("https://")
         ? `<a class="row-meta" href="${esc(camera.source_url)}" target="_blank" rel="noopener noreferrer">Открыть снимок в новой вкладке ↗</a>`
         : `<span class="row-meta">${camera.source_url?.startsWith("/images/cameras/") ? "Демонстрационная камера" : "Снимок недоступен"}</span>`;
-      const decision = camera.moderation_status === "pending" ? "На модерации" : camera.moderation_status === "approved" ? "Одобрена" : `Отклонена: ${camera.moderation_reason}`;
+      const decision = camera.moderation_status === "pending" ? "На модерации" : camera.moderation_status === "approved" ? "Одобрена" : "Отклонена";
       return `<tr><td><strong>${esc(camera.name)}</strong><span class="row-meta">${esc(camera.owner_name)}</span></td>
         <td data-label="Место">${esc(camera.address)}<span class="row-meta">${esc(location)}</span></td>
         <td data-label="Снимок">${esc(camera.note)}${snapshot}</td>
-        <td data-label="Статус">${esc(decision)}</td>
-        <td data-label="Управление" class="camera-management"><select data-camera="${Number(camera.id)}" aria-label="Управление камерой: ${esc(camera.name)}"><option value="" selected disabled>Выбрать действие</option>${camera.moderation_status === "pending" ? '<option value="approved">Одобрить</option><option value="rejected">Отклонить</option>' : ""}<option value="delete">Удалить</option></select></td></tr>`;
+        <td data-label="Статус"><span class="badge camera-${esc(camera.moderation_status)}"><span class="status-dot"></span>${esc(decision)}</span></td>
+        <td data-label="Пояснение">${camera.moderation_status === "rejected" && camera.moderation_reason ? `<p class="camera-explanation">${esc(camera.moderation_reason)}</p>` : `<span class="muted">—</span>`}</td>
+        <td data-label="Управление" class="camera-management"><button type="button" class="camera-menu-trigger" data-camera="${Number(camera.id)}" data-status="${esc(camera.moderation_status)}" popovertarget="camera-action-menu" aria-expanded="false" aria-label="Действия с камерой: ${esc(camera.name)}">Действия ${icon("chevron")}</button></td></tr>`;
     }).join("");
     $("cameras-empty").hidden = cameraTotal !== 0;
     $("cameras-page").textContent = cameraTotal ? `Страница ${cameraPage} из ${Math.ceil(cameraTotal / cameraPageSize)} · всего камер: ${cameraTotal}` : "Нет камер";
@@ -363,25 +384,53 @@ async function loadCameras() {
 }
 $("refresh-cameras").addEventListener("click", loadCameras);
 for (const id of ["camera-status", "camera-house", "camera-entrance", "camera-floor", "camera-zone"]) $(id).addEventListener("change", () => {
-  if (id === "camera-house") updateCameraLocationOptions();
+  if (id === "camera-house" || id === "camera-zone") updateCameraLocationOptions();
   cameraPage = 1; void loadCameras();
 });
 $("cameras-prev").addEventListener("click", () => { if (cameraPage > 1) { cameraPage--; void loadCameras(); } });
 $("cameras-next").addEventListener("click", () => { if (cameraPage * cameraPageSize < cameraTotal) { cameraPage++; void loadCameras(); } });
-$("cameras-body").addEventListener("change", async event => {
-  const control = event.target.closest("select[data-camera]");
-  if (!control) return;
-  const decision = control.value;
-  control.value = "";
+let cameraMenuControl = null;
+const cameraMenu = $("camera-action-menu");
+$("cameras-body").addEventListener("click", event => {
+  const control = event.target.closest("button[data-camera]");
+  if (!control || state.busy) return;
+  if (cameraMenu.matches(":popover-open") && cameraMenuControl !== control) cameraMenu.hidePopover();
+  cameraMenuControl?.setAttribute("aria-expanded", "false");
+  cameraMenuControl = control;
+  cameraMenu.innerHTML = `${control.dataset.status === "pending" ? `<button data-decision="approved">${icon("check")}Одобрить</button><button data-decision="rejected">${icon("close")}Отклонить</button>` : ""}<button data-decision="delete" class="camera-delete">${icon("trash")}Удалить камеру</button>`;
+  const rect = control.getBoundingClientRect();
+  const height = control.dataset.status === "pending" ? 152 : 56;
+  cameraMenu.style.left = `${Math.max(8, Math.min(rect.right - 208, innerWidth - 216))}px`;
+  cameraMenu.style.top = `${Math.max(8, rect.bottom + height + 8 > innerHeight ? rect.top - height - 6 : rect.bottom + 6)}px`;
+});
+cameraMenu.addEventListener("toggle", event => {
+  cameraMenuControl?.setAttribute("aria-expanded", String(event.newState === "open"));
+});
+window.addEventListener("resize", () => cameraMenu.hidePopover());
+cameraMenu.addEventListener("keydown", event => {
+  if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
+  event.preventDefault();
+  const buttons = [...cameraMenu.querySelectorAll("button")];
+  const index = buttons.indexOf(document.activeElement);
+  buttons[event.key === "Home" ? 0 : event.key === "End" ? buttons.length - 1 : (index + (event.key === "ArrowDown" ? 1 : -1) + buttons.length) % buttons.length]?.focus();
+});
+cameraMenu.addEventListener("click", async event => {
+  const action = event.target.closest("button[data-decision]");
+  const control = cameraMenuControl;
+  if (!action || !control) return;
+  const decision = action.dataset.decision;
+  cameraMenu.hidePopover();
   if (state.busy || !["approved", "rejected", "delete"].includes(decision)) return;
-  if (decision === "delete" && !window.confirm("Удалить камеру? Она исчезнет у владельца и жителей дома.")) return;
+  const profile = state.profile;
+  if (decision === "delete" && !await confirmAction({ title: "Удалить камеру?", description: "Камера исчезнет у владельца и жителей дома. Это действие нельзя отменить.", confirmLabel: "Удалить", destructive: true })) return;
   let reason = "";
   if (decision === "rejected") {
-    const answer = window.prompt("Причина отклонения камеры (до 1000 символов):");
+    const answer = await requestCameraRejection();
     if (answer === null) return;
     reason = answer.trim();
     if (!reason || reason.length > 1000) { showError("cameras-error", "Укажите причину отклонения: от 1 до 1000 символов"); return; }
   }
+  if (state.busy || state.profile !== profile || !control.isConnected) return;
   state.busy = true; control.disabled = true;
   try {
     if (decision === "delete") {
@@ -449,7 +498,9 @@ $("registrations-body").addEventListener("click", async event => {
   const button = event.target.closest("[data-registration], [data-delete-user]");
   if (!button || state.busy) return;
   const deleting = button.hasAttribute("data-delete-user");
-  if (deleting && !window.confirm(`Удалить аккаунт «${button.dataset.resident}»? Все его обращения, переписка, показания и привязки к квартирам будут удалены. Квартиры и данные других жильцов сохранятся. Это действие нельзя отменить.`)) return;
+  const profile = state.profile;
+  if (deleting && !await confirmAction({ title: "Удалить аккаунт?", description: `Аккаунт «${button.dataset.resident}», его обращения, переписка, показания и привязки к квартирам будут удалены. Квартиры и данные других жильцов сохранятся. Это действие нельзя отменить.`, confirmLabel: "Удалить аккаунт", destructive: true })) return;
+  if (state.busy || state.profile !== profile || !button.isConnected) return;
   state.busy = true; button.disabled = true;
   try {
     if (deleting) {
@@ -520,12 +571,14 @@ async function loadContacts() {
     if (request === contactState.request) { contactState.loading = false; contactBusy(false); }
   }
 }
-function canDiscardContacts() {
-  return !contactState.dirty || window.confirm("Есть несохранённые контакты. Отменить изменения и загрузить данные с сервера?");
+async function canDiscardContacts() {
+  return !contactState.dirty || await confirmAction({ title: "Сбросить изменения?", description: "Несохранённые контакты будут заменены данными с сервера.", confirmLabel: "Сбросить", destructive: true });
 }
-$("refresh-contacts").addEventListener("click", () => { if (canDiscardContacts()) void loadContacts(); });
-$("contact-house").addEventListener("change", () => {
-  if (canDiscardContacts()) void loadContacts(); else $("contact-house").value = contactState.house;
+$("refresh-contacts").addEventListener("click", async () => { if (await canDiscardContacts() && state.profile) void loadContacts(); });
+$("contact-house").addEventListener("change", async () => {
+  const nextHouse = $("contact-house").value;
+  $("contact-house").value = contactState.house;
+  if (await canDiscardContacts() && state.profile) { $("contact-house").value = nextHouse; void loadContacts(); }
 });
 $("contact-rows").addEventListener("input", () => { contactState.dirty = true; $("contacts-status").textContent = "Есть несохранённые изменения."; });
 $("contact-rows").addEventListener("change", event => {

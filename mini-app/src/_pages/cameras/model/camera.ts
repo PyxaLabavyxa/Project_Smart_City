@@ -6,6 +6,7 @@ export type Camera = {
   mine: boolean; visibility: "private" | "public";
   moderationStatus: "pending" | "approved" | "rejected";
   moderationReason: string | null;
+  liveAvailable?: boolean;
   place?: HouseLocation;
 };
 export const cameraVisibilityLabel = (camera: Camera) => camera.visibility === "private" ? "Личная камера"

@@ -34,7 +34,7 @@ export function ReportIssueLink() {
       setPlace({ houseId: house.id, entrance: selected.entrance, floor: selected.floor, zone: "corridor" });
       if (!dialog.current?.open) dialog.current?.showModal();
     }}><Icon name="plus" />Создать обращение</button>
-    {portal && createPortal(<dialog ref={dialog} className={styles.sheet} aria-labelledby="create-issue-title" onClick={event => {
+    {portal && createPortal(<dialog ref={dialog} className={styles.sheet} data-tour-preview={activeTarget === "issue-location" || undefined} aria-labelledby="create-issue-title" onClick={event => {
       if (event.target !== event.currentTarget) return;
       const r = event.currentTarget.getBoundingClientRect();
       if (event.clientX < r.left || event.clientX > r.right || event.clientY < r.top || event.clientY > r.bottom) dialog.current?.close();

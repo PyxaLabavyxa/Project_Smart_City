@@ -325,6 +325,8 @@ class HouseCamera(Base):
     status: Mapped[str] = mapped_column(String(20))
     note: Mapped[str] = mapped_column(Text)
     preview_url: Mapped[str | None] = mapped_column(String(2000))
+    source_config: Mapped[str | None] = mapped_column(Text)
+    source_type: Mapped[str] = mapped_column(String(20), default="snapshot", server_default="snapshot")
     captured_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     owner_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))

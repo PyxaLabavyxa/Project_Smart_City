@@ -1,3 +1,4 @@
+from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
@@ -6,11 +7,18 @@ from app.database.models import House, HouseCamera
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from smart_city_api.services import camera_media
 from tests.test_api import headers
 from tests.test_staff import ROOT, login
 
 pytest_plugins = ["tests.test_staff"]
 CAMERAS = "/api/v1/houses/1/cameras"
+
+
+@pytest.fixture(autouse=True)
+def camera_frames(monkeypatch, api, tmp_path):
+    api[0].app.state.settings.media_root = tmp_path
+    monkeypatch.setattr(camera_media, "frame", AsyncMock(return_value=b"\xff\xd8frame\xff\xd9"))
 
 
 def body(**changes):
@@ -48,7 +56,7 @@ def test_personal_camera_is_owner_only_in_list_and_preview(api):
     assert [c["id"] for c in client.get(CAMERAS, headers=headers(102)).json()] == ["1"]
     frame = client.get(f"/api/v1/cameras/{camera['id']}/preview", headers=headers())
     assert frame.status_code == 200
-    assert frame.json()["src"] == "https://camera.example/snapshot.jpg?token=test"
+    assert frame.json()["src"].startswith("data:image/jpeg;base64,")
     assert frame.headers["cache-control"] == "no-store"
     assert client.get(f"/api/v1/cameras/{camera['id']}/preview").status_code == 401
     assert client.post(CAMERAS, json=body()).status_code == 401
@@ -73,7 +81,6 @@ def test_creation_retry_preserves_one_camera_and_rejects_changed_payload(api):
 @pytest.mark.parametrize(
     "url",
     [
-        "http://camera.example/frame.jpg",
         "rtsp://camera.example/live",
         "javascript:alert(1)",
         "/images/cameras/yard-1.png",
@@ -148,7 +155,7 @@ def test_public_camera_requires_scoped_staff_approval_and_csrf(staff_api):
     csrf = login(client)
     queue = client.get(ROOT + "/cameras").json()
     assert queue["total"] == 1 and queue["items"][0]["id"] == public["id"]
-    assert queue["items"][0]["source_url"].startswith("https://camera.example/")
+    assert queue["items"][0]["source_url"] is None
     assert (
         client.post(
             ROOT + f"/cameras/{private['id']}/moderate", headers=csrf, json={"decision": "approved"}
