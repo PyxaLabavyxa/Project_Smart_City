@@ -1,9 +1,7 @@
-import re
 from datetime import UTC, datetime
-from urllib.parse import urlsplit
 
-from app.database.models import ApartmentMessage, HouseCamera, HouseWork
-from fastapi import APIRouter, HTTPException
+from app.database.models import ApartmentMessage, HouseWork
+from fastapi import APIRouter
 from sqlalchemy import or_, select
 
 from smart_city_api.api.dependencies import Resident, Session
@@ -18,6 +16,8 @@ from smart_city_api.schemas.app import (
     SendMessage,
     WorkResponse,
 )
+from smart_city_api.schemas.cameras import CreateCamera
+from smart_city_api.services import cameras as camera_service
 from smart_city_api.services.access import require_apartment, require_house
 from smart_city_api.services.messages import message_response, send_message
 from smart_city_api.services.utilities import load_account, save_reading
@@ -67,37 +67,17 @@ async def reading(meter_id: int, data: ReadingInput, session: Session, user: Res
 
 @router.get("/houses/{house_id}/cameras", response_model=list[CameraResponse])
 async def cameras(house_id: int, session: Session, user: Resident):
-    await require_house(session, user.id, house_id)
-    rows = (
-        await session.scalars(
-            select(HouseCamera)
-            .where(
-                HouseCamera.house_id == house_id,
-            )
-            .order_by(HouseCamera.id)
-        )
-    ).all()
-    return [CameraResponse(id=str(c.id), name=c.name, status=c.status, note=c.note) for c in rows]
+    return await camera_service.list_cameras(session, user.id, house_id)
+
+
+@router.post("/houses/{house_id}/cameras", response_model=CameraResponse, status_code=201)
+async def add_camera(house_id: int, data: CreateCamera, session: Session, user: Resident):
+    return await camera_service.create_camera(session, user.id, house_id, data)
 
 
 @router.get("/cameras/{camera_id}/preview", response_model=CameraFrame)
 async def preview(camera_id: int, session: Session, user: Resident):
-    camera = await session.get(HouseCamera, camera_id)
-    if camera is None:
-        raise HTTPException(404, "Камера не найдена")
-    await require_house(session, user.id, camera.house_id)
-    if camera.status != "online" or not camera.preview_url or not camera.captured_at:
-        raise HTTPException(503, "Изображение камеры пока недоступно")
-    if re.fullmatch(r"/images/cameras/(entrance-[12]|yard)-1\.png", camera.preview_url):
-        now = datetime.now(UTC)
-        frame = int(now.timestamp() // 5) % 2 + 1
-        return CameraFrame(
-            src=camera.preview_url.replace("-1.png", f"-{frame}.png"), capturedAt=now
-        )
-    url = urlsplit(camera.preview_url)
-    if url.scheme != "https" or not url.hostname or url.username or url.password:
-        raise HTTPException(503, "Изображение камеры пока недоступно")
-    return CameraFrame(src=camera.preview_url, capturedAt=camera.captured_at)
+    return await camera_service.preview_camera(session, user.id, camera_id, datetime.now(UTC))
 
 
 @router.get("/houses/{house_id}/works", response_model=list[WorkResponse])

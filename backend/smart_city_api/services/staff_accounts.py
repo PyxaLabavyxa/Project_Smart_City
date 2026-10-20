@@ -4,6 +4,7 @@ import logging
 from app.database.models import (
     Apartment,
     ApartmentMessage,
+    HouseCamera,
     Issue,
     IssueEvent,
     IssueMessage,
@@ -56,6 +57,9 @@ async def delete_registered_user(
         .join(Apartment)
         .where(RegistrationRequest.user_id == uid, ~Apartment.house_id.in_(managed)),
         select(Issue.id).where(Issue.user_id == uid, ~Issue.house_id.in_(managed)),
+        select(HouseCamera.id).where(
+            HouseCamera.owner_id == uid, ~HouseCamera.house_id.in_(managed)
+        ),
         select(ApartmentMessage.id)
         .join(Apartment, Apartment.id == ApartmentMessage.sender_id)
         .where(ApartmentMessage.user_id == uid, ~Apartment.house_id.in_(managed)),
@@ -113,6 +117,7 @@ async def delete_registered_user(
         delete(MiniAppPresence).where(MiniAppPresence.user_id == uid),
         delete(RegistrationRequest).where(RegistrationRequest.user_id == uid),
         delete(UserApartment).where(UserApartment.user_id == uid),
+        delete(HouseCamera).where(HouseCamera.owner_id == uid),
         delete(User).where(User.id == uid),
     ]
     for operation in operations:

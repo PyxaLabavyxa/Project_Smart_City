@@ -693,6 +693,39 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+    post:
+      tags:
+      - services
+      summary: Add Camera
+      operationId: add_camera_api_v1_houses__house_id__cameras_post
+      security:
+      - MAXLaunchData: []
+      parameters:
+      - name: house_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: House Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCamera'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CameraResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /api/v1/cameras/{camera_id}/preview:
     get:
       tags:
@@ -746,6 +779,154 @@ paths:
                 items:
                   $ref: '#/components/schemas/WorkResponse'
                 title: Response Works Api V1 Houses  House Id  Works Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/staff/cameras:
+    get:
+      tags:
+      - Staff
+      summary: Cameras For Moderation
+      operationId: cameras_for_moderation_api_v1_staff_cameras_get
+      security:
+      - StaffSession: []
+      parameters:
+      - name: status
+        in: query
+        required: false
+        schema:
+          enum:
+          - all
+          - pending
+          - approved
+          - rejected
+          type: string
+          default: pending
+          title: Status
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 100000
+          minimum: 1
+          default: 1
+          title: Page
+      - name: page_size
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 100
+          minimum: 1
+          default: 5
+          title: Page Size
+      - name: house_id
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: integer
+            exclusiveMinimum: 0
+          - type: 'null'
+          title: House Id
+      - name: entrance
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: integer
+            maximum: 100
+            minimum: 1
+          - type: 'null'
+          title: Entrance
+      - name: floor
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: integer
+            maximum: 200
+            minimum: 1
+          - type: 'null'
+          title: Floor
+      - name: zone
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            maxLength: 20
+          - type: 'null'
+          title: Zone
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffCameraPage'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/staff/cameras/{camera_id}/moderate:
+    post:
+      tags:
+      - Staff
+      summary: Review Camera
+      operationId: review_camera_api_v1_staff_cameras__camera_id__moderate_post
+      security:
+      - StaffSession: []
+      parameters:
+      - name: camera_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Camera Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModerateCamera'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CameraResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/staff/cameras/{camera_id}:
+    delete:
+      tags:
+      - Staff
+      summary: Remove Camera
+      operationId: remove_camera_api_v1_staff_cameras__camera_id__delete
+      security:
+      - StaffSession: []
+      parameters:
+      - name: camera_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Camera Id
+      responses:
+        '204':
+          description: Successful Response
         '422':
           description: Validation Error
           content:
@@ -1380,6 +1561,34 @@ components:
         note:
           type: string
           title: Note
+        mine:
+          type: boolean
+          title: Mine
+          default: false
+        visibility:
+          type: string
+          enum:
+          - private
+          - public
+          title: Visibility
+          default: public
+        moderation_status:
+          type: string
+          enum:
+          - pending
+          - approved
+          - rejected
+          title: Moderation Status
+          default: approved
+        moderation_reason:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Moderation Reason
+        place:
+          anyOf:
+          - $ref: '#/components/schemas/Location'
+          - type: 'null'
       type: object
       required:
       - id
@@ -1468,6 +1677,41 @@ components:
       - company_name
       - items
       title: ContactsOutput
+    CreateCamera:
+      properties:
+        name:
+          type: string
+          maxLength: 200
+          minLength: 1
+          title: Name
+        note:
+          type: string
+          maxLength: 1000
+          title: Note
+          default: ''
+        source_url:
+          type: string
+          maxLength: 2000
+          minLength: 1
+          title: Source Url
+        is_public:
+          type: boolean
+          title: Is Public
+          default: false
+        place:
+          $ref: '#/components/schemas/Location'
+        request_id:
+          type: string
+          format: uuid
+          title: Request Id
+      additionalProperties: false
+      type: object
+      required:
+      - name
+      - source_url
+      - place
+      - request_id
+      title: CreateCamera
     CreateIssue:
       properties:
         title:
@@ -1580,6 +1824,16 @@ components:
         address:
           type: string
           title: Address
+        entrances_count:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Entrances Count
+        floors_count:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Floors Count
       type: object
       required:
       - id
@@ -2179,6 +2433,24 @@ components:
       - previous
       - current
       title: MeterResponse
+    ModerateCamera:
+      properties:
+        decision:
+          type: string
+          enum:
+          - approved
+          - rejected
+          title: Decision
+        reason:
+          type: string
+          maxLength: 1000
+          title: Reason
+          default: ''
+      additionalProperties: false
+      type: object
+      required:
+      - decision
+      title: ModerateCamera
     NotificationPreferences:
       properties:
         personal_messages:
@@ -2376,6 +2648,91 @@ components:
       - text
       - request_id
       title: SendMessage
+    StaffCameraPage:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/StaffCameraResponse'
+          type: array
+          title: Items
+        total:
+          type: integer
+          title: Total
+      type: object
+      required:
+      - items
+      - total
+      title: StaffCameraPage
+    StaffCameraResponse:
+      properties:
+        id:
+          type: string
+          title: Id
+        name:
+          type: string
+          title: Name
+        status:
+          type: string
+          enum:
+          - online
+          - maintenance
+          - unavailable
+          title: Status
+        note:
+          type: string
+          title: Note
+        mine:
+          type: boolean
+          title: Mine
+          default: false
+        visibility:
+          type: string
+          enum:
+          - private
+          - public
+          title: Visibility
+          default: public
+        moderation_status:
+          type: string
+          enum:
+          - pending
+          - approved
+          - rejected
+          title: Moderation Status
+          default: approved
+        moderation_reason:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Moderation Reason
+        place:
+          anyOf:
+          - $ref: '#/components/schemas/Location'
+          - type: 'null'
+        house_id:
+          type: integer
+          title: House Id
+        address:
+          type: string
+          title: Address
+        owner_name:
+          type: string
+          title: Owner Name
+        source_url:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Source Url
+      type: object
+      required:
+      - id
+      - name
+      - status
+      - note
+      - house_id
+      - address
+      - owner_name
+      title: StaffCameraResponse
     StaffIssuePage:
       properties:
         items:

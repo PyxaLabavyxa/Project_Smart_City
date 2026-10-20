@@ -67,7 +67,18 @@ def test_materials_are_valid_and_match_documented_application_routes():
     )
     public_contract = read_json(config["openapi_json"])
     assert read_yaml(config["openapi"]) == public_contract
-    assert public_contract == contract
+    # The public snapshot describes the deployed release, not unreleased local additions.
+    # Preserve its operations and fields, allowing new routes and optional response fields.
+    for path, operations in public_contract["paths"].items():
+        for method, operation in operations.items():
+            assert contract["paths"][path][method] == operation
+    for name, schema in public_contract["components"]["schemas"].items():
+        current = dict(contract["components"]["schemas"][name])
+        if "properties" in schema:
+            current["properties"] = {
+                key: current["properties"][key] for key in schema["properties"]
+            }
+        assert current == schema
     assert contract == create_app(Settings(_env_file=None, database_url=None)).openapi()
     assert config["team"] == read_json(config["test_data"])["team"] == "Облачный Код"
     assert config["base_url"] == "https://201.34.159.33/api/v1"

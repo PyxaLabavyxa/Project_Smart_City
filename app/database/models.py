@@ -243,6 +243,27 @@ class HouseCamera(Base):
     note: Mapped[str] = mapped_column(Text)
     preview_url: Mapped[str | None] = mapped_column(String(2000))
     captured_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    owner_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    visibility: Mapped[str] = mapped_column(String(20), default="public", server_default="public")
+    moderation_status: Mapped[str] = mapped_column(
+        String(20), default="approved", server_default="approved"
+    )
+    moderation_reason: Mapped[str | None] = mapped_column(String(1000))
+    reviewed_by: Mapped[int | None] = mapped_column(ForeignKey("staff_users.id", ondelete="SET NULL"))
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    entrance: Mapped[int | None] = mapped_column(SmallInteger)
+    floor: Mapped[int | None] = mapped_column(SmallInteger)
+    zone: Mapped[str | None] = mapped_column(String(20))
+    apartment_id: Mapped[int | None] = mapped_column(ForeignKey("apartments.id"))
+    request_id: Mapped[str | None] = mapped_column(String(36))
+    __table_args__ = (
+        UniqueConstraint("owner_id", "request_id", name="uq_camera_request"),
+        CheckConstraint("visibility IN ('private', 'public')", name="ck_camera_visibility"),
+        CheckConstraint(
+            "moderation_status IN ('pending', 'approved', 'rejected')", name="ck_camera_moderation"
+        ),
+    )
 
 
 class HouseWork(Base):

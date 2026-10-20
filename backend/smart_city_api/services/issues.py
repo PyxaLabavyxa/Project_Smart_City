@@ -1,7 +1,7 @@
 import hashlib
 
 from app.database.enums import IssueCategory, IssuePriority, IssueStatus
-from app.database.models import Apartment, House, Issue, IssueEvent, IssuePhoto
+from app.database.models import House, Issue, IssueEvent, IssuePhoto
 from fastapi import HTTPException
 from sqlalchemy import and_, or_, select
 from sqlalchemy.exc import IntegrityError
@@ -9,8 +9,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from smart_city_api.schemas.app import CreateIssue, IssueHistory, IssueResponse, Location
 from smart_city_api.services.access import own_apartment_ids, require_house
+from smart_city_api.services.locations import OUTDOOR_ZONES, validate_location
 
-OUTDOOR_ZONES = {"house", "courtyard", "parking"}
 CATEGORIES_BY_SCOPE = {
     "courtyard": {
         IssueCategory.YARD,
@@ -108,22 +108,7 @@ async def create_issue(
     house = await require_house(session, user_id, house_id)
     place = data.place
     outdoor = place.zone in OUTDOOR_ZONES
-    if not outdoor and (place.entrance > house.entrances_count or place.floor > house.floors_count):
-        raise HTTPException(422, "Такого этажа или подъезда нет в доме")
-    if place.zone == "entrance" and place.floor != 1:
-        raise HTTPException(422, "Входная группа находится на первом этаже")
-    if place.apartment_id:
-        apartment = await session.scalar(
-            select(Apartment).where(
-                Apartment.id == place.apartment_id,
-                Apartment.house_id == house_id,
-                Apartment.entrance == place.entrance,
-                Apartment.floor == place.floor,
-                Apartment.id.in_(own_apartment_ids(user_id)),
-            )
-        )
-        if apartment is None:
-            raise HTTPException(422, "Выберите свою квартиру или общую зону")
+    await validate_location(session, user_id, house, place)
     fingerprint_data = f"{house_id}:{data.model_dump_json(exclude={'request_id'})}"
     legacy_fingerprint_data = None
     if outdoor:

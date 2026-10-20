@@ -5,7 +5,7 @@
 .success button { flex-shrink: 0; width: 44px; height: 44px; border: 0; border-radius: var(--radius-input); background: transparent; color: inherit; font-size: 24px; }
 .back:hover { color: var(--color-primary); border-color: var(--color-primary); }
 .heading { margin-bottom: 36px; }
-.heading h1 { max-width: 32ch; overflow-wrap: anywhere; font-size: var(--font-page-title); letter-spacing: -1px; line-height: 1.2; }
+.heading h1 { max-width: 32ch; overflow-wrap: anywhere; font-size: var(--font-page-title); font-weight:750; letter-spacing: -1px; line-height: 1.2; }
 .meta { margin: 14px 0 0; color: var(--color-muted); font-size: 13px; line-height: 1.7; }
 .status { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 28px; }
 .priority { color: var(--color-warning); font-size: 12px; }

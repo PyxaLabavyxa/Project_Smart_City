@@ -140,6 +140,11 @@ class CameraResponse(BaseModel):
     name: str
     status: Literal["online", "maintenance", "unavailable"]
     note: str
+    mine: bool = False
+    visibility: Literal["private", "public"] = "public"
+    moderation_status: Literal["pending", "approved", "rejected"] = "approved"
+    moderation_reason: str | None = None
+    place: Location | None = None
 
 
 class CameraFrame(BaseModel):

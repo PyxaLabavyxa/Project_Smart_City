@@ -26,6 +26,8 @@ class StaffTokenOutput(BaseModel):
 class HouseOutput(BaseModel):
     id: int
     address: str
+    entrances_count: int | None = None
+    floors_count: int | None = None
 
 
 class ProfileOutput(BaseModel):

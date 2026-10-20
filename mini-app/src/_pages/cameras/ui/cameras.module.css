@@ -68,6 +68,42 @@
 .preview figcaption { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:calc(12 * var(--u)); font-size:calc(14 * var(--u)); }
 .detail .preview img { width:100%; max-width:100%; margin-inline:0; aspect-ratio:1.45; object-fit:cover; border-radius:calc(15 * var(--u)); }
 .previewFooter { margin-top:calc(12 * var(--u)); }
-.previewFooter .retry { width:100%; min-height:calc(54 * var(--u)); border-radius:calc(16 * var(--u)); font-size:calc(19 * var(--u)); }
+.previewFooter .retry { width:100%; min-height:calc(54 * var(--u)); border-radius:var(--radius-button); font-size:calc(19 * var(--u)); }
 .about { padding:0; background:transparent; }
-.about > a { width:100%; min-height:calc(54 * var(--u)); margin-top:0; gap:14px; border-radius:calc(16 * var(--u)); font-size:calc(19 * var(--u)); color:var(--color-muted); border-color:#a4bedb; }
+.about > a { width:100%; min-height:calc(54 * var(--u)); margin-top:0; gap:14px; border-radius:var(--radius-button); font-size:calc(19 * var(--u)); color:var(--color-muted); border-color:#a4bedb; }
+.toolbar { display:flex; gap:10px; margin-bottom:18px; }
+.addButton { composes:primary from "@/shared/styles/controls.module.css"; min-height:max(48px,calc(54 * var(--u))); font-size:clamp(15px,calc(19 * var(--u)),19px); font-weight:400; }
+.toolbar .addButton { flex:1; padding:12px; min-width:0; }
+.filterToggle { composes:filterTrigger from "@/shared/styles/controls.module.css"; flex-shrink:0; width:clamp(106px,calc(128 * var(--u)),128px); min-height:max(48px,calc(54 * var(--u))); font-size:clamp(14px,calc(17 * var(--u)),17px); }
+.filterToggle svg { flex-shrink:0; }
+.results { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; }
+.results p { margin:0; }
+.refreshList { composes:button from "@/shared/styles/controls.module.css"; padding:12px; }
+.filters { min-width:0; margin:0 0 20px; padding:14px; border:1px solid var(--color-line); border-radius:var(--radius-card); }
+.filters legend { padding-inline:6px; font-size:15px; }
+.radio input { width:20px; height:20px; accent-color:var(--color-primary); flex-shrink:0; }
+.locationFilters { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.locationFilters label { display:grid; min-width:0; gap:5px; font-size:14px; }
+.locationFilters .cameraType,.locationFilters label:last-child { grid-column:1 / -1; }
+.locationFilters select { width:100%; min-width:0; padding:10px 8px; font-size:14px; }
+.resetFilters,.accessNotice button { border:0; padding:10px 0; min-height:44px; background:transparent; color:var(--color-primary); font:inherit; font-size:14px; }
+.hint,.cardBody p.accessLabel { color:var(--color-muted); font-size:14px; line-height:1.45; }
+.form { display:grid; gap:22px; padding-bottom:20px; }
+.form fieldset { display:grid; gap:14px; min-width:0; margin:0; padding:0; border:0; }
+.form legend { font-size:20px; font-weight:600; margin-bottom:14px; }
+.form label:not(.radio) { display:grid; gap:7px; min-width:0; font-size:16px; }
+.fieldLabel { display:flex; align-items:baseline; gap:6px; white-space:nowrap; }
+.form :global([data-number-choice]) { min-height:46px; padding:10px 12px; border-radius:var(--radius-button); gap:10px; }
+.form :global([data-number-choice]) > span:first-child { flex-direction:row; align-items:center; gap:8px; font-size:14px; }
+.form :global([data-number-choice]) strong { font-size:18px; font-weight:400; }
+.form :is(input[type="url"],input[name="camera-name"],textarea) { width:100%; }
+.form .hint { margin:0; }
+.radio { display:flex; align-items:flex-start; gap:12px; padding:14px; border:1px solid var(--color-line); border-radius:var(--radius-input); background:var(--color-surface); }
+.radio:has(input:checked) { border-color:var(--color-action); background:var(--color-soft); }
+.radio input { margin-top:3px; }
+.radio span { display:grid; min-width:0; gap:5px; }
+.radio small { color:var(--color-muted); font-size:14px; line-height:1.4; }
+.error { color:var(--color-danger); font-size:14px; overflow-wrap:anywhere; }
+.cancel { display:grid; place-items:center; min-height:44px; color:var(--color-muted); }
+.accessNotice { padding:14px; margin-bottom:18px; border:1px solid var(--color-line); border-radius:var(--radius-card); overflow-wrap:anywhere; }
+.accessNotice p { font-size:15px; line-height:1.45; color:var(--color-muted); margin:8px 0 0; }

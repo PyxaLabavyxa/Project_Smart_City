@@ -1,5 +1,6 @@
 "use client";
 import { useId, useRef } from "react";
+import { Icon } from "@/shared/ui/icon";
 import styles from "./number-choice.module.css";
 
 export function NumberChoice({ label, value, count, onChange }: { label: string; value: number; count: number; onChange: (value: number) => void }) {
@@ -11,7 +12,7 @@ export function NumberChoice({ label, value, count, onChange }: { label: string;
     <button ref={trigger} data-number-choice type="button" className={styles.trigger} aria-label={`${label}: ${value}`} aria-haspopup="dialog" onClick={() => {
       dialog.current?.showModal();
       dialog.current?.querySelector<HTMLButtonElement>('[aria-pressed="true"]')?.focus();
-    }}><span><small>{label}</small><strong>{value}</strong></span><span aria-hidden="true">⌄</span></button>
+    }}><span><small>{label}</small><strong>{value}</strong></span><span className={styles.chevron} aria-hidden="true"><Icon name="arrow" size={16} /></span></button>
     <dialog ref={dialog} aria-labelledby={title} className={styles.dialog} onClose={() => trigger.current?.focus()} onClick={event => {
       if (event.target !== event.currentTarget) return;
       const box = event.currentTarget.getBoundingClientRect();

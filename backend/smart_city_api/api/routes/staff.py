@@ -1,5 +1,5 @@
 import asyncio
-from typing import Annotated
+from typing import Annotated, Literal
 
 from app.database.enums import IssuePriority, IssueStatus
 from app.database.models import CompanyHouse, House, IssuePhoto, StaffSession
@@ -21,6 +21,8 @@ from smart_city_api.core.staff_auth import (
     require_same_origin,
     token_hash,
 )
+from smart_city_api.schemas.app import CameraResponse
+from smart_city_api.schemas.cameras import ModerateCamera, StaffCameraPage
 from smart_city_api.schemas.contacts import ContactsInput, ContactsOutput
 from smart_city_api.schemas.staff import (
     ActionOutput,
@@ -34,12 +36,45 @@ from smart_city_api.schemas.staff import (
     StaffTokenOutput,
     StatusInput,
 )
+from smart_city_api.services import cameras as camera_service
 from smart_city_api.services import staff as service
 from smart_city_api.services.contacts import read_contacts, save_contacts, staff_house
 from smart_city_api.services.photos import photo_path
 from smart_city_api.services.staff_accounts import delete_registered_user
 
 router = APIRouter(prefix="/api/v1/staff", tags=["Staff"])
+
+
+@router.get("/cameras", response_model=StaffCameraPage)
+async def cameras_for_moderation(
+    session: Session,
+    employee: Staff,
+    status: Literal["all", "pending", "approved", "rejected"] = "pending",
+    page: Annotated[int, Query(ge=1, le=100000)] = 1,
+    page_size: Annotated[int, Query(ge=1, le=100)] = 5,
+    house_id: Annotated[int | None, Query(gt=0)] = None,
+    entrance: Annotated[int | None, Query(ge=1, le=100)] = None,
+    floor: Annotated[int | None, Query(ge=1, le=200)] = None,
+    zone: Annotated[str | None, Query(max_length=20)] = None,
+):
+    return await camera_service.list_moderation(
+        session, employee.id, status, page, page_size, house_id, entrance, floor, zone
+    )
+
+
+@router.post("/cameras/{camera_id}/moderate", response_model=CameraResponse)
+async def review_camera(
+    camera_id: int,
+    data: ModerateCamera,
+    session: Session,
+    employee: Staff,
+):
+    return await camera_service.moderate_camera(session, employee.id, camera_id, data)
+
+
+@router.delete("/cameras/{camera_id}", status_code=204)
+async def remove_camera(camera_id: int, session: Session, employee: Staff):
+    await camera_service.delete_camera(session, employee.id, camera_id)
 
 
 @router.get("/houses/{house_id}/contacts", response_model=ContactsOutput)
@@ -135,7 +170,15 @@ async def profile(session: Session, employee: Staff, authentication: StaffAuth):
     return ProfileOutput(
         name=employee.name,
         contact_houses=[HouseOutput(id=h.id, address=h.address) for h in contact_houses],
-        houses=[HouseOutput(id=h.id, address=h.address) for h in houses],
+        houses=[
+            HouseOutput(
+                id=h.id,
+                address=h.address,
+                entrances_count=h.entrances_count,
+                floors_count=h.floors_count,
+            )
+            for h in houses
+        ],
         csrf_token=csrf_token(authentication.token),
     )
 

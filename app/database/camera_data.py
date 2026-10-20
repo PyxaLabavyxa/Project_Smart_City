@@ -33,6 +33,9 @@ async def provision_cameras(session, house):
                     status="online",
                     preview_url=f"/images/cameras/{asset}-1.png",
                     captured_at=datetime.now(UTC),
+                    entrance=int(name.split()[-1]) if name.startswith("Подъезд ") else 1,
+                    floor=1,
+                    zone="entrance" if name.startswith("Подъезд ") else "courtyard",
                 )
             )
     await session.flush()

@@ -13,7 +13,6 @@ const items = [
  { href:"/utilities", icon:"receipt", title:"ЖКХ", description:"Квитанции и показания" },
  { href:"/messages", icon:"messages", title:"Сообщения", description:"Переписки с соседями" },
  { href:"/health", icon:"health", title:"Здоровье дома", description:"Состояние и история" },
- { href:"/cameras", icon:"camera", title:"Камеры", description:"Общие зоны" },
  { href:"/info", icon:"issues", title:"Информация о доме", description:"Характеристики и документы" },
 ] as const;
 export function MorePage() {

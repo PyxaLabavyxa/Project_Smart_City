@@ -18,3 +18,8 @@ test('unknown cameras and missing entrances do not guess a category or place', (
   assert.equal(cameraIssueContext({ ...camera, name: 'Подъезд 4' }, house), undefined);
   assert.equal(cameraIssueContext({ ...camera, name: 'Камера 17' }, house), undefined);
 });
+
+test('explicit camera location takes precedence over its display name', () => {
+  const place = { houseId: '42', entrance: 2, floor: 3, zone: 'corridor' };
+  assert.deepEqual(cameraIssueContext({ ...camera, place }, house), { place, category: 'Другое' });
+});

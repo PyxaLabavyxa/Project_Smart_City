@@ -1,0 +1,62 @@
+[
+  {
+    "number": "01",
+    "file": "01-home-issues-sheet.png",
+    "title": "Главная, обращения, нижняя форма",
+    "screens": 3
+  },
+  {
+    "number": "02",
+    "file": "02-create-place-category-description.png",
+    "title": "Создание: место, категория, описание",
+    "screens": 3
+  },
+  {
+    "number": "03",
+    "file": "03-review-success-details.png",
+    "title": "Проверка, подтверждение, история обращения",
+    "screens": 3
+  },
+  {
+    "number": "04",
+    "file": "04-utilities-meters-payment.png",
+    "title": "Квитанция, показания, оплата",
+    "screens": 3
+  },
+  {
+    "number": "05",
+    "file": "05-cameras-light-detail-dark.png",
+    "title": "Камеры: список, просмотр, тёмная тема",
+    "screens": 3
+  },
+  {
+    "number": "06",
+    "file": "06-more-contacts-messages.png",
+    "title": "Ещё, контакты УК, сообщения",
+    "screens": 3
+  },
+  {
+    "number": "07",
+    "file": "07-house-floor-information.png",
+    "title": "Дом, план этажа, информация о доме",
+    "screens": 3
+  },
+  {
+    "number": "08",
+    "file": "08-dark-home-issues-utilities.png",
+    "title": "Тёмная тема: главная, обращения, ЖКХ",
+    "screens": 3
+  },
+  {
+    "number": "09",
+    "file": "09-health-onboarding-guide.png",
+    "title": "Здоровье дома, подсказка, обучение",
+    "screens": 3
+  },
+  {
+    "number": "10",
+    "file": "10-dark-house-floor-more.png",
+    "title": "Тёмная тема: дом, план этажа, Ещё",
+    "screens": 3
+  }
+]

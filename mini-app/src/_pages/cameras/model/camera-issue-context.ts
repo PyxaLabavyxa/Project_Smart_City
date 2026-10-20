@@ -2,6 +2,11 @@ import type { House, HouseLocation } from "@/entities/house";
 import type { Camera } from "./camera";
 
 export function cameraIssueContext(camera: Camera, house: House): { place: HouseLocation; category: string } | undefined {
+  if (camera.place) {
+    const category = camera.place.zone === "courtyard" || camera.place.zone === "parking" ? "Двор"
+      : camera.place.floor === 1 && camera.place.zone === "entrance" ? "Подъезд" : "Другое";
+    return { place: camera.place, category };
+  }
   const name = camera.name.toLocaleLowerCase("ru");
   const base = { houseId: house.id, entrance: 1, floor: 1 };
   if (/(?:^|\s)двор(?:\s|$|[.,·—-])/.test(name) || camera.id === "courtyard") {

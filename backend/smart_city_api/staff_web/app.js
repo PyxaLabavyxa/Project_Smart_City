@@ -2,6 +2,7 @@
 
 const $ = (id) => document.getElementById(id);
 const apiRoot = "/api/v1/staff";
+const cameraPageSize = 5;
 const statuses = { new: "Новое", in_progress: "В работе", resolved: "Решено" };
 const priorities = { 1: "Высокий", 2: "Средний", 3: "Низкий" };
 const categories = {
@@ -70,6 +71,7 @@ function showLogin() {
   $("issue-dialog").close(); $("photo-dialog").close();
   $("full-photo").removeAttribute("src"); $("detail-content").replaceChildren();
   $("registrations-body").replaceChildren();
+  cameraRequest++; $("cameras-body").replaceChildren();
   contactState.request++; contactState.house = ""; contactState.loaded = false; contactState.dirty = false; contactState.loading = false;
   $("contact-rows").replaceChildren(); $("contacts-form").hidden = true;
   $("issues-body").replaceChildren(); $("workspace").hidden = true;
@@ -98,6 +100,10 @@ async function enterWorkspace() {
   $("staff-name").textContent = state.profile.name;
   $("avatar").textContent = state.profile.name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
   $("house-filter").innerHTML = '<option value="">Все мои дома</option>' + state.profile.houses.map((house) => `<option value="${house.id}">${esc(house.address)}</option>`).join("");
+  $("camera-house").innerHTML = $("house-filter").innerHTML;
+  $("camera-status").value = "all"; $("camera-zone").value = ""; cameraPage = 1;
+  $("camera-entrance").value = ""; $("camera-floor").value = "";
+  updateCameraLocationOptions();
   $("contact-house").innerHTML = state.profile.contact_houses.map((house) => `<option value="${house.id}">${esc(house.address)}</option>`).join("");
   $("priority-filter").value = ""; $("search").value = "";
   $("no-houses").hidden = state.profile.houses.length > 0;
@@ -284,8 +290,9 @@ $("detail-content").addEventListener("click", (event) => {
 $("close-photo").addEventListener("click", () => $("photo-dialog").close());
 $("photo-dialog").addEventListener("close", () => $("full-photo").removeAttribute("src"));
 setInterval(async () => {
-  if (!state.profile || document.hidden || state.busy) return;
+  if (!state.profile || document.hidden || state.busy || document.activeElement?.matches("#cameras-body select")) return;
   if (window.location.hash === "#registrations") await loadRegistrations();
+  else if (window.location.hash === "#cameras") await loadCameras();
   else if (window.location.hash !== "#contacts") await loadList();
   const id = state.detail?.id;
   if (id && $("issue-dialog").open) {
@@ -297,18 +304,103 @@ enterWorkspace().catch((error) => { showLogin(); if (error.status !== 401) showE
 
 
 let registrationPage = 1, registrationTotal = 0, registrationRequest = 0;
+let cameraPage = 1, cameraTotal = 0, cameraRequest = 0;
+function updateCameraLocationOptions() {
+  const houses = state.profile.houses.filter(house => !$("camera-house").value || String(house.id) === $("camera-house").value);
+  for (const [id, property, label, all] of [["camera-entrance", "entrances_count", "Подъезд", "Все подъезды"], ["camera-floor", "floors_count", "Этаж", "Все этажи"]]) {
+    const select = $(id), previous = select.value;
+    const count = Math.max(0, ...houses.map(house => house[property] || 0));
+    select.innerHTML = `<option value="">${all}</option>` + Array.from({ length: count }, (_, index) => `<option value="${index + 1}">${label} ${index + 1}</option>`).join("");
+    select.value = Number(previous) >= 1 && Number(previous) <= count ? previous : "";
+  }
+}
+async function loadCameras() {
+  if (!state.profile) return;
+  const request = ++cameraRequest;
+  $("refresh-cameras").disabled = true;
+  $("cameras-section").setAttribute("aria-busy", "true");
+  try {
+    const params = new URLSearchParams({ status: $("camera-status").value, page: cameraPage, page_size: cameraPageSize });
+    for (const [key, id] of [["house_id", "camera-house"], ["entrance", "camera-entrance"], ["floor", "camera-floor"], ["zone", "camera-zone"]]) if ($(id).value) params.set(key, $(id).value);
+    const data = await api(`/cameras?${params}`);
+    if (!state.profile || request !== cameraRequest) return;
+    cameraTotal = data.total;
+    showError("cameras-error", "");
+    $("cameras-body").innerHTML = data.items.map(camera => {
+      const place = camera.place;
+      const location = !place ? "Место не указано" : ["house", "courtyard", "parking"].includes(place.zone) ? zones[place.zone] : `Подъезд ${place.entrance} · этаж ${place.floor} · ${zones[place.zone] || place.zone}`;
+      const snapshot = camera.source_url?.startsWith("https://")
+        ? `<a class="row-meta" href="${esc(camera.source_url)}" target="_blank" rel="noopener noreferrer">Открыть снимок в новой вкладке ↗</a>`
+        : `<span class="row-meta">${camera.source_url?.startsWith("/images/cameras/") ? "Демонстрационная камера" : "Снимок недоступен"}</span>`;
+      const decision = camera.moderation_status === "pending" ? "На модерации" : camera.moderation_status === "approved" ? "Одобрена" : `Отклонена: ${camera.moderation_reason}`;
+      return `<tr><td><strong>${esc(camera.name)}</strong><span class="row-meta">${esc(camera.owner_name)}</span></td>
+        <td data-label="Место">${esc(camera.address)}<span class="row-meta">${esc(location)}</span></td>
+        <td data-label="Снимок">${esc(camera.note)}${snapshot}</td>
+        <td data-label="Статус">${esc(decision)}</td>
+        <td data-label="Управление" class="camera-management"><select data-camera="${Number(camera.id)}" aria-label="Управление камерой: ${esc(camera.name)}"><option value="" selected disabled>Выбрать действие</option>${camera.moderation_status === "pending" ? '<option value="approved">Одобрить</option><option value="rejected">Отклонить</option>' : ""}<option value="delete">Удалить</option></select></td></tr>`;
+    }).join("");
+    $("cameras-empty").hidden = cameraTotal !== 0;
+    $("cameras-page").textContent = cameraTotal ? `Страница ${cameraPage} из ${Math.ceil(cameraTotal / cameraPageSize)} · всего камер: ${cameraTotal}` : "Нет камер";
+    $("cameras-prev").disabled = cameraPage <= 1;
+    $("cameras-next").disabled = cameraPage * cameraPageSize >= cameraTotal;
+  } catch (error) { if (request === cameraRequest) showError("cameras-error", error.message); }
+  finally {
+    if (request === cameraRequest) {
+      $("refresh-cameras").disabled = false;
+      $("cameras-section").setAttribute("aria-busy", "false");
+    }
+  }
+}
+$("refresh-cameras").addEventListener("click", loadCameras);
+for (const id of ["camera-status", "camera-house", "camera-entrance", "camera-floor", "camera-zone"]) $(id).addEventListener("change", () => {
+  if (id === "camera-house") updateCameraLocationOptions();
+  cameraPage = 1; void loadCameras();
+});
+$("cameras-prev").addEventListener("click", () => { if (cameraPage > 1) { cameraPage--; void loadCameras(); } });
+$("cameras-next").addEventListener("click", () => { if (cameraPage * cameraPageSize < cameraTotal) { cameraPage++; void loadCameras(); } });
+$("cameras-body").addEventListener("change", async event => {
+  const control = event.target.closest("select[data-camera]");
+  if (!control) return;
+  const decision = control.value;
+  control.value = "";
+  if (state.busy || !["approved", "rejected", "delete"].includes(decision)) return;
+  if (decision === "delete" && !window.confirm("Удалить камеру? Она исчезнет у владельца и жителей дома.")) return;
+  let reason = "";
+  if (decision === "rejected") {
+    const answer = window.prompt("Причина отклонения камеры (до 1000 символов):");
+    if (answer === null) return;
+    reason = answer.trim();
+    if (!reason || reason.length > 1000) { showError("cameras-error", "Укажите причину отклонения: от 1 до 1000 символов"); return; }
+  }
+  state.busy = true; control.disabled = true;
+  try {
+    if (decision === "delete") {
+      await api(`/cameras/${Number(control.dataset.camera)}`, { method: "DELETE" });
+      toast("Камера удалена");
+    } else {
+      await api(`/cameras/${Number(control.dataset.camera)}/moderate`, { method: "POST", body: JSON.stringify({ decision, reason }) });
+      toast(decision === "approved" ? "Камера доступна жителям дома" : "Камера отклонена. Причина доступна владельцу");
+    }
+    if ((decision === "delete" || $("camera-status").value !== "all") && cameraPage > 1 && (cameraPage - 1) * cameraPageSize >= cameraTotal - 1) cameraPage--;
+    await loadCameras();
+  } catch (error) { showError("cameras-error", error.message); }
+  finally { state.busy = false; control.disabled = false; }
+});
 function switchSection() {
   const registrations = window.location.hash === "#registrations";
   const contacts = window.location.hash === "#contacts";
-  $("issues-section").hidden = registrations || contacts;
+  const cameras = window.location.hash === "#cameras";
+  $("issues-section").hidden = registrations || contacts || cameras;
   $("registrations-section").hidden = !registrations;
   $("contacts-section").hidden = !contacts;
-  $("section-name").textContent = contacts ? "Контакты" : registrations ? "Заявки" : "Обращения";
-  for (const [id, active] of [["nav-issues", !registrations && !contacts], ["nav-registrations", registrations], ["nav-contacts", contacts]]) {
+  $("cameras-section").hidden = !cameras;
+  $("section-name").textContent = cameras ? "Камеры" : contacts ? "Контакты" : registrations ? "Заявки" : "Обращения";
+  for (const [id, active] of [["nav-issues", !registrations && !contacts && !cameras], ["nav-registrations", registrations], ["nav-contacts", contacts], ["nav-cameras", cameras]]) {
     $(id).classList.toggle("active", active);
     if (active) $(id).setAttribute("aria-current", "page"); else $(id).removeAttribute("aria-current");
   }
   if (registrations && state.profile) void loadRegistrations();
+  if (cameras && state.profile) void loadCameras();
   if (contacts && state.profile && !contactState.loaded && !contactState.loading) void loadContacts();
 }
 async function loadRegistrations() {
