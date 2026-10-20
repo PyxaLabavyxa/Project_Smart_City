@@ -18,6 +18,7 @@
 .room[data-problem] { background:var(--color-warning-bg); border-color:var(--color-warning); }
 .room[data-resolved] { background:var(--color-success-bg); }
 .room:focus-visible { z-index:2; }
+.room:disabled { opacity:.55; cursor:default; }
 .service { min-height:76px; padding:8px 4px; gap:4px; }
 .service svg { width:23px; height:23px; }
 .corridor { flex:1; min-height:65px; padding:10px 3px; }

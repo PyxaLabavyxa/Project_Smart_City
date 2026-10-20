@@ -200,22 +200,21 @@ def test_profile_structure_and_cross_house_access(api):
     assert client.get("/api/v1/me", headers=headers(104)).json()["houses"] == []
 
 
-@pytest.mark.parametrize("category", ["entrance", "yard"])
-def test_ground_floor_categories_cannot_be_created_upstairs(api, category):
+def test_categories_follow_the_location_instead_of_the_floor(api):
     client, _, _ = api
     path = "/api/v1/houses/1/issues"
-    response = client.post(
-        path,
-        json=issue_body(category=category, place={"entrance": 1, "floor": 2, "zone": "corridor"}),
-        headers=headers(),
-    )
+    response = client.post(path, json=issue_body(
+        category="entrance", place={"entrance": 1, "floor": 2, "zone": "corridor"}
+    ), headers=headers())
+    assert response.status_code == 201, response.text
+    response = client.post(path, json=issue_body(
+        category="yard", place={"entrance": 1, "floor": 1, "zone": "corridor"}
+    ), headers=headers())
     assert response.status_code == 422
-    assert "первом этаже" in response.json()["detail"]
-    assert client.get(path, headers=headers()).json()["items"] == []
-    assert (
-        client.post(path, json=issue_body(category=category), headers=headers()).status_code
-        == 201
-    )
+    response = client.post(path, json=issue_body(
+        category="yard", place={"zone": "courtyard"}
+    ), headers=headers())
+    assert response.status_code == 201, response.text
 
 
 def test_issues_persist_idempotently_with_history_and_private_location(api):

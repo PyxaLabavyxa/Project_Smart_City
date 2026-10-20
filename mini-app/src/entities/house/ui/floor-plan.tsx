@@ -1,17 +1,19 @@
 "use client";
 import { useState, type CSSProperties } from "react";
 import { Icon } from "@/shared/ui/icon";
-import { floorApartments, sameLocation, zoneLabel, type House, type HouseLocation, type CommonZone } from "../model/house";
+import { isOutdoorZone, floorApartments, sameLocation, zoneLabel, type House, type HouseLocation, type CommonZone } from "../model/house";
 import styles from "./floor-plan.module.css";
 
-export function FloorPlan({ house, selected, onSelect, problemPlaces = [], resolvedPlaces = [], tourTarget }: {
+export function FloorPlan({ house, selected, onSelect, problemPlaces = [], resolvedPlaces = [], tourTarget, allowApartmentSelection = true }: {
   tourTarget?: string;
+  allowApartmentSelection?: boolean;
   house: House; selected: HouseLocation; onSelect: (place: HouseLocation) => void;
   problemPlaces?: readonly HouseLocation[];
   resolvedPlaces?: readonly HouseLocation[];
 }) {
   const allApartments = floorApartments(house, selected.entrance, selected.floor);
   const [segment, setSegment] = useState({ key: "", page: 0 });
+  if (isOutdoorZone(selected.zone)) return <p className={styles.hint}>{zoneLabel(selected)} — общая территория дома. План этажа для этого места не используется.</p>;
   const key = `${selected.entrance}:${selected.floor}:${allApartments.join(",")}`;
   const pages = Math.ceil(allApartments.length / 6);
   const selectedPage = selected.zone === "apartment" ? Math.floor(allApartments.indexOf(selected.apartment) / 6) : null;
@@ -25,8 +27,9 @@ export function FloorPlan({ house, selected, onSelect, problemPlaces = [], resol
     const condition = problem ? "Есть обращение" : resolved ? "Недавно решено" : "Нет обращений";
     const own = place.zone === "apartment" && place.apartment === house.residentApartment;
     return <button key={zoneLabel(place)} type="button" style={position} className={`${styles.room} ${className}`} data-tour={place.zone === "apartment" ? "plan-room" : undefined} data-apartment={place.zone === "apartment" || undefined} data-problem={problem || undefined} data-resolved={resolved || undefined}
+      disabled={place.zone === "apartment" && !allowApartmentSelection}
       aria-label={`${zoneLabel(place)} · ${own ? "Ваша квартира · " : ""}${condition}`} aria-pressed={sameLocation(place, selected)} onClick={() => onSelect(place)}>
-      {place.zone === "apartment" ? <><span className={styles.apartmentHeading}>Квартира {sameLocation(place, selected) && <Icon name="check" size={14} />}</span><strong className={styles.number} data-long={place.apartment >= 1000 || undefined}>{place.apartment}</strong></> : place.zone === "corridor" ? <><strong>{pages > 1 ? "Коридор" : "Холл"}</strong>{pages === 1 && <span>Общий коридор</span>}</> : <><Icon name={place.zone === "elevator" ? "lift" : place.zone === "stairs" ? "stairs" : place.zone === "technical" ? "settings" : "door"} /><strong>{place.zone === "technical" ? "Тех. помещение" : zoneLabel(place)}</strong></>}
+      {place.zone === "apartment" ? <><span className={styles.apartmentHeading}>Квартира {sameLocation(place, selected) && <Icon name="check" size={14} />}</span><strong className={styles.number} data-long={place.apartment >= 1000 || undefined}>{place.apartment}</strong></> : place.zone === "corridor" ? <strong>{zoneLabel(place)}</strong> : <><Icon name={place.zone === "elevator" ? "lift" : place.zone === "stairs" ? "stairs" : place.zone === "technical" ? "settings" : "door"} /><strong>{place.zone === "technical" ? "Тех. помещение" : zoneLabel(place)}</strong></>}
       {(place.zone === "apartment" || place.zone === "corridor") && <small><Icon name={problem ? "warning" : "check"} size={12} />{own && !problem ? "Ваша квартира" : condition}</small>}
     </button>;
   }
@@ -43,7 +46,7 @@ export function FloorPlan({ house, selected, onSelect, problemPlaces = [], resol
       </div>
       {selected.floor === 1 && zone("entrance", styles.entrance)}
     </div>
-    <p className={styles.hint}>Выберите помещение на схеме</p>
+    <p className={styles.hint}>{allowApartmentSelection ? "Выберите помещение на схеме" : "Выберите общую зону на схеме. Для обращения внутри квартиры используйте раздел «Квартира»."}</p>
     <div className={styles.legend}><span>✓ В порядке</span><span>△ Есть обращение</span><span>● Выбранное место</span></div>
   </div>;
 }

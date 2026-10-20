@@ -3116,15 +3116,29 @@
       "Location": {
         "properties": {
           "entrance": {
-            "type": "integer",
-            "maximum": 100.0,
-            "minimum": 1.0,
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Entrance"
           },
           "floor": {
-            "type": "integer",
-            "maximum": 200.0,
-            "minimum": 1.0,
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 200.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Floor"
           },
           "zone": {
@@ -3158,8 +3172,6 @@
         "additionalProperties": false,
         "type": "object",
         "required": [
-          "entrance",
-          "floor",
           "zone"
         ],
         "title": "Location"

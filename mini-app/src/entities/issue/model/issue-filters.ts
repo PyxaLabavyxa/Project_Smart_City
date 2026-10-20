@@ -1,3 +1,4 @@
+import { isOutdoorZone } from "../../house/model/house.ts";
 import type { IssueRecord, IssueStateStatus } from "./issue";
 
 export const issueStatusLabels: Record<IssueStateStatus, string> = {
@@ -9,10 +10,6 @@ export const issueCategories = [
   "Водоснабжение", "Отопление", "Электричество", "Лифт", "Подъезд",
   "Двор", "Мусор", "Безопасность", "Другое",
 ] as const;
-
-export function categoriesForFloor(floor: number) {
-  return issueCategories.filter(category => floor === 1 || (category !== "Подъезд" && category !== "Двор"));
-}
 
 export type IssueFilters = {
   status: "all" | "active" | IssueStateStatus;
@@ -34,8 +31,8 @@ export function filterIssues(issues: readonly IssueRecord[], filters: IssueFilte
     if (filters.onlyMine && !issue.mine) return false;
     if (filters.status === "active" ? issue.status === "completed" : filters.status !== "all" && issue.status !== filters.status) return false;
     if (filters.category && issue.category !== filters.category) return false;
-    if (filters.entrance && issue.place?.entrance !== Number(filters.entrance)) return false;
-    if (filters.floor && issue.place?.floor !== Number(filters.floor)) return false;
+    if (filters.entrance && (!issue.place || isOutdoorZone(issue.place.zone) || issue.place.entrance !== Number(filters.entrance))) return false;
+    if (filters.floor && (!issue.place || isOutdoorZone(issue.place.zone) || issue.place.floor !== Number(filters.floor))) return false;
     if (filters.zone && issue.place?.zone !== filters.zone) return false;
     return !query || `${issue.title} ${issue.description} ${issue.location}`.toLocaleLowerCase("ru").includes(query);
   }).sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));

@@ -1,8 +1,21 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { floorApartments, totalApartments, findApartment, validStructure, resolveLocation, fallbackLocation, locationQuery, parseLocation } from '../src/entities/house/model/house.ts';
+import { floorApartments, totalApartments, findApartment, validStructure, resolveLocation, fallbackLocation, locationQuery, parseLocation, zoneLabel, formatLocation } from '../src/entities/house/model/house.ts';
 
 const house = { id: 'central-18', address: 'Центральная, 18', entrances: 2, floors: 9, apartmentsPerFloor: 4, residentApartment: 71 };
+
+test('the shared corridor is a hall only on the first floor, regardless of plan size', () => {
+  for (const apartmentsPerFloor of [2, 6, 12, 60]) {
+    const configured = { ...house, apartmentsPerFloor };
+    for (const floor of [1, 2, 9]) {
+      const place = { houseId: configured.id, entrance: 1, floor, zone: 'corridor' };
+      const label = floor === 1 ? 'Холл' : 'Коридор';
+      assert.equal(zoneLabel(place), label);
+      assert.equal(formatLocation(place), `Подъезд 1 · этаж ${floor} · ${label}`);
+    }
+  }
+  assert.equal(zoneLabel({ houseId: house.id, entrance: 1, floor: 1, zone: 'entrance' }), 'Входная группа');
+});
 
 test('numbering stays continuous across entrances, odd floors and overrides', () => {
   for (const apartmentsPerFloor of [1, 4, 7, 12, 30, 60]) {

@@ -72,6 +72,7 @@ def row_query():
 
 def issue_row(row) -> IssueRow:
     issue, address, author, apartment, photo_count = row
+    outdoor = issue.zone in ("house", "courtyard", "parking")
     return IssueRow(
         id=issue.id,
         title=issue.title,
@@ -83,8 +84,8 @@ def issue_row(row) -> IssueRow:
         house_id=issue.house_id,
         address=address,
         author=author,
-        entrance=issue.entrance,
-        floor=issue.floor,
+        entrance=None if outdoor else issue.entrance,
+        floor=None if outdoor else issue.floor,
         zone=issue.zone,
         apartment=apartment,
         photo_count=photo_count,

@@ -4,6 +4,7 @@ import { RequestState } from "@/shared/ui/navigation/request-state";
 import Link from "next/link";
 import { useHouseSelection } from "@/entities/house";
 import { useIssues } from "@/entities/issue";
+import { initialReportStep } from "@/entities/issue/model/issue-draft";
 import { cameraIssueContext } from "../model/camera-issue-context";
 import { useCameras } from "../model/api";
 import { CameraStatus } from "./camera-status";
@@ -52,7 +53,7 @@ function LoadedCameraDetailsPage({ id }: { id: string }) {
       const context = cameraIssueContext(camera, house);
       if (context) {
         select(context.place);
-        updateDraft({ ...context, step: 1 });
+        updateDraft({ ...context, step: initialReportStep(context.place) });
       } else {
         updateDraft({ category: "", step: 0 });
       }

@@ -9,7 +9,7 @@ const categories = {
   elevator: "Лифт", entrance: "Подъезд", yard: "Двор", garbage: "Мусор",
   security: "Безопасность", other: "Другое",
 };
-const zones = { apartment: "Квартира", corridor: "Коридор", elevator: "Лифт", stairs: "Лестница", entrance: "Подъезд", yard: "Двор", roof: "Крыша", basement: "Подвал" };
+const zones = { apartment: "Квартира", corridor: "Коридор", elevator: "Лифт", stairs: "Лестница", entrance: "Входная группа", courtyard: "Двор", parking: "Парковка", house: "Общая территория дома", technical: "Техническая зона", yard: "Двор", roof: "Крыша", basement: "Подвал" };
 const iconPaths = {
   inbox: '<path d="M5 3h14v18H5zM8 7h8M8 11h8M8 15h5"/>',
   users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/><circle cx="9" cy="7" r="4"/>',

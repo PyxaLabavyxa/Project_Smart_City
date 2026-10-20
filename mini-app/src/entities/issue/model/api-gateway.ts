@@ -1,5 +1,5 @@
 import type { House } from "@/entities/house";
-import { commonZones, formatLocation, type HouseLocation } from "@/entities/house";
+import { isOutdoorZone, commonZones, formatLocation, type HouseLocation } from "@/entities/house";
 import { endpoints, type ApiClient } from "@/shared/api/client";
 import { array, number, record, string } from "@/shared/api/parse";
 import { readPages } from "@/shared/api/pagination";
@@ -15,7 +15,8 @@ export function parseIssue(value: unknown, house: House): IssueRecord {
   let place: HouseLocation | undefined;
   if (row.place) {
     const p = record(row.place);
-    const base = { houseId: String(number(row.house_id)), entrance: number(p.entrance), floor: number(p.floor) };
+    const outdoor = isOutdoorZone(string(p.zone));
+    const base = { houseId: String(number(row.house_id)), entrance: outdoor ? 1 : number(p.entrance), floor: outdoor ? 1 : number(p.floor) };
     if (p.zone === "apartment") {
       const apartment = house.apartments?.find(a => a.id === number(p.apartment_id));
       if (apartment) place = { ...base, zone: "apartment", apartment: apartment.number };
@@ -47,7 +48,7 @@ export function createIssueGateway(api: ApiClient, house: House): IssueGateway {
       if (place.zone === "apartment" && !apartmentId) throw new Error("Квартира не найдена");
       const data = {
         title: input.title, description: input.description, category, request_id: requestId,
-        place: { entrance: place.entrance, floor: place.floor, zone: place.zone, apartment_id: apartmentId ?? null },
+        place: { entrance: isOutdoorZone(place.zone) ? null : place.entrance, floor: isOutdoorZone(place.zone) ? null : place.floor, zone: place.zone, apartment_id: apartmentId ?? null },
       };
       if (input.photos?.length) {
         const body = new FormData();

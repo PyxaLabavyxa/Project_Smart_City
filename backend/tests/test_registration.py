@@ -159,7 +159,10 @@ def test_seed_five_houses_is_idempotent_and_does_not_assign(tmp_path):
                 for issue in await session.scalars(select(Issue)):
                     house = await session.get(House, issue.house_id)
                     response = await issue_response(session, issue, house, issue.user_id)
-                    assert 1 <= response.place.floor <= house.floors_count
+                    if response.place.zone in ("house", "courtyard", "parking"):
+                        assert response.place.floor is None and response.place.entrance is None
+                    else:
+                        assert 1 <= response.place.floor <= house.floors_count
                 assert await session.scalar(select(func.count()).select_from(UserApartment)) == 0
         finally:
             await db.close()

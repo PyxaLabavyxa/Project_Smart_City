@@ -1,4 +1,4 @@
-export { commonZones, totalApartments, floorApartments, findApartment, zoneLabel, formatLocation, sameLocation } from "./model/house";
+export { isOutdoorZone, commonZones, totalApartments, floorApartments, findApartment, zoneLabel, formatLocation, sameLocation } from "./model/house";
 export type { House, HouseLocation, CommonZone } from "./model/house";
 export { FloorControls } from "./ui/floor-controls";
 export { FloorPlan } from "./ui/floor-plan";

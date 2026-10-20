@@ -2,15 +2,19 @@
 import { useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useIssues, categoriesForFloor, similarIssues, IssueCategoryIcon } from "@/entities/issue";
-import { LocationSelector, formatLocation, validLocation, useHouseSelection } from "@/entities/house";
+import { useIssues, similarIssues, IssueCategoryIcon } from "@/entities/issue";
+import { formatLocation, validLocation, useHouseSelection } from "@/entities/house";
 import styles from "./report-issue.module.css";
+import { categoriesForPlace, reportCategoryLabel, reportScope } from "@/entities/issue/model/report-categories";
+import { ReportLocationPicker } from "./report-location-picker";
+import { initialReportStep } from "@/entities/issue/model/issue-draft";
 import { PhotoPicker } from "./photo-picker";
 import { Icon } from "@/shared/ui/icon";
+import { BrandWordmark } from "@/shared/ui/brand-mark";
 
-const steps = ["Место", "Категория", "Описание", "Проверка"];
-const stepTitles = ["Где возникла проблема?", "Что случилось?", "Расскажите о проблеме", "Проверьте обращение"];
-export function ReportIssueForm({ cancelHref = "/issues" }: { cancelHref?: string }) {
+const categorySteps = [{ id: 1, label: "Категория" }, { id: 2, label: "Описание" }, { id: 3, label: "Проверка" }];
+const stepTitles = ["Уточните место на плане", "Что случилось?", "Расскажите о проблеме", "Проверьте обращение"];
+export function ReportIssueForm({ cancelHref = "/issues", cancelLabel = "Все обращения" }: { cancelHref?: string; cancelLabel?: string }) {
   const { addIssue, issues, draft, creating, updateDraft, resetDraft } = useIssues();
   const { house, choices } = useHouseSelection();
   const router = useRouter();
@@ -21,7 +25,12 @@ export function ReportIssueForm({ cancelHref = "/issues" }: { cancelHref?: strin
   const saving = creating || navigating;
   const [failure, setFailure] = useState("");
   const matches = similarIssues(issues, draft.place, draft.category);
-  const categories = categoriesForFloor(draft.place.floor);
+  const categories = categoriesForPlace(draft.place);
+  const categoryLabel = reportCategoryLabel(draft.place, draft.category);
+  const needsPlan = reportScope(draft.place) === "entrance";
+  const steps = needsPlan ? [{ id: 0, label: "Место" }, ...categorySteps] : categorySteps;
+  const stepIndex = steps.findIndex(step => step.id === draft.step);
+  const backStep = draft.step > (needsPlan ? 0 : 1) ? draft.step - 1 : -1;
   function goToStep(step: number) {
     updateDraft({ step });
     setErrors({});
@@ -34,7 +43,7 @@ export function ReportIssueForm({ cancelHref = "/issues" }: { cancelHref?: strin
     if (!validLocation(house, draft.place)) next.place = "Выберите место в доме";
     const place = draft.place;
     if (place.zone === "apartment" && !choices.some(choice => choice.houseId === house.id && choice.apartment === place.apartment)) next.place = "Обращение внутри квартиры доступно только её жильцам. Выберите свою квартиру или общую зону.";
-    if (draft.step >= 1 && !categories.some(category => category === draft.category)) next.category = "Выберите категорию для этого этажа";
+    if (draft.step >= 1 && !categories.some(category => category.value === draft.category)) next.category = "Выберите подкатегорию для этого места";
     if (draft.step >= 2 && !draft.title.trim()) next.title = "Укажите, что случилось";
     if (draft.step >= 2 && !draft.description.trim()) next.description = "Добавьте описание проблемы";
     setErrors(next);
@@ -48,7 +57,7 @@ export function ReportIssueForm({ cancelHref = "/issues" }: { cancelHref?: strin
       requestAnimationFrame(() => form.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus());
       return;
     }
-    if (draft.step < 3) { goToStep(draft.step + 1); return; }
+    if (draft.step < 3) { goToStep(draft.step < 0 ? initialReportStep(draft.place) : draft.step + 1); return; }
     submitted.current = true;
     setFailure("");
     try {
@@ -62,17 +71,20 @@ export function ReportIssueForm({ cancelHref = "/issues" }: { cancelHref?: strin
   }
   if (navigating) return <div className={styles.review} role="status"><h2>Обращение отправлено</h2><p>Открываем подтверждение…</p></div>;
   const error = (name: string) => errors[name] ? <span className={styles.error} id={name + "-error"} role="alert">{errors[name]}</span> : null;
-  return <form ref={formRef} data-step={draft.step} className={styles.form} onSubmit={submit} noValidate aria-busy={saving}>
-    <p className={styles.note} aria-live="polite">Шаг {draft.step + 1} из {steps.length} · {steps[draft.step]}</p>
-    <ol className={styles.steps} aria-label="Этапы обращения">{steps.map((step, index) => <li key={step} data-reached={index <= draft.step || undefined} aria-current={draft.step === index ? "step" : undefined}><span>{index < draft.step ? "✓" : index + 1}</span>{step}</li>)}</ol>
+  return <><header className={styles.pageHeader}>
+    {draft.step >= 0 ? <button type="button" disabled={saving} aria-label="Назад: предыдущий шаг" onClick={() => goToStep(backStep)}><Icon name="back" size={24} /></button> : <Link href={cancelHref} aria-label={`Назад: ${cancelLabel}`}><Icon name="back" size={24} /></Link>}
+    <BrandWordmark /><Link href={cancelHref} aria-label="Закрыть создание обращения"><Icon name="close" size={24} /></Link>
+  </header><h1 className={styles.srOnly}>Создать обращение</h1><form ref={formRef} data-step={draft.step} className={styles.form} onSubmit={submit} noValidate aria-busy={saving}>
+    <p className={styles.note} aria-live="polite">{stepIndex < 0 ? "Выбор места проблемы" : `Шаг ${stepIndex + 1} из ${steps.length} · ${steps[stepIndex].label}`}</p>
+    {draft.step >= 0 && <ol className={styles.steps} style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` }} aria-label="Этапы обращения">{steps.map((step, index) => <li key={step.id} data-reached={step.id <= draft.step || undefined} aria-current={draft.step === step.id ? "step" : undefined}><span>{step.id < draft.step ? "✓" : index + 1}</span>{step.label}</li>)}</ol>}
     <fieldset key={draft.step} className={styles.fields} disabled={saving}>
-      <legend tabIndex={-1}>{stepTitles[draft.step]}</legend>
-      {draft.step > 0 && draft.step < 3 && <p className={styles.context}>{draft.step > 1 && `${draft.category} · `}{formatLocation(draft.place)} <button type="button" onClick={() => goToStep(0)}>Изменить место</button></p>}
-      {draft.step === 0 && <><LocationSelector value={draft.place} onChange={place => updateDraft({ place })} problemPlaces={issues.filter(issue => issue.status !== "completed").flatMap(issue => issue.place ? [issue.place] : [])} />{error("place")}</>}
-      {draft.step === 1 && <><div className={styles.categories} role="radiogroup" aria-label="Категория" tabIndex={-1} aria-invalid={!!errors.category} aria-describedby={errors.category ? "category-error" : undefined}>
-        {categories.map(category => <label key={category} className={styles.category}>
-          <input type="radio" name="category" value={category} checked={draft.category === category} onChange={() => { updateDraft({ category }); setErrors({}); }} />
-          <IssueCategoryIcon category={category} /><span>{category}</span>
+      <legend tabIndex={-1}>{draft.step < 0 ? "Где возникла проблема?" : stepTitles[draft.step]}</legend>
+      {draft.step > 0 && draft.step < 3 && <p className={styles.context}>{draft.step > 1 && `${categoryLabel} · `}{formatLocation(draft.place)} <button type="button" onClick={() => goToStep(-1)}>Изменить место</button></p>}
+      {draft.step <= 0 && <><ReportLocationPicker value={draft.place} onChange={place => updateDraft({ place })} details={draft.step === 0} showScopes={draft.step < 0} />{error("place")}</>}
+      {draft.step === 1 && <><div className={styles.categories} role="radiogroup" aria-label="Подкатегория" tabIndex={-1} aria-invalid={!!errors.category} aria-describedby={errors.category ? "category-error" : undefined}>
+        {categories.map(category => <label key={category.value} className={styles.category}>
+          <input type="radio" name="category" value={category.value} checked={draft.category === category.value} onChange={() => { updateDraft({ category: category.value }); setErrors({}); }} />
+          <IssueCategoryIcon category={category.value} /><span>{category.label}</span>
         </label>)}
       </div>{error("category")}</>}
       {draft.step === 2 && <>
@@ -88,19 +100,19 @@ export function ReportIssueForm({ cancelHref = "/issues" }: { cancelHref?: strin
         <PhotoPicker photos={draft.photos} disabled={saving} onChange={photos => updateDraft({ photos })} />
       </>}
       {draft.step === 3 && <div className={styles.review}>
-        {([{icon:"pin",label:"Место",value:`${house.address} · ${formatLocation(draft.place)}`,step:0},{icon:"settings",label:"Категория",value:draft.category,step:1},{icon:"receipt",label:"Заголовок",value:draft.title,step:2},{icon:"messages",label:"Описание",value:draft.description,step:2}] as const).map(item => <div className={styles.reviewRow} key={item.label}><span className={styles.reviewIcon}><Icon name={item.icon} size={29} /></span><span><strong>{item.label}</strong><p>{item.value}</p></span><button type="button" onClick={() => goToStep(item.step)}>Изменить</button></div>)}
+        {([{icon:"pin",label:"Место",value:`${house.address} · ${formatLocation(draft.place)}`,step:-1},{icon:"settings",label:"Подкатегория",value:categoryLabel,step:1},{icon:"receipt",label:"Заголовок",value:draft.title,step:2},{icon:"messages",label:"Описание",value:draft.description,step:2}] as const).map(item => <div className={styles.reviewRow} key={item.label}><span className={styles.reviewIcon}><Icon name={item.icon} size={29} /></span><span><strong>{item.label}</strong><p>{item.value}</p></span><button type="button" onClick={() => goToStep(item.step)}>Изменить</button></div>)}
       </div>}
       {draft.step === 3 && draft.photos.length > 0 && <PhotoPicker photos={draft.photos} />}
     </fieldset>
     {matches.length > 0 && draft.step >= 1 && <aside className={styles.similar} aria-label="Похожие обращения"><strong>Возможно, об этой проблеме уже сообщили</strong><p>В этом месте есть активные обращения той же категории. Можно открыть их или продолжить создание.</p>{matches.map(issue => <Link key={issue.id} href={"/issues/" + issue.id}>{issue.title}</Link>)}</aside>}
     {failure && <p role="alert" className={styles.error}>{failure}</p>}
     <div className={styles.actions}>
-      {draft.step > 0 ? <button type="button" className={styles.previous} disabled={saving} onClick={() => goToStep(draft.step - 1)}>← Назад</button> : <Link className={styles.previous} href={cancelHref}>← Назад</Link>}
+      {draft.step >= 0 ? <button type="button" className={styles.previous} disabled={saving} onClick={() => goToStep(backStep)}>← Назад</button> : <Link className={styles.previous} href={cancelHref}>← Назад</Link>}
       <button type="submit" className={styles.primary} disabled={saving}>{saving ? "Сохраняем…" : draft.step === 3 ? "Отправить обращение" : draft.step === 2 ? "Проверить" : "Продолжить"}</button>
     </div>
     {draft.step === 2 && <div className={styles.draftActions}>
       <Link href={cancelHref} aria-disabled={saving} onClick={event => { if (saving) event.preventDefault(); }}>Сохранить черновик</Link>
       <button type="button" disabled={saving} onClick={() => { if (window.confirm("Удалить черновик обращения?")) { resetDraft(); setErrors({}); } }}>Сбросить черновик</button>
     </div>}
-  </form>;
+  </form></>;
 }

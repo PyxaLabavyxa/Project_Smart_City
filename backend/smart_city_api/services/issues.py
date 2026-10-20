@@ -10,6 +10,26 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from smart_city_api.schemas.app import CreateIssue, IssueHistory, IssueResponse, Location
 from smart_city_api.services.access import own_apartment_ids, require_house
 
+OUTDOOR_ZONES = {"house", "courtyard", "parking"}
+CATEGORIES_BY_SCOPE = {
+    "courtyard": {
+        IssueCategory.YARD,
+        IssueCategory.GARBAGE,
+        IssueCategory.ELECTRICITY,
+        IssueCategory.WATER,
+        IssueCategory.SECURITY,
+        IssueCategory.OTHER,
+    },
+    "entrance": set(IssueCategory) - {IssueCategory.YARD},
+    "apartment": {
+        IssueCategory.WATER,
+        IssueCategory.HEATING,
+        IssueCategory.ELECTRICITY,
+        IssueCategory.SECURITY,
+        IssueCategory.OTHER,
+    },
+}
+
 
 def visible_issues(user_id: int):
     return and_(
@@ -87,14 +107,11 @@ async def create_issue(
 ) -> IssueResponse:
     house = await require_house(session, user_id, house_id)
     place = data.place
-    if place.entrance > house.entrances_count or place.floor > house.floors_count:
+    outdoor = place.zone in OUTDOOR_ZONES
+    if not outdoor and (place.entrance > house.entrances_count or place.floor > house.floors_count):
         raise HTTPException(422, "Такого этажа или подъезда нет в доме")
-    if place.zone in ("house", "courtyard", "parking") and (place.entrance, place.floor) != (1, 1):
-        raise HTTPException(422, "Общая территория должна быть привязана к дому")
     if place.zone == "entrance" and place.floor != 1:
         raise HTTPException(422, "Входная группа находится на первом этаже")
-    if place.floor > 1 and data.category in (IssueCategory.ENTRANCE, IssueCategory.YARD):
-        raise HTTPException(422, "Категории «Подъезд» и «Двор» доступны только на первом этаже")
     if place.apartment_id:
         apartment = await session.scalar(
             select(Apartment).where(
@@ -108,9 +125,21 @@ async def create_issue(
         if apartment is None:
             raise HTTPException(422, "Выберите свою квартиру или общую зону")
     fingerprint_data = f"{house_id}:{data.model_dump_json(exclude={'request_id'})}"
+    legacy_fingerprint_data = None
+    if outdoor:
+        legacy = data.model_copy(
+            update={"place": place.model_copy(update={"entrance": 1, "floor": 1})}
+        )
+        legacy_fingerprint_data = f"{house_id}:{legacy.model_dump_json(exclude={'request_id'})}"
     if photos:
-        fingerprint_data += ":photos:" + ":".join(digest for _, digest in photos)
+        photo_fingerprint = ":photos:" + ":".join(digest for _, digest in photos)
+        fingerprint_data += photo_fingerprint
+        if legacy_fingerprint_data is not None:
+            legacy_fingerprint_data += photo_fingerprint
     fingerprint = hashlib.sha256(fingerprint_data.encode()).hexdigest()
+    retry_fingerprints = {fingerprint}
+    if legacy_fingerprint_data is not None:
+        retry_fingerprints.add(hashlib.sha256(legacy_fingerprint_data.encode()).hexdigest())
     statement = select(Issue).where(
         Issue.user_id == user_id, Issue.request_id == str(data.request_id)
     )
@@ -120,13 +149,16 @@ async def create_issue(
             raise HTTPException(
                 409, "Обращение отклонено. Для нового обращения отправьте новую заявку"
             )
-        if existing.request_hash != fingerprint:
+        if existing.request_hash not in retry_fingerprints:
             raise HTTPException(409, "Этот ключ запроса уже использован для другого обращения")
 
     existing = await session.scalar(statement)
     if existing:
         check_retry(existing)
         return await issue_response(session, existing, house, user_id)
+    scope = "courtyard" if outdoor else "apartment" if place.zone == "apartment" else "entrance"
+    if data.category not in CATEGORIES_BY_SCOPE[scope]:
+        raise HTTPException(422, "Эта подкатегория недоступна для выбранного места")
     issue = Issue(
         user_id=user_id,
         house_id=house_id,

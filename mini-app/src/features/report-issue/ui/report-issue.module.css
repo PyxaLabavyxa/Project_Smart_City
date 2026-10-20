@@ -5,7 +5,7 @@
 .heading p,.subtitle { margin:8px 0 0; color:var(--color-muted); font-size:15px; }
 .form { display:grid; gap:24px; scroll-margin-top:24px; }
 .note { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); }
-.steps { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); padding:0; margin:0 0 8px; list-style:none; }
+.steps { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); padding:0; margin:0 0 8px; list-style:none; }
 .steps li { position:relative; display:grid; justify-items:center; gap:7px; color:var(--color-muted); font-size:13px; text-align:center; }
 .steps li::before { content:""; position:absolute; top:18px; width:100%; height:1px; background:var(--color-line); }
 .steps li:first-child::before { width:50%; right:0; }
@@ -65,6 +65,7 @@
 .pageHeader { display:grid; grid-template-columns:40px minmax(0,1fr) 40px; align-items:center; gap:10px; height:calc(78 * var(--u)); margin-top:calc(-10 * var(--u)); }
 .pageHeader > span { width:calc(230 * var(--u)); max-width:100%; margin:auto; }
 .pageHeader a { display:grid; place-items:center; min-height:40px; }
+.pageHeader > button { display:grid; place-items:center; min-height:40px; padding:0; border:0; background:transparent; color:var(--color-ink); }
 .srOnly { position:absolute; width:1px; height:1px; clip-path:inset(50%); overflow:hidden; }
 .form { gap:calc(24 * var(--u)); padding-top:calc(12 * var(--u)); padding-bottom:calc(90 * var(--u)); }
 .steps { margin-bottom:calc(8 * var(--u)); }
@@ -124,3 +125,9 @@
 .form[data-step="3"] .actions .previous { flex-basis:32%; }
 .form[data-step="3"] .actions .primary { font-size:calc(18 * var(--u)); padding:calc(10 * var(--u)); }
 .sheet[open]:not(:modal) { z-index:60; }
+
+.placeDetails { display:grid; gap:20px; }
+.placeDetails :global([data-number-choice]) { min-height:max(44px,calc(54 * var(--u))); padding:calc(8 * var(--u)) calc(12 * var(--u)); border-radius:calc(10 * var(--u)); }
+.placeDetails :global([data-number-choice]) > span:first-child { font-size:calc(14 * var(--u)); gap:2px; }
+.placeDetails :global([data-number-choice]) strong,.placeDetails :global([data-number-choice]) > span:last-child { font-size:calc(18 * var(--u)); }
+.placeHint { margin:0; color:var(--color-muted); font-size:14px; line-height:1.7; }

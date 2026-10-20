@@ -198,6 +198,76 @@
         }
       }
     },
+    "/api/v1/me/notifications": {
+      "get": {
+        "tags": [
+          "resident"
+        ],
+        "summary": "Notification Preferences",
+        "operationId": "notification_preferences_api_v1_me_notifications_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationPreferences"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "MAXLaunchData": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "resident"
+        ],
+        "summary": "Save Notification Preferences",
+        "operationId": "save_notification_preferences_api_v1_me_notifications_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotificationPreferences"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationPreferences"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "MAXLaunchData": []
+          }
+        ]
+      }
+    },
     "/api/v1/me": {
       "get": {
         "tags": [
@@ -3046,15 +3116,29 @@
       "Location": {
         "properties": {
           "entrance": {
-            "type": "integer",
-            "maximum": 100.0,
-            "minimum": 1.0,
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Entrance"
           },
           "floor": {
-            "type": "integer",
-            "maximum": 200.0,
-            "minimum": 1.0,
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 200.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Floor"
           },
           "zone": {
@@ -3088,8 +3172,6 @@
         "additionalProperties": false,
         "type": "object",
         "required": [
-          "entrance",
-          "floor",
           "zone"
         ],
         "title": "Location"
@@ -3291,6 +3373,35 @@
           "current"
         ],
         "title": "MeterResponse"
+      },
+      "NotificationPreferences": {
+        "properties": {
+          "personal_messages": {
+            "type": "boolean",
+            "title": "Personal Messages"
+          },
+          "issue_messages": {
+            "type": "boolean",
+            "title": "Issue Messages"
+          },
+          "issue_statuses": {
+            "type": "boolean",
+            "title": "Issue Statuses"
+          },
+          "announcements": {
+            "type": "boolean",
+            "title": "Announcements"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "personal_messages",
+          "issue_messages",
+          "issue_statuses",
+          "announcements"
+        ],
+        "title": "NotificationPreferences"
       },
       "PhotoOutput": {
         "properties": {

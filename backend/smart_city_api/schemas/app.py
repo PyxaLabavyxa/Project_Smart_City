@@ -11,8 +11,8 @@ from smart_city_api.schemas.resident import ApartmentResponse, HouseResponse
 
 class Location(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    entrance: int = Field(ge=1, le=100)
-    floor: int = Field(ge=1, le=200)
+    entrance: int | None = Field(default=None, ge=1, le=100)
+    floor: int | None = Field(default=None, ge=1, le=200)
     zone: Literal[
         "apartment",
         "corridor",
@@ -30,6 +30,13 @@ class Location(BaseModel):
     def check_apartment(self):
         if (self.zone == "apartment") != (self.apartment_id is not None):
             raise ValueError("Apartment ID is required only for an apartment location")
+        if self.zone in ("house", "courtyard", "parking"):
+            # Accept the old client's (1, 1) sentinel, but never store it as a real floor.
+            if (self.entrance, self.floor) not in ((None, None), (1, 1)):
+                raise ValueError("Outdoor locations do not have an entrance or floor")
+            self.entrance = self.floor = None
+        elif self.entrance is None or self.floor is None:
+            raise ValueError("An indoor location requires an entrance and floor")
         return self
 
 
