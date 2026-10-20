@@ -87,7 +87,7 @@ def test_worker_suppresses_only_currently_active_recipient(api, state, expected)
     )
 
     async def run():
-        database = create_async_engine(f"sqlite+aiosqlite:///{engine.url.database}")
+        database = create_async_engine(client.app.state.settings.database_url.get_secret_value())
         bot = AsyncMock()
         bot.send_message.return_value = object()
         try:

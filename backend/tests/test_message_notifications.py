@@ -67,7 +67,7 @@ def test_worker_retries_outage_and_does_not_redeliver_success(api):
     )
 
     async def run():
-        database = create_async_engine(f"sqlite+aiosqlite:///{engine.url.database}")
+        database = create_async_engine(client.app.state.settings.database_url.get_secret_value())
         sessions = async_sessionmaker(database, expire_on_commit=False)
         bot = AsyncMock()
         bot.send_message.side_effect = RuntimeError("outage")

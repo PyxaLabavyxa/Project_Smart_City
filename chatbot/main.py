@@ -2,6 +2,7 @@ import asyncio
 from contextlib import suppress
 from chatbot.services.message_notifications import run_message_notifications
 from chatbot.services.staff_notifications import run_staff_notifications
+from chatbot.services.house_chat_delivery import run_house_chat_delivery
 from app.database.runtime import loop_factory
 
 from maxapi import Dispatcher
@@ -11,6 +12,8 @@ from app.config_data.config import Config, load_config
 from app.database.session import create_tables, engine
 from chatbot.max_client import MaxBot
 from chatbot.handlers import user_handlers, other_handlers, staff_messages, registration
+from chatbot.handlers import house_chats
+from chatbot.middlewares.private_dialog import PrivateDialogMiddleware, router as private_dialog_router
 from chatbot.keyboards.main_menu import set_main_menu
 from app.ai.client import create_ai_client, create_report_model
 from chatbot.middlewares.ai import AIMiddleware
@@ -23,6 +26,7 @@ async def main() -> None:
 
     bot = MaxBot(token=config.max_bot.token)
     dp = Dispatcher()
+    dp.middlewares.append(PrivateDialogMiddleware())
 
     ai_client = create_ai_client(config.yandex_ai)
     report_model  = create_report_model(ai_client, config.yandex_ai)
@@ -31,6 +35,8 @@ async def main() -> None:
     dp.middlewares.append(PhotoMiddleware(LocalPhotoStorage(config.storage.root)))
 
     dp.include_routers(
+        house_chats.router,
+        private_dialog_router,
         user_handlers.start_router,
         user_handlers.router,
         registration.router,
@@ -40,6 +46,7 @@ async def main() -> None:
 
     notifications = None
     staff_notifications = None
+    house_chat_notifications = None
     try:
         await create_tables()
         if registration.test_mode():
@@ -62,13 +69,15 @@ async def main() -> None:
         await bot.delete_webhook()
         notifications = asyncio.create_task(run_message_notifications(bot))
         staff_notifications = asyncio.create_task(run_staff_notifications(bot))
+        from app.database.session import session_factory
+        house_chat_notifications = asyncio.create_task(run_house_chat_delivery(bot, session_factory))
         await dp.start_polling(bot)
 
     finally:
-        for task in (notifications, staff_notifications):
+        for task in (notifications, staff_notifications, house_chat_notifications):
             if task is not None:
                 task.cancel()
-        for task in (notifications, staff_notifications):
+        for task in (notifications, staff_notifications, house_chat_notifications):
             if task is not None:
                 with suppress(asyncio.CancelledError):
                     await task

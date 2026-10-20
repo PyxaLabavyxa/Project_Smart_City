@@ -1,0 +1,402 @@
+import secrets
+from datetime import UTC, datetime, timedelta
+
+from app.database.models import (
+    Announcement,
+    AnnouncementDelivery,
+    AnnouncementPrivateDelivery,
+    House,
+    HouseChat,
+)
+from app.services.announcement_audience import residents, unavailable_reason
+from app.services.house_chats import code_hash
+from fastapi import HTTPException
+from sqlalchemy import delete, func, select, update
+
+from smart_city_api.schemas.house_chats import (
+    AnnouncementDeliveryOutput,
+    AnnouncementOutput,
+    ChatOutput,
+    PrivateAnnouncementDeliveryOutput,
+    ResidentChoice,
+)
+from smart_city_api.services.contacts import staff_house
+from smart_city_api.services.staff import house_scope
+
+
+async def list_chats(session, staff_id):
+    rows = (
+        await session.execute(
+            select(House, HouseChat)
+            .outerjoin(HouseChat, HouseChat.house_id == House.id)
+            .where(House.id.in_(house_scope(staff_id)))
+            .order_by(House.address)
+        )
+    ).all()
+    return [
+        ChatOutput(
+            house_id=house.id,
+            address=house.address,
+            **(
+                {
+                    k: getattr(chat, k)
+                    for k in ("chat_id", "title", "status", "menu_status", "error", "checked_at")
+                }
+                if chat
+                else {}
+            ),
+        )
+        for house, chat in rows
+    ]
+
+
+async def connection_code(session, staff_id, house_id):
+    await staff_house(session, staff_id, house_id, lock=True)
+    chat = await session.get(HouseChat, house_id)
+    if chat and chat.chat_id is not None:
+        raise HTTPException(409, "Сначала отключите существующий чат")
+    if not chat:
+        chat = HouseChat(house_id=house_id, status="disconnected", menu_status="none", revision=0)
+        session.add(chat)
+    code = secrets.token_hex(12)
+    expires = datetime.now(UTC) + timedelta(minutes=15)
+    chat.code_hash, chat.code_expires_at, chat.code_staff_id = code_hash(code), expires, staff_id
+    await session.commit()
+    return {"command": f"/domoved {code}", "expires_at": expires}
+
+
+async def disconnect(session, staff_id, house_id):
+    await staff_house(session, staff_id, house_id, lock=True)
+    chat = await session.scalar(
+        select(HouseChat).where(HouseChat.house_id == house_id).with_for_update()
+    )
+    if chat:
+        chat.chat_id = chat.code_hash = chat.code_expires_at = chat.code_staff_id = None
+        chat.connected_by = chat.menu_message_id = None
+        chat.revision += 1
+        chat.status, chat.menu_status, chat.title, chat.error = "disconnected", "none", "", ""
+        await session.execute(
+            update(AnnouncementDelivery)
+            .where(
+                AnnouncementDelivery.house_id == house_id,
+                AnnouncementDelivery.status.in_(["pending", "failed"]),
+            )
+            .values(status="cancelled", error="Чат отключён")
+        )
+    await session.commit()
+
+
+async def restore_menu(session, staff_id, house_id):
+    await staff_house(session, staff_id, house_id, lock=True)
+    chat = await session.scalar(
+        select(HouseChat).where(HouseChat.house_id == house_id).with_for_update()
+    )
+    if not chat or chat.chat_id is None:
+        raise HTTPException(409, "Сначала подключите чат")
+    if chat.menu_status in ("sending", "pending"):
+        return
+    chat.menu_status = "pending"
+    chat.error = ""
+    await session.commit()
+
+
+async def owned_announcement(session, staff_id, announcement_id, *, lock=False):
+    statement = select(Announcement).where(
+        Announcement.id == announcement_id, Announcement.staff_id == staff_id
+    )
+    if lock:
+        statement = statement.with_for_update()
+    row = await session.scalar(statement)
+    if row is None:
+        raise HTTPException(404, "Рассылка не найдена")
+    return row
+
+
+async def resident_choices(session, staff_id, query="", page=1):
+    houses = dict(
+        (
+            await session.execute(
+                select(House.id, House.address).where(House.id.in_(house_scope(staff_id)))
+            )
+        ).all()
+    )
+    targets = await residents(session, staff_id, list(houses))
+    choices = []
+    query = query.casefold().strip()
+    for uid, target in targets.items():
+        user = target["user"]
+        if query and query not in user.name.casefold() and query not in str(user.max_user_id):
+            continue
+        reason = unavailable_reason(user)
+        choices.append(
+            ResidentChoice(
+                id=uid,
+                name=user.name,
+                max_user_id=user.max_user_id,
+                apartments=[f"{houses[h]} · кв. {n}" for h, n in target["apartments"]],
+                available=not reason,
+                reason=reason,
+            )
+        )
+    return {"items": choices[(page - 1) * 50 : page * 50], "total": len(choices)}
+
+
+async def read_announcement(session, staff_id, announcement_id):
+    row = await owned_announcement(session, staff_id, announcement_id)
+    recipients = (
+        await session.execute(
+            select(AnnouncementDelivery, House, HouseChat)
+            .join(House, House.id == AnnouncementDelivery.house_id)
+            .outerjoin(HouseChat, HouseChat.house_id == House.id)
+            .where(AnnouncementDelivery.announcement_id == row.id)
+            .order_by(House.address)
+        )
+    ).all()
+    private = (
+        await session.scalars(
+            select(AnnouncementPrivateDelivery)
+            .where(AnnouncementPrivateDelivery.announcement_id == row.id)
+            .order_by(AnnouncementPrivateDelivery.id)
+        )
+    ).all()
+    targets = (
+        await residents(session, staff_id, row.house_ids, [d.user_id for d in private])
+        if private
+        else {}
+    )
+    houses = dict(
+        (
+            await session.execute(
+                select(House.id, House.address).where(House.id.in_(house_scope(staff_id)))
+            )
+        ).all()
+    )
+    private_output = []
+    for d in private:
+        target = targets.get(d.user_id)
+        user = target["user"] if target else None
+        reason = unavailable_reason(user) if user else "Житель больше недоступен в выбранных домах"
+        private_output.append(
+            PrivateAnnouncementDeliveryOutput(
+                user_id=d.user_id,
+                name=user.name if user else "Недоступный получатель",
+                max_user_id=user.max_user_id if user else None,
+                address="; ".join(f"{houses[h]} · кв. {n}" for h, n in target["apartments"])
+                if target
+                else "",
+                available=not reason,
+                status=d.status,
+                error=d.error or (reason if d.status == "draft" else ""),
+                sent_at=d.sent_at,
+            )
+        )
+    return AnnouncementOutput(
+        **{
+            k: getattr(row, k)
+            for k in (
+                "id",
+                "topic",
+                "title",
+                "text",
+                "status",
+                "version",
+                "created_at",
+                "sent_at",
+                "house_ids",
+                "channels",
+                "resident_ids",
+                "audience",
+                "excluded_count",
+            )
+        },
+        deliveries=[
+            AnnouncementDeliveryOutput(
+                house_id=d.house_id,
+                address=h.address,
+                chat_title=c.title if c else "",
+                status=d.status,
+                error=d.error,
+                sent_at=d.sent_at,
+            )
+            for d, h, c in recipients
+        ],
+        private_deliveries=private_output,
+    )
+
+
+async def list_announcements(session, staff_id, page):
+    ids = (
+        await session.scalars(
+            select(Announcement.id)
+            .where(Announcement.staff_id == staff_id)
+            .order_by(Announcement.id.desc())
+            .offset((page - 1) * 20)
+            .limit(20)
+        )
+    ).all()
+    total = await session.scalar(
+        select(func.count()).select_from(Announcement).where(Announcement.staff_id == staff_id)
+    )
+    return {"items": [await read_announcement(session, staff_id, i) for i in ids], "total": total}
+
+
+async def save_draft(session, staff_id, data, announcement_id=None):
+    houses = set(
+        (
+            await session.scalars(
+                select(House.id).where(
+                    House.id.in_(house_scope(staff_id)), House.id.in_(data.house_ids)
+                )
+            )
+        ).all()
+    )
+    if houses != set(data.house_ids):
+        raise HTTPException(404, "Один из выбранных домов недоступен")
+    candidates = (
+        await residents(
+            session,
+            staff_id,
+            sorted(houses),
+            data.resident_ids if data.audience == "residents" else None,
+        )
+        if "private" in data.channels
+        else {}
+    )
+    if data.audience == "residents" and set(candidates) != set(data.resident_ids):
+        raise HTTPException(404, "Один из выбранных жителей недоступен")
+    eligible = {
+        uid: target for uid, target in candidates.items() if not unavailable_reason(target["user"])
+    }
+    if announcement_id:
+        row = await owned_announcement(session, staff_id, announcement_id, lock=True)
+        if row.status != "draft" or row.version != data.version:
+            raise HTTPException(409, "Черновик изменился или уже отправлен. Обновите страницу")
+        row.version += 1
+        for model in (AnnouncementDelivery, AnnouncementPrivateDelivery):
+            await session.execute(delete(model).where(model.announcement_id == row.id))
+    else:
+        row = Announcement(staff_id=staff_id, version=1, status="draft")
+        session.add(row)
+    row.topic, row.title, row.text = data.topic, data.title, data.text
+    row.house_ids, row.channels, row.resident_ids = (
+        sorted(houses),
+        list(data.channels),
+        list(data.resident_ids),
+    )
+    row.audience, row.excluded_count = data.audience, len(candidates) - len(eligible)
+    await session.flush()
+    if "groups" in data.channels:
+        session.add_all(
+            AnnouncementDelivery(announcement_id=row.id, house_id=h, status="draft")
+            for h in sorted(houses)
+        )
+    session.add_all(
+        AnnouncementPrivateDelivery(announcement_id=row.id, user_id=uid, status="draft")
+        for uid in eligible
+    )
+    await session.commit()
+    return await read_announcement(session, staff_id, row.id)
+
+
+async def publish(session, staff_id, announcement_id, version):
+    row = await owned_announcement(session, staff_id, announcement_id, lock=True)
+    if row.version != version:
+        raise HTTPException(409, "Предпросмотр устарел. Откройте черновик заново")
+    for house_id in row.house_ids:
+        await staff_house(session, staff_id, house_id)
+    if row.status != "draft":
+        return await read_announcement(session, staff_id, row.id)
+    deliveries = (
+        await session.scalars(
+            select(AnnouncementDelivery).where(AnnouncementDelivery.announcement_id == row.id)
+        )
+    ).all()
+    for delivery in deliveries:
+        chat = await session.get(HouseChat, delivery.house_id)
+        if not chat or chat.status != "connected" or chat.menu_status != "ready":
+            raise HTTPException(409, "У всех выбранных домов должен быть подключён исправный чат")
+        delivery.chat_id, delivery.chat_revision, delivery.status = (
+            chat.chat_id,
+            chat.revision,
+            "pending",
+        )
+    private = (
+        await session.scalars(
+            select(AnnouncementPrivateDelivery).where(
+                AnnouncementPrivateDelivery.announcement_id == row.id
+            )
+        )
+    ).all()
+    targets = (
+        await residents(session, staff_id, row.house_ids, [d.user_id for d in private])
+        if private
+        else {}
+    )
+    eligible = {uid for uid, t in targets.items() if not unavailable_reason(t["user"])}
+    if not deliveries and not eligible:
+        raise HTTPException(
+            409, "Нет доступных получателей. Проверьте выбор жителей и их настройки уведомлений"
+        )
+    for delivery in private:
+        delivery.status = "pending" if delivery.user_id in eligible else "cancelled"
+        delivery.error = (
+            "" if delivery.user_id in eligible else "Доступ или настройки жителя изменились"
+        )
+    row.status, row.sent_at = "queued", datetime.now(UTC)
+    await session.commit()
+    return await read_announcement(session, staff_id, row.id)
+
+
+async def retry_failed(session, staff_id, announcement_id):
+    row = await owned_announcement(session, staff_id, announcement_id, lock=True)
+    deliveries = (
+        await session.scalars(
+            select(AnnouncementDelivery)
+            .where(
+                AnnouncementDelivery.announcement_id == row.id,
+                AnnouncementDelivery.status == "failed",
+            )
+            .with_for_update()
+        )
+    ).all()
+    for d in deliveries:
+        await staff_house(session, staff_id, d.house_id)
+        chat = await session.get(HouseChat, d.house_id)
+        if (
+            not chat
+            or chat.status != "connected"
+            or chat.menu_status != "ready"
+            or chat.chat_id != d.chat_id
+            or chat.revision != d.chat_revision
+        ):
+            raise HTTPException(
+                409,
+                "Чат изменился или недоступен. Создайте новый черновик после проверки подключения",
+            )
+        d.status, d.error = "pending", ""
+    private = (
+        await session.scalars(
+            select(AnnouncementPrivateDelivery)
+            .where(
+                AnnouncementPrivateDelivery.announcement_id == row.id,
+                AnnouncementPrivateDelivery.status == "failed",
+            )
+            .with_for_update()
+        )
+    ).all()
+    targets = (
+        await residents(session, staff_id, row.house_ids, [d.user_id for d in private])
+        if private
+        else {}
+    )
+    for d in private:
+        target = targets.get(d.user_id)
+        if not target or unavailable_reason(target["user"]):
+            raise HTTPException(
+                409,
+                "Жителю нужно открыть бота, включить объявления "
+                "и сохранить привязку к выбранному дому",
+            )
+        d.status, d.error = "pending", ""
+    await session.commit()
+    return await read_announcement(session, staff_id, row.id)

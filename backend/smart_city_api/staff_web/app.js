@@ -67,6 +67,7 @@ function toast(text) {
   toastTimer = setTimeout(() => { $("toast").hidden = true; }, 5000);
 }
 function showLogin() {
+  window.resetChatManagement?.();
   state.profile = null; state.detail = null; state.listRequest++; state.detailRequest++;
   $("issue-dialog").close(); $("photo-dialog").close();
   $("full-photo").removeAttribute("src"); $("detail-content").replaceChildren();
@@ -390,18 +391,23 @@ function switchSection() {
   const registrations = window.location.hash === "#registrations";
   const contacts = window.location.hash === "#contacts";
   const cameras = window.location.hash === "#cameras";
-  $("issues-section").hidden = registrations || contacts || cameras;
+  const maxChats = window.location.hash === "#max-chats";
+  const announcements = window.location.hash === "#announcements";
+  $("issues-section").hidden = registrations || contacts || cameras || maxChats || announcements;
+  $("max-chats-section").hidden = !maxChats;
+  $("announcements-section").hidden = !announcements;
   $("registrations-section").hidden = !registrations;
   $("contacts-section").hidden = !contacts;
   $("cameras-section").hidden = !cameras;
-  $("section-name").textContent = cameras ? "Камеры" : contacts ? "Контакты" : registrations ? "Заявки" : "Обращения";
-  for (const [id, active] of [["nav-issues", !registrations && !contacts && !cameras], ["nav-registrations", registrations], ["nav-contacts", contacts], ["nav-cameras", cameras]]) {
+  $("section-name").textContent = maxChats ? "MAX-чаты" : announcements ? "Рассылки" : cameras ? "Камеры" : contacts ? "Контакты" : registrations ? "Заявки" : "Обращения";
+  for (const [id, active] of [["nav-issues", !registrations && !contacts && !cameras && !maxChats && !announcements], ["nav-registrations", registrations], ["nav-contacts", contacts], ["nav-cameras", cameras], ["nav-max-chats", maxChats], ["nav-announcements", announcements]]) {
     $(id).classList.toggle("active", active);
     if (active) $(id).setAttribute("aria-current", "page"); else $(id).removeAttribute("aria-current");
   }
   if (registrations && state.profile) void loadRegistrations();
   if (cameras && state.profile) void loadCameras();
   if (contacts && state.profile && !contactState.loaded && !contactState.loading) void loadContacts();
+  if ((maxChats || announcements) && state.profile) void loadChatManagement(announcements);
 }
 async function loadRegistrations() {
   if (!state.profile) return;

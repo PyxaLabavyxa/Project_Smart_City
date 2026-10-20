@@ -11,6 +11,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from smart_city_api.api.router import router
 from smart_city_api.api.routes.auth import router as auth_router
+from smart_city_api.api.routes.house_chats import router as house_chats_router
 from smart_city_api.api.routes.registration import router as registration_router
 from smart_city_api.api.routes.resident import router as resident_router
 from smart_city_api.api.routes.services import router as services_router
@@ -95,6 +96,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(resident_router)
     app.include_router(services_router)
     app.include_router(staff_router)
+    app.include_router(house_chats_router)
     app.include_router(registration_router)
     app.mount(
         "/staff",

@@ -1,4 +1,6 @@
 const routes: Record<string, string> = {
+  report: "/issues/new",
+  contacts: "/contacts",
   issues: "/issues",
   utilities: "/utilities",
   cameras: "/cameras",

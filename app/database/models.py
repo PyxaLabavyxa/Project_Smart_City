@@ -14,7 +14,7 @@ from sqlalchemy import (
     func,
     UniqueConstraint
 )
-from sqlalchemy import JSON, Numeric, Date, Boolean, CheckConstraint, true
+from sqlalchemy import JSON, Numeric, Date, Boolean, CheckConstraint, true, false
 
 from app.database.enums import IssueCategory, IssuePriority, IssueStatus
 
@@ -23,12 +23,95 @@ class Base(DeclarativeBase):
     pass
 
 
+class HouseChat(Base):
+    __tablename__ = "house_chats"
+
+    house_id: Mapped[int] = mapped_column(ForeignKey("houses.id"), primary_key=True)
+    chat_id: Mapped[int | None] = mapped_column(BigInteger, unique=True)
+    title: Mapped[str] = mapped_column(String(200), default="", server_default="")
+    status: Mapped[str] = mapped_column(String(20), default="disconnected")
+    revision: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    code_hash: Mapped[str | None] = mapped_column(String(64), unique=True)
+    code_staff_id: Mapped[int | None] = mapped_column(ForeignKey("staff_users.id"))
+    code_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    connected_by: Mapped[int | None] = mapped_column(BigInteger)
+    checked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    menu_message_id: Mapped[str | None] = mapped_column(String(200))
+    menu_status: Mapped[str] = mapped_column(String(20), default="none")
+    menu_attempted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    error: Mapped[str] = mapped_column(String(300), default="", server_default="")
+    __table_args__ = (
+        CheckConstraint("status IN ('disconnected','connected','attention')", name="ck_house_chat_status"),
+        CheckConstraint("menu_status IN ('none','pending','sending','ready','failed','uncertain')", name="ck_house_chat_menu"),
+    )
+
+
+class Announcement(Base):
+    __tablename__ = "announcements"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    staff_id: Mapped[int] = mapped_column(ForeignKey("staff_users.id"), index=True)
+    topic: Mapped[str] = mapped_column(String(20))
+    title: Mapped[str] = mapped_column(String(150))
+    text: Mapped[str] = mapped_column(String(3000))
+    version: Mapped[int] = mapped_column(Integer, default=1)
+    status: Mapped[str] = mapped_column(String(20), default="draft")
+    house_ids: Mapped[list[int]] = mapped_column(JSON, default=list, server_default="[]")
+    channels: Mapped[list[str]] = mapped_column(JSON, default=lambda: ["groups"], server_default='["groups"]')
+    resident_ids: Mapped[list[int]] = mapped_column(JSON, default=list, server_default="[]")
+    audience: Mapped[str] = mapped_column(String(20), default="houses", server_default="houses")
+    excluded_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    __table_args__ = (
+        CheckConstraint("status IN ('draft','queued')", name="ck_announcement_status"),
+        CheckConstraint("topic IN ('outage','works','meeting','other')", name="ck_announcement_topic"),
+    )
+
+
+class AnnouncementDelivery(Base):
+    __tablename__ = "announcement_deliveries"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    announcement_id: Mapped[int] = mapped_column(ForeignKey("announcements.id", ondelete="CASCADE"), index=True)
+    house_id: Mapped[int] = mapped_column(ForeignKey("houses.id"))
+    chat_id: Mapped[int | None] = mapped_column(BigInteger)
+    chat_revision: Mapped[int | None] = mapped_column(Integer)
+    status: Mapped[str] = mapped_column(String(20), default="draft")
+    message_id: Mapped[str | None] = mapped_column(String(200))
+    attempted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    error: Mapped[str] = mapped_column(String(300), default="", server_default="")
+    __table_args__ = (
+        UniqueConstraint("announcement_id", "house_id", name="uq_announcement_house"),
+        CheckConstraint("status IN ('draft','pending','sending','sent','failed','uncertain','cancelled')", name="ck_announcement_delivery"),
+    )
+
+
+class AnnouncementPrivateDelivery(Base):
+    __tablename__ = "announcement_private_deliveries"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    announcement_id: Mapped[int] = mapped_column(ForeignKey("announcements.id", ondelete="CASCADE"), index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    status: Mapped[str] = mapped_column(String(20), default="draft", index=True)
+    message_id: Mapped[str | None] = mapped_column(String(200))
+    attempted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    error: Mapped[str] = mapped_column(String(300), default="", server_default="")
+    __table_args__ = (
+        UniqueConstraint("announcement_id", "user_id", name="uq_announcement_resident"),
+        CheckConstraint("status IN ('draft','pending','sending','sent','failed','uncertain','cancelled')", name="ck_announcement_private_delivery"),
+    )
+
+
 class User(Base):
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     max_user_id: Mapped[int] = mapped_column(BigInteger, unique=True)
     name: Mapped[str] = mapped_column(String(200))
+    bot_dialog_started: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
     notify_personal_messages: Mapped[bool] = mapped_column(Boolean, default=True, server_default=true())
     notify_issue_messages: Mapped[bool] = mapped_column(Boolean, default=True, server_default=true())
     notify_issue_statuses: Mapped[bool] = mapped_column(Boolean, default=True, server_default=true())

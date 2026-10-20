@@ -2,6 +2,7 @@ import asyncio
 import logging
 
 from app.database.models import (
+    AnnouncementPrivateDelivery,
     Apartment,
     ApartmentMessage,
     HouseCamera,
@@ -93,6 +94,7 @@ async def delete_registered_user(
         await session.scalars(select(IssuePhoto.file_path).where(IssuePhoto.issue_id.in_(issues)))
     )
     operations = [
+        delete(AnnouncementPrivateDelivery).where(AnnouncementPrivateDelivery.user_id == uid),
         delete(StaffNotification).where(
             or_(
                 StaffNotification.issue_id.in_(issues),

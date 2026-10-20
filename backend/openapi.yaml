@@ -1378,6 +1378,319 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/staff/announcement-residents:
+    get:
+      tags:
+      - Staff chats
+      summary: Residents
+      operationId: residents_api_v1_staff_announcement_residents_get
+      security:
+      - StaffSession: []
+      parameters:
+      - name: q
+        in: query
+        required: false
+        schema:
+          type: string
+          maxLength: 100
+          default: ''
+          title: Q
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 10000
+          minimum: 1
+          default: 1
+          title: Page
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResidentPage'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/staff/max-chats:
+    get:
+      tags:
+      - Staff chats
+      summary: Chats
+      operationId: chats_api_v1_staff_max_chats_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ChatOutput'
+                type: array
+                title: Response Chats Api V1 Staff Max Chats Get
+      security:
+      - StaffSession: []
+  /api/v1/staff/max-chats/{house_id}/code:
+    post:
+      tags:
+      - Staff chats
+      summary: Connection
+      operationId: connection_api_v1_staff_max_chats__house_id__code_post
+      security:
+      - StaffSession: []
+      parameters:
+      - name: house_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: House Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConnectionCode'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/staff/max-chats/{house_id}/disconnect:
+    post:
+      tags:
+      - Staff chats
+      summary: Disconnect
+      operationId: disconnect_api_v1_staff_max_chats__house_id__disconnect_post
+      security:
+      - StaffSession: []
+      parameters:
+      - name: house_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: House Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/staff/max-chats/{house_id}/menu:
+    post:
+      tags:
+      - Staff chats
+      summary: Menu
+      operationId: menu_api_v1_staff_max_chats__house_id__menu_post
+      security:
+      - StaffSession: []
+      parameters:
+      - name: house_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: House Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/staff/announcements:
+    get:
+      tags:
+      - Staff chats
+      summary: Announcements
+      operationId: announcements_api_v1_staff_announcements_get
+      security:
+      - StaffSession: []
+      parameters:
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 100000
+          minimum: 1
+          default: 1
+          title: Page
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnnouncementPage'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    post:
+      tags:
+      - Staff chats
+      summary: Create
+      operationId: create_api_v1_staff_announcements_post
+      security:
+      - StaffSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnnouncementInput'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnnouncementOutput'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/staff/announcements/{announcement_id}:
+    get:
+      tags:
+      - Staff chats
+      summary: Detail
+      operationId: detail_api_v1_staff_announcements__announcement_id__get
+      security:
+      - StaffSession: []
+      parameters:
+      - name: announcement_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Announcement Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnnouncementOutput'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    put:
+      tags:
+      - Staff chats
+      summary: Edit
+      operationId: edit_api_v1_staff_announcements__announcement_id__put
+      security:
+      - StaffSession: []
+      parameters:
+      - name: announcement_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Announcement Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnnouncementInput'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnnouncementOutput'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/staff/announcements/{announcement_id}/send:
+    post:
+      tags:
+      - Staff chats
+      summary: Send
+      operationId: send_api_v1_staff_announcements__announcement_id__send_post
+      security:
+      - StaffSession: []
+      parameters:
+      - name: announcement_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Announcement Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VersionInput'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnnouncementOutput'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/staff/announcements/{announcement_id}/retry:
+    post:
+      tags:
+      - Staff chats
+      summary: Retry
+      operationId: retry_api_v1_staff_announcements__announcement_id__retry_post
+      security:
+      - StaffSession: []
+      parameters:
+      - name: announcement_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Announcement Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnnouncementOutput'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /api/v1/registration:
     get:
       tags:
@@ -1487,6 +1800,194 @@ components:
       required:
       - notification_id
       title: ActionOutput
+    AnnouncementDeliveryOutput:
+      properties:
+        house_id:
+          type: integer
+          title: House Id
+        address:
+          type: string
+          title: Address
+        chat_title:
+          type: string
+          title: Chat Title
+        status:
+          type: string
+          title: Status
+        error:
+          type: string
+          title: Error
+        sent_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Sent At
+      type: object
+      required:
+      - house_id
+      - address
+      - chat_title
+      - status
+      - error
+      - sent_at
+      title: AnnouncementDeliveryOutput
+    AnnouncementInput:
+      properties:
+        topic:
+          type: string
+          enum:
+          - outage
+          - works
+          - meeting
+          - other
+          title: Topic
+        title:
+          type: string
+          maxLength: 150
+          minLength: 1
+          title: Title
+        text:
+          type: string
+          maxLength: 3000
+          minLength: 1
+          title: Text
+        house_ids:
+          items:
+            type: integer
+          type: array
+          maxItems: 100
+          minItems: 1
+          title: House Ids
+        version:
+          type: integer
+          minimum: 1.0
+          title: Version
+          default: 1
+        channels:
+          items:
+            type: string
+            enum:
+            - groups
+            - private
+          type: array
+          maxItems: 2
+          minItems: 1
+          title: Channels
+        resident_ids:
+          items:
+            type: integer
+          type: array
+          maxItems: 100
+          title: Resident Ids
+        audience:
+          type: string
+          enum:
+          - houses
+          - residents
+          title: Audience
+          default: houses
+      type: object
+      required:
+      - topic
+      - title
+      - text
+      - house_ids
+      title: AnnouncementInput
+    AnnouncementOutput:
+      properties:
+        id:
+          type: integer
+          title: Id
+        topic:
+          type: string
+          title: Topic
+        title:
+          type: string
+          title: Title
+        text:
+          type: string
+          title: Text
+        status:
+          type: string
+          title: Status
+        version:
+          type: integer
+          title: Version
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        sent_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Sent At
+        deliveries:
+          items:
+            $ref: '#/components/schemas/AnnouncementDeliveryOutput'
+          type: array
+          title: Deliveries
+        house_ids:
+          items:
+            type: integer
+          type: array
+          title: House Ids
+        channels:
+          items:
+            type: string
+          type: array
+          title: Channels
+        resident_ids:
+          items:
+            type: integer
+          type: array
+          title: Resident Ids
+        private_deliveries:
+          items:
+            $ref: '#/components/schemas/PrivateAnnouncementDeliveryOutput'
+          type: array
+          title: Private Deliveries
+        excluded_count:
+          type: integer
+          title: Excluded Count
+        audience:
+          type: string
+          title: Audience
+      type: object
+      required:
+      - id
+      - topic
+      - title
+      - text
+      - status
+      - version
+      - created_at
+      - sent_at
+      - deliveries
+      - house_ids
+      - channels
+      - resident_ids
+      - private_deliveries
+      - excluded_count
+      - audience
+      title: AnnouncementOutput
+    AnnouncementPage:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/AnnouncementOutput'
+          type: array
+          title: Items
+        total:
+          type: integer
+          title: Total
+      type: object
+      required:
+      - items
+      - total
+      title: AnnouncementPage
     ApartmentPage:
       properties:
         items:
@@ -1617,6 +2118,60 @@ components:
       - tariff
       - amount
       title: Charge
+    ChatOutput:
+      properties:
+        house_id:
+          type: integer
+          title: House Id
+        address:
+          type: string
+          title: Address
+        chat_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Chat Id
+        title:
+          type: string
+          title: Title
+          default: ''
+        status:
+          type: string
+          title: Status
+          default: disconnected
+        menu_status:
+          type: string
+          title: Menu Status
+          default: none
+        error:
+          type: string
+          title: Error
+          default: ''
+        checked_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Checked At
+      type: object
+      required:
+      - house_id
+      - address
+      title: ChatOutput
+    ConnectionCode:
+      properties:
+        command:
+          type: string
+          title: Command
+        expires_at:
+          type: string
+          format: date-time
+          title: Expires At
+      type: object
+      required:
+      - command
+      - expires_at
+      title: ConnectionCode
     ContactInput:
       properties:
         label:
@@ -2506,6 +3061,48 @@ components:
       - sequence
       - active
       title: PresenceInput
+    PrivateAnnouncementDeliveryOutput:
+      properties:
+        user_id:
+          type: integer
+          title: User Id
+        name:
+          type: string
+          title: Name
+        max_user_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Max User Id
+        address:
+          type: string
+          title: Address
+        available:
+          type: boolean
+          title: Available
+        status:
+          type: string
+          title: Status
+        error:
+          type: string
+          title: Error
+        sent_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Sent At
+      type: object
+      required:
+      - user_id
+      - name
+      - max_user_id
+      - address
+      - available
+      - status
+      - error
+      - sent_at
+      title: PrivateAnnouncementDeliveryOutput
     Profile:
       properties:
         id:
@@ -2626,6 +3223,52 @@ components:
       - expected_status
       - request_id
       title: RejectInput
+    ResidentChoice:
+      properties:
+        id:
+          type: integer
+          title: Id
+        name:
+          type: string
+          title: Name
+        max_user_id:
+          type: integer
+          title: Max User Id
+        apartments:
+          items:
+            type: string
+          type: array
+          title: Apartments
+        available:
+          type: boolean
+          title: Available
+        reason:
+          type: string
+          title: Reason
+      type: object
+      required:
+      - id
+      - name
+      - max_user_id
+      - apartments
+      - available
+      - reason
+      title: ResidentChoice
+    ResidentPage:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/ResidentChoice'
+          type: array
+          title: Items
+        total:
+          type: integer
+          title: Total
+      type: object
+      required:
+      - items
+      - total
+      title: ResidentPage
     SendMessage:
       properties:
         recipient_id:
@@ -2823,6 +3466,16 @@ components:
       - msg
       - type
       title: ValidationError
+    VersionInput:
+      properties:
+        version:
+          type: integer
+          minimum: 1.0
+          title: Version
+      type: object
+      required:
+      - version
+      title: VersionInput
     WorkResponse:
       properties:
         id:
