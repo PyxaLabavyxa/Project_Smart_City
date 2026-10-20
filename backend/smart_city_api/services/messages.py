@@ -11,6 +11,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from smart_city_api.schemas.app import MessageResponse, SendMessage
+from smart_city_api.services import chat_photos
 from smart_city_api.services.access import require_apartment
 
 
@@ -26,11 +27,12 @@ async def message_response(
         text=message.text,
         direction="outgoing" if outgoing else "incoming",
         createdAt=message.created_at,
+        photos=await chat_photos.outputs(session, message.id),
     )
 
 
 async def send_message(
-    session: AsyncSession, user_id: int, apartment_id: int, data: SendMessage
+    session: AsyncSession, user_id: int, apartment_id: int, data: SendMessage, photos=()
 ) -> MessageResponse:
     sender = await require_apartment(session, user_id, apartment_id)
     recipient = await session.get(Apartment, data.recipient_id)
@@ -51,6 +53,7 @@ async def send_message(
     existing = await session.scalar(statement)
     if existing:
         check_retry(existing)
+        await chat_photos.check_photos(session, existing.id, photos)
         return await message_response(session, existing, apartment_id)
     message = ApartmentMessage(
         user_id=user_id,
@@ -62,6 +65,7 @@ async def send_message(
     try:
         session.add(message)
         await session.flush()
+        chat_photos.attach(session, message.id, photos)
         recipients = await session.scalars(
             select(User.max_user_id)
             .join(UserApartment)
@@ -85,5 +89,6 @@ async def send_message(
         if existing is None:
             raise
         check_retry(existing)
+        await chat_photos.check_photos(session, existing.id, photos)
         return await message_response(session, existing, apartment_id)
     return await message_response(session, message, apartment_id)

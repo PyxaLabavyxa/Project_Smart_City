@@ -1,7 +1,8 @@
 from datetime import UTC, datetime
 
-from app.database.models import ApartmentMessage, HouseWork
-from fastapi import APIRouter
+from app.database.models import ApartmentMessage, ChatPhoto, HouseWork
+from fastapi import APIRouter, HTTPException, Request
+from fastapi.responses import FileResponse
 from sqlalchemy import or_, select
 
 from smart_city_api.api.dependencies import Resident, Session
@@ -18,7 +19,8 @@ from smart_city_api.schemas.app import (
 )
 from smart_city_api.schemas.cameras import CreateCamera
 from smart_city_api.services import cameras as camera_service
-from smart_city_api.services.access import require_apartment, require_house
+from smart_city_api.services import chat_photos
+from smart_city_api.services.access import own_apartment_ids, require_apartment, require_house
 from smart_city_api.services.messages import message_response, send_message
 from smart_city_api.services.utilities import load_account, save_reading
 
@@ -53,6 +55,47 @@ async def messages(
 @router.post("/apartments/{apartment_id}/messages", response_model=MessageResponse, status_code=201)
 async def send(apartment_id: int, data: SendMessage, session: Session, user: Resident):
     return await send_message(session, user.id, apartment_id, data)
+
+
+@router.post(
+    "/apartments/{apartment_id}/messages/with-photos",
+    openapi_extra=chat_photos.MULTIPART,
+    response_model=MessageResponse,
+    status_code=201,
+)
+async def send_photos(apartment_id: int, request: Request, session: Session, user: Resident):
+    await require_apartment(session, user.id, apartment_id)
+    async with chat_photos.upload(request, SendMessage) as (data, photos):
+        return await send_message(session, user.id, apartment_id, data, photos)
+
+
+@router.get("/chat-photos/{photo_id}", response_class=FileResponse)
+async def chat_photo(photo_id: int, request: Request, session: Session, user: Resident):
+    from app.database.models import IssueMessage
+
+    from smart_city_api.services.issue_chat import own_issue
+
+    record = await session.get(ChatPhoto, photo_id)
+    if record is None:
+        raise HTTPException(404, "Фотография не найдена")
+    if record.apartment_message_id is not None:
+        permitted = await session.scalar(
+            select(ApartmentMessage.id).where(
+                ApartmentMessage.id == record.apartment_message_id,
+                or_(
+                    ApartmentMessage.sender_id.in_(own_apartment_ids(user.id)),
+                    ApartmentMessage.recipient_id.in_(own_apartment_ids(user.id)),
+                ),
+            )
+        )
+        if permitted is None:
+            raise HTTPException(404, "Фотография не найдена")
+    else:
+        message = await session.get(IssueMessage, record.issue_message_id)
+        if message is None:
+            raise HTTPException(404, "Фотография не найдена")
+        await own_issue(session, user.id, message.issue_id)
+    return await chat_photos.response(request, record)
 
 
 @router.get("/apartments/{apartment_id}/utilities", response_model=AccountResponse | None)

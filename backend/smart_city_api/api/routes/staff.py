@@ -2,7 +2,14 @@ import asyncio
 from typing import Annotated, Literal
 
 from app.database.enums import IssuePriority, IssueStatus
-from app.database.models import CompanyHouse, House, IssuePhoto, StaffSession
+from app.database.models import (
+    ChatPhoto,
+    CompanyHouse,
+    House,
+    IssueMessage,
+    IssuePhoto,
+    StaffSession,
+)
 from app.paths import project_path
 from fastapi import APIRouter, HTTPException, Query, Request, Response
 from fastapi.responses import FileResponse
@@ -37,6 +44,7 @@ from smart_city_api.schemas.staff import (
     StatusInput,
 )
 from smart_city_api.services import cameras as camera_service
+from smart_city_api.services import chat_photos
 from smart_city_api.services import staff as service
 from smart_city_api.services.contacts import read_contacts, save_contacts, staff_house
 from smart_city_api.services.photos import photo_path
@@ -217,6 +225,29 @@ async def reject_issue(issue_id: int, body: RejectInput, session: Session, emplo
 @router.post("/issues/{issue_id}/messages", response_model=ActionOutput)
 async def send_message(issue_id: int, body: MessageInput, session: Session, employee: Staff):
     return await service.perform_action(session, employee, issue_id, body)
+
+
+@router.post(
+    "/issues/{issue_id}/messages/with-photos",
+    response_model=ActionOutput,
+    openapi_extra=chat_photos.MULTIPART,
+)
+async def send_message_photos(issue_id: int, request: Request, session: Session, employee: Staff):
+    await service.accessible_issue(session, employee.id, issue_id)
+    async with chat_photos.upload(request, MessageInput) as (data, photos):
+        return await service.perform_action(session, employee, issue_id, data, photos)
+
+
+@router.get("/chat-photos/{photo_id}", response_class=FileResponse)
+async def chat_photo(photo_id: int, request: Request, session: Session, employee: Staff):
+    record = await session.get(ChatPhoto, photo_id)
+    if record is None or record.issue_message_id is None:
+        raise HTTPException(404, "Фотография не найдена")
+    message = await session.get(IssueMessage, record.issue_message_id)
+    if message is None:
+        raise HTTPException(404, "Фотография не найдена")
+    await service.accessible_issue(session, employee.id, message.issue_id)
+    return await chat_photos.response(request, record)
 
 
 @router.get("/photos/{photo_id}", response_class=FileResponse)

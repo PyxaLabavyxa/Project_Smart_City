@@ -409,6 +409,55 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/issues/{issue_id}/messages/with-photos:
+    post:
+      tags:
+      - resident
+      summary: Issue Message Photos
+      operationId: issue_message_photos_api_v1_issues__issue_id__messages_with_photos_post
+      security:
+      - MAXLaunchData: []
+      parameters:
+      - name: issue_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Issue Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IssueMessageOutput'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+              - data
+              - photos
+              properties:
+                data:
+                  type: string
+                  description: 'JSON: text, request_id; для соседей также recipient_id.
+                    Текст может быть пустым при наличии фото.'
+                photos:
+                  type: array
+                  minItems: 1
+                  maxItems: 10
+                  items:
+                    type: string
+                    format: binary
   /api/v1/issues/{issue_id}/presence:
     post:
       tags:
@@ -590,6 +639,79 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MessageResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/apartments/{apartment_id}/messages/with-photos:
+    post:
+      tags:
+      - services
+      summary: Send Photos
+      operationId: send_photos_api_v1_apartments__apartment_id__messages_with_photos_post
+      security:
+      - MAXLaunchData: []
+      parameters:
+      - name: apartment_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Apartment Id
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+              - data
+              - photos
+              properties:
+                data:
+                  type: string
+                  description: 'JSON: text, request_id; для соседей также recipient_id.
+                    Текст может быть пустым при наличии фото.'
+                photos:
+                  type: array
+                  minItems: 1
+                  maxItems: 10
+                  items:
+                    type: string
+                    format: binary
+  /api/v1/chat-photos/{photo_id}:
+    get:
+      tags:
+      - services
+      summary: Chat Photo
+      operationId: chat_photo_api_v1_chat_photos__photo_id__get
+      security:
+      - MAXLaunchData: []
+      parameters:
+      - name: photo_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Photo Id
+      responses:
+        '200':
+          description: Successful Response
         '422':
           description: Validation Error
           content:
@@ -1262,6 +1384,79 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ActionOutput'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/staff/issues/{issue_id}/messages/with-photos:
+    post:
+      tags:
+      - Staff
+      summary: Send Message Photos
+      operationId: send_message_photos_api_v1_staff_issues__issue_id__messages_with_photos_post
+      security:
+      - StaffSession: []
+      parameters:
+      - name: issue_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Issue Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActionOutput'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+              - data
+              - photos
+              properties:
+                data:
+                  type: string
+                  description: 'JSON: text, request_id; для соседей также recipient_id.
+                    Текст может быть пустым при наличии фото.'
+                photos:
+                  type: array
+                  minItems: 1
+                  maxItems: 10
+                  items:
+                    type: string
+                    format: binary
+  /api/v1/staff/chat-photos/{photo_id}:
+    get:
+      tags:
+      - Staff
+      summary: Chat Photo
+      operationId: chat_photo_api_v1_staff_chat_photos__photo_id__get
+      security:
+      - StaffSession: []
+      parameters:
+      - name: photo_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Photo Id
+      responses:
+        '200':
+          description: Successful Response
         '422':
           description: Validation Error
           content:
@@ -2158,6 +2353,19 @@ components:
       - house_id
       - address
       title: ChatOutput
+    ChatPhotoOutput:
+      properties:
+        id:
+          type: integer
+          title: Id
+        url:
+          type: string
+          title: Url
+      type: object
+      required:
+      - id
+      - url
+      title: ChatPhotoOutput
     ConnectionCode:
       properties:
         command:
@@ -2586,6 +2794,11 @@ components:
       title: IssueMessageInput
     IssueMessageOutput:
       properties:
+        photos:
+          items:
+            $ref: '#/components/schemas/ChatPhotoOutput'
+          type: array
+          title: Photos
         id:
           type: integer
           title: Id
@@ -2882,6 +3095,11 @@ components:
       title: MessageInput
     MessageOutput:
       properties:
+        photos:
+          items:
+            $ref: '#/components/schemas/ChatPhotoOutput'
+          type: array
+          title: Photos
         id:
           type: integer
           title: Id
@@ -2928,6 +3146,11 @@ components:
       title: MessagePage
     MessageResponse:
       properties:
+        photos:
+          items:
+            $ref: '#/components/schemas/ChatPhotoOutput'
+          type: array
+          title: Photos
         id:
           type: integer
           title: Id

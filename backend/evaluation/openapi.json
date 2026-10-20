@@ -663,6 +663,82 @@
         }
       }
     },
+    "/api/v1/issues/{issue_id}/messages/with-photos": {
+      "post": {
+        "tags": [
+          "resident"
+        ],
+        "summary": "Issue Message Photos",
+        "operationId": "issue_message_photos_api_v1_issues__issue_id__messages_with_photos_post",
+        "security": [
+          {
+            "MAXLaunchData": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "issue_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Issue Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssueMessageOutput"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "data",
+                  "photos"
+                ],
+                "properties": {
+                  "data": {
+                    "type": "string",
+                    "description": "JSON: text, request_id; для соседей также recipient_id. Текст может быть пустым при наличии фото."
+                  },
+                  "photos": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 10,
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/issues/{issue_id}/presence": {
       "post": {
         "tags": [
@@ -964,6 +1040,122 @@
         }
       }
     },
+    "/api/v1/apartments/{apartment_id}/messages/with-photos": {
+      "post": {
+        "tags": [
+          "services"
+        ],
+        "summary": "Send Photos",
+        "operationId": "send_photos_api_v1_apartments__apartment_id__messages_with_photos_post",
+        "security": [
+          {
+            "MAXLaunchData": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "apartment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Apartment Id"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "data",
+                  "photos"
+                ],
+                "properties": {
+                  "data": {
+                    "type": "string",
+                    "description": "JSON: text, request_id; для соседей также recipient_id. Текст может быть пустым при наличии фото."
+                  },
+                  "photos": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 10,
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/chat-photos/{photo_id}": {
+      "get": {
+        "tags": [
+          "services"
+        ],
+        "summary": "Chat Photo",
+        "operationId": "chat_photo_api_v1_chat_photos__photo_id__get",
+        "security": [
+          {
+            "MAXLaunchData": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "photo_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Photo Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/apartments/{apartment_id}/utilities": {
       "get": {
         "tags": [
@@ -1125,6 +1317,61 @@
             }
           }
         }
+      },
+      "post": {
+        "tags": [
+          "services"
+        ],
+        "summary": "Add Camera",
+        "operationId": "add_camera_api_v1_houses__house_id__cameras_post",
+        "security": [
+          {
+            "MAXLaunchData": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "house_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "House Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCamera"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CameraResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/cameras/{camera_id}/preview": {
@@ -1211,6 +1458,251 @@
                 }
               }
             }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/staff/cameras": {
+      "get": {
+        "tags": [
+          "Staff"
+        ],
+        "summary": "Cameras For Moderation",
+        "operationId": "cameras_for_moderation_api_v1_staff_cameras_get",
+        "security": [
+          {
+            "StaffSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "all",
+                "pending",
+                "approved",
+                "rejected"
+              ],
+              "type": "string",
+              "default": "pending",
+              "title": "Status"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100000,
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 5,
+              "title": "Page Size"
+            }
+          },
+          {
+            "name": "house_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "exclusiveMinimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "House Id"
+            }
+          },
+          {
+            "name": "entrance",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 100,
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Entrance"
+            }
+          },
+          {
+            "name": "floor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 200,
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Floor"
+            }
+          },
+          {
+            "name": "zone",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 20
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Zone"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffCameraPage"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/staff/cameras/{camera_id}/moderate": {
+      "post": {
+        "tags": [
+          "Staff"
+        ],
+        "summary": "Review Camera",
+        "operationId": "review_camera_api_v1_staff_cameras__camera_id__moderate_post",
+        "security": [
+          {
+            "StaffSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "camera_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Camera Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModerateCamera"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CameraResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/staff/cameras/{camera_id}": {
+      "delete": {
+        "tags": [
+          "Staff"
+        ],
+        "summary": "Remove Camera",
+        "operationId": "remove_camera_api_v1_staff_cameras__camera_id__delete",
+        "security": [
+          {
+            "StaffSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "camera_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Camera Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
           },
           "422": {
             "description": "Validation Error",
@@ -1786,6 +2278,122 @@
         }
       }
     },
+    "/api/v1/staff/issues/{issue_id}/messages/with-photos": {
+      "post": {
+        "tags": [
+          "Staff"
+        ],
+        "summary": "Send Message Photos",
+        "operationId": "send_message_photos_api_v1_staff_issues__issue_id__messages_with_photos_post",
+        "security": [
+          {
+            "StaffSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "issue_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Issue Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionOutput"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "data",
+                  "photos"
+                ],
+                "properties": {
+                  "data": {
+                    "type": "string",
+                    "description": "JSON: text, request_id; для соседей также recipient_id. Текст может быть пустым при наличии фото."
+                  },
+                  "photos": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 10,
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/staff/chat-photos/{photo_id}": {
+      "get": {
+        "tags": [
+          "Staff"
+        ],
+        "summary": "Chat Photo",
+        "operationId": "chat_photo_api_v1_staff_chat_photos__photo_id__get",
+        "security": [
+          {
+            "StaffSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "photo_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Photo Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/staff/photos/{photo_id}": {
       "get": {
         "tags": [
@@ -1951,6 +2559,524 @@
             "content": {
               "application/json": {
                 "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/staff/announcement-residents": {
+      "get": {
+        "tags": [
+          "Staff chats"
+        ],
+        "summary": "Residents",
+        "operationId": "residents_api_v1_staff_announcement_residents_get",
+        "security": [
+          {
+            "StaffSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 100,
+              "default": "",
+              "title": "Q"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 10000,
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResidentPage"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/staff/max-chats": {
+      "get": {
+        "tags": [
+          "Staff chats"
+        ],
+        "summary": "Chats",
+        "operationId": "chats_api_v1_staff_max_chats_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ChatOutput"
+                  },
+                  "type": "array",
+                  "title": "Response Chats Api V1 Staff Max Chats Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "StaffSession": []
+          }
+        ]
+      }
+    },
+    "/api/v1/staff/max-chats/{house_id}/code": {
+      "post": {
+        "tags": [
+          "Staff chats"
+        ],
+        "summary": "Connection",
+        "operationId": "connection_api_v1_staff_max_chats__house_id__code_post",
+        "security": [
+          {
+            "StaffSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "house_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "House Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectionCode"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/staff/max-chats/{house_id}/disconnect": {
+      "post": {
+        "tags": [
+          "Staff chats"
+        ],
+        "summary": "Disconnect",
+        "operationId": "disconnect_api_v1_staff_max_chats__house_id__disconnect_post",
+        "security": [
+          {
+            "StaffSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "house_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "House Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/staff/max-chats/{house_id}/menu": {
+      "post": {
+        "tags": [
+          "Staff chats"
+        ],
+        "summary": "Menu",
+        "operationId": "menu_api_v1_staff_max_chats__house_id__menu_post",
+        "security": [
+          {
+            "StaffSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "house_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "House Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/staff/announcements": {
+      "get": {
+        "tags": [
+          "Staff chats"
+        ],
+        "summary": "Announcements",
+        "operationId": "announcements_api_v1_staff_announcements_get",
+        "security": [
+          {
+            "StaffSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100000,
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnnouncementPage"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Staff chats"
+        ],
+        "summary": "Create",
+        "operationId": "create_api_v1_staff_announcements_post",
+        "security": [
+          {
+            "StaffSession": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnnouncementInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnnouncementOutput"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/staff/announcements/{announcement_id}": {
+      "get": {
+        "tags": [
+          "Staff chats"
+        ],
+        "summary": "Detail",
+        "operationId": "detail_api_v1_staff_announcements__announcement_id__get",
+        "security": [
+          {
+            "StaffSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "announcement_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Announcement Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnnouncementOutput"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Staff chats"
+        ],
+        "summary": "Edit",
+        "operationId": "edit_api_v1_staff_announcements__announcement_id__put",
+        "security": [
+          {
+            "StaffSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "announcement_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Announcement Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnnouncementInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnnouncementOutput"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/staff/announcements/{announcement_id}/send": {
+      "post": {
+        "tags": [
+          "Staff chats"
+        ],
+        "summary": "Send",
+        "operationId": "send_api_v1_staff_announcements__announcement_id__send_post",
+        "security": [
+          {
+            "StaffSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "announcement_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Announcement Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VersionInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnnouncementOutput"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/staff/announcements/{announcement_id}/retry": {
+      "post": {
+        "tags": [
+          "Staff chats"
+        ],
+        "summary": "Retry",
+        "operationId": "retry_api_v1_staff_announcements__announcement_id__retry_post",
+        "security": [
+          {
+            "StaffSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "announcement_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Announcement Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnnouncementOutput"
+                }
               }
             }
           },
@@ -2143,6 +3269,259 @@
         ],
         "title": "ActionOutput"
       },
+      "AnnouncementDeliveryOutput": {
+        "properties": {
+          "house_id": {
+            "type": "integer",
+            "title": "House Id"
+          },
+          "address": {
+            "type": "string",
+            "title": "Address"
+          },
+          "chat_title": {
+            "type": "string",
+            "title": "Chat Title"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "error": {
+            "type": "string",
+            "title": "Error"
+          },
+          "sent_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sent At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "house_id",
+          "address",
+          "chat_title",
+          "status",
+          "error",
+          "sent_at"
+        ],
+        "title": "AnnouncementDeliveryOutput"
+      },
+      "AnnouncementInput": {
+        "properties": {
+          "topic": {
+            "type": "string",
+            "enum": [
+              "outage",
+              "works",
+              "meeting",
+              "other"
+            ],
+            "title": "Topic"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 150,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 3000,
+            "minLength": 1,
+            "title": "Text"
+          },
+          "house_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "House Ids"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Version",
+            "default": 1
+          },
+          "channels": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "groups",
+                "private"
+              ]
+            },
+            "type": "array",
+            "maxItems": 2,
+            "minItems": 1,
+            "title": "Channels"
+          },
+          "resident_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "title": "Resident Ids"
+          },
+          "audience": {
+            "type": "string",
+            "enum": [
+              "houses",
+              "residents"
+            ],
+            "title": "Audience",
+            "default": "houses"
+          }
+        },
+        "type": "object",
+        "required": [
+          "topic",
+          "title",
+          "text",
+          "house_ids"
+        ],
+        "title": "AnnouncementInput"
+      },
+      "AnnouncementOutput": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "topic": {
+            "type": "string",
+            "title": "Topic"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "sent_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sent At"
+          },
+          "deliveries": {
+            "items": {
+              "$ref": "#/components/schemas/AnnouncementDeliveryOutput"
+            },
+            "type": "array",
+            "title": "Deliveries"
+          },
+          "house_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "House Ids"
+          },
+          "channels": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Channels"
+          },
+          "resident_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Resident Ids"
+          },
+          "private_deliveries": {
+            "items": {
+              "$ref": "#/components/schemas/PrivateAnnouncementDeliveryOutput"
+            },
+            "type": "array",
+            "title": "Private Deliveries"
+          },
+          "excluded_count": {
+            "type": "integer",
+            "title": "Excluded Count"
+          },
+          "audience": {
+            "type": "string",
+            "title": "Audience"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "topic",
+          "title",
+          "text",
+          "status",
+          "version",
+          "created_at",
+          "sent_at",
+          "deliveries",
+          "house_ids",
+          "channels",
+          "resident_ids",
+          "private_deliveries",
+          "excluded_count",
+          "audience"
+        ],
+        "title": "AnnouncementOutput"
+      },
+      "AnnouncementPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AnnouncementOutput"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "AnnouncementPage"
+      },
       "ApartmentPage": {
         "properties": {
           "items": {
@@ -2245,6 +3624,51 @@
           "note": {
             "type": "string",
             "title": "Note"
+          },
+          "mine": {
+            "type": "boolean",
+            "title": "Mine",
+            "default": false
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "private",
+              "public"
+            ],
+            "title": "Visibility",
+            "default": "public"
+          },
+          "moderation_status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "approved",
+              "rejected"
+            ],
+            "title": "Moderation Status",
+            "default": "approved"
+          },
+          "moderation_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Moderation Reason"
+          },
+          "place": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Location"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -2283,6 +3707,104 @@
           "amount"
         ],
         "title": "Charge"
+      },
+      "ChatOutput": {
+        "properties": {
+          "house_id": {
+            "type": "integer",
+            "title": "House Id"
+          },
+          "address": {
+            "type": "string",
+            "title": "Address"
+          },
+          "chat_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chat Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "default": ""
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "default": "disconnected"
+          },
+          "menu_status": {
+            "type": "string",
+            "title": "Menu Status",
+            "default": "none"
+          },
+          "error": {
+            "type": "string",
+            "title": "Error",
+            "default": ""
+          },
+          "checked_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checked At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "house_id",
+          "address"
+        ],
+        "title": "ChatOutput"
+      },
+      "ChatPhotoOutput": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "url"
+        ],
+        "title": "ChatPhotoOutput"
+      },
+      "ConnectionCode": {
+        "properties": {
+          "command": {
+            "type": "string",
+            "title": "Command"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "command",
+          "expires_at"
+        ],
+        "title": "ConnectionCode"
       },
       "ContactInput": {
         "properties": {
@@ -2362,6 +3884,50 @@
           "items"
         ],
         "title": "ContactsOutput"
+      },
+      "CreateCamera": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 1000,
+            "title": "Note",
+            "default": ""
+          },
+          "source_url": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Source Url"
+          },
+          "is_public": {
+            "type": "boolean",
+            "title": "Is Public",
+            "default": false
+          },
+          "place": {
+            "$ref": "#/components/schemas/Location"
+          },
+          "request_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Request Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "source_url",
+          "place",
+          "request_id"
+        ],
+        "title": "CreateCamera"
       },
       "CreateIssue": {
         "properties": {
@@ -2517,6 +4083,28 @@
           "address": {
             "type": "string",
             "title": "Address"
+          },
+          "entrances_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entrances Count"
+          },
+          "floors_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Floors Count"
           }
         },
         "type": "object",
@@ -2796,6 +4384,13 @@
       },
       "IssueMessageOutput": {
         "properties": {
+          "photos": {
+            "items": {
+              "$ref": "#/components/schemas/ChatPhotoOutput"
+            },
+            "type": "array",
+            "title": "Photos"
+          },
           "id": {
             "type": "integer",
             "title": "Id"
@@ -3225,6 +4820,13 @@
       },
       "MessageOutput": {
         "properties": {
+          "photos": {
+            "items": {
+              "$ref": "#/components/schemas/ChatPhotoOutput"
+            },
+            "type": "array",
+            "title": "Photos"
+          },
           "id": {
             "type": "integer",
             "title": "Id"
@@ -3291,6 +4893,13 @@
       },
       "MessageResponse": {
         "properties": {
+          "photos": {
+            "items": {
+              "$ref": "#/components/schemas/ChatPhotoOutput"
+            },
+            "type": "array",
+            "title": "Photos"
+          },
           "id": {
             "type": "integer",
             "title": "Id"
@@ -3374,6 +4983,30 @@
         ],
         "title": "MeterResponse"
       },
+      "ModerateCamera": {
+        "properties": {
+          "decision": {
+            "type": "string",
+            "enum": [
+              "approved",
+              "rejected"
+            ],
+            "title": "Decision"
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 1000,
+            "title": "Reason",
+            "default": ""
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "decision"
+        ],
+        "title": "ModerateCamera"
+      },
       "NotificationPreferences": {
         "properties": {
           "personal_messages": {
@@ -3446,6 +5079,69 @@
           "active"
         ],
         "title": "PresenceInput"
+      },
+      "PrivateAnnouncementDeliveryOutput": {
+        "properties": {
+          "user_id": {
+            "type": "integer",
+            "title": "User Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "max_user_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max User Id"
+          },
+          "address": {
+            "type": "string",
+            "title": "Address"
+          },
+          "available": {
+            "type": "boolean",
+            "title": "Available"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "error": {
+            "type": "string",
+            "title": "Error"
+          },
+          "sent_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sent At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "name",
+          "max_user_id",
+          "address",
+          "available",
+          "status",
+          "error",
+          "sent_at"
+        ],
+        "title": "PrivateAnnouncementDeliveryOutput"
       },
       "Profile": {
         "properties": {
@@ -3609,6 +5305,68 @@
         ],
         "title": "RejectInput"
       },
+      "ResidentChoice": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "max_user_id": {
+            "type": "integer",
+            "title": "Max User Id"
+          },
+          "apartments": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Apartments"
+          },
+          "available": {
+            "type": "boolean",
+            "title": "Available"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "max_user_id",
+          "apartments",
+          "available",
+          "reason"
+        ],
+        "title": "ResidentChoice"
+      },
+      "ResidentPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ResidentChoice"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "ResidentPage"
+      },
       "SendMessage": {
         "properties": {
           "recipient_id": {
@@ -3636,6 +5394,131 @@
           "request_id"
         ],
         "title": "SendMessage"
+      },
+      "StaffCameraPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/StaffCameraResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "StaffCameraPage"
+      },
+      "StaffCameraResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "online",
+              "maintenance",
+              "unavailable"
+            ],
+            "title": "Status"
+          },
+          "note": {
+            "type": "string",
+            "title": "Note"
+          },
+          "mine": {
+            "type": "boolean",
+            "title": "Mine",
+            "default": false
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "private",
+              "public"
+            ],
+            "title": "Visibility",
+            "default": "public"
+          },
+          "moderation_status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "approved",
+              "rejected"
+            ],
+            "title": "Moderation Status",
+            "default": "approved"
+          },
+          "moderation_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Moderation Reason"
+          },
+          "place": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Location"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "house_id": {
+            "type": "integer",
+            "title": "House Id"
+          },
+          "address": {
+            "type": "string",
+            "title": "Address"
+          },
+          "owner_name": {
+            "type": "string",
+            "title": "Owner Name"
+          },
+          "source_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "status",
+          "note",
+          "house_id",
+          "address",
+          "owner_name"
+        ],
+        "title": "StaffCameraResponse"
       },
       "StaffIssuePage": {
         "properties": {
@@ -3762,6 +5645,20 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "VersionInput": {
+        "properties": {
+          "version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "version"
+        ],
+        "title": "VersionInput"
       },
       "WorkResponse": {
         "properties": {

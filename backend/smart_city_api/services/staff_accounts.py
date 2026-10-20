@@ -5,6 +5,7 @@ from app.database.models import (
     AnnouncementPrivateDelivery,
     Apartment,
     ApartmentMessage,
+    ChatPhoto,
     HouseCamera,
     Issue,
     IssueEvent,
@@ -93,8 +94,16 @@ async def delete_registered_user(
     keys = list(
         await session.scalars(select(IssuePhoto.file_path).where(IssuePhoto.issue_id.in_(issues)))
     )
+    chat_replies = select(IssueMessage.id).where(
+        or_(IssueMessage.issue_id.in_(issues), IssueMessage.user_id == uid)
+    )
+    chat_filter = or_(
+        ChatPhoto.apartment_message_id.in_(messages), ChatPhoto.issue_message_id.in_(chat_replies)
+    )
+    keys.extend(await session.scalars(select(ChatPhoto.file_path).where(chat_filter)))
     operations = [
         delete(AnnouncementPrivateDelivery).where(AnnouncementPrivateDelivery.user_id == uid),
+        delete(ChatPhoto).where(chat_filter),
         delete(StaffNotification).where(
             or_(
                 StaffNotification.issue_id.in_(issues),
@@ -129,6 +138,10 @@ async def delete_registered_user(
     for key in set(keys):
         if (
             await session.scalar(select(IssuePhoto.id).where(IssuePhoto.file_path == key).limit(1))
+            is None
+            and await session.scalar(
+                select(ChatPhoto.id).where(ChatPhoto.file_path == key).limit(1)
+            )
             is None
         ):
             removable.append(key)

@@ -18,9 +18,9 @@ test('missing, conflicting and untrusted launch routes are ignored', () => {
 });
 
 test('issue notifications open the exact issue and its UK chat', () => {
-  assert.equal(launchRoute('start_param=issue_42'), '/issues/42?chat=1');
-  assert.equal(launchRoute('', 'issue_2147483647'), '/issues/2147483647?chat=1');
-  assert.equal(launchRoute('start_param=issue_7', 'issue_9'), '/issues/7?chat=1');
+  assert.equal(launchRoute('start_param=issue_42'), '/issues/42/chat');
+  assert.equal(launchRoute('', 'issue_2147483647'), '/issues/2147483647/chat');
+  assert.equal(launchRoute('start_param=issue_7', 'issue_9'), '/issues/7/chat');
   for (const key of ['issue_0', 'issue_-1', 'issue_01', 'issue_1/chat', 'issue_1?x=y', 'issue_2147483648', 'issue_1.5', 'issue_']) {
     assert.equal(launchRoute('', key), undefined);
   }

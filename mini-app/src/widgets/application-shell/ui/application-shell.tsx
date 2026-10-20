@@ -16,18 +16,19 @@ function parentPage(path: string) {
 }
 export function ApplicationShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const neighborChat = pathname === "/messages" || pathname.startsWith("/messages/") || /^\/issues\/[1-9]\d*\/chat\/?$/.test(pathname);
   const parent = parentPage(pathname);
   const inlineBack = pathname === "/contacts" || pathname.startsWith("/cameras/");
-  return <div className={styles.app}>
+  return <div className={`${styles.app}${neighborChat ? ` ${styles.chatApp}` : ""}`}>
     <a className={styles.skip} href="#main">Перейти к содержимому</a>
-    {pathname !== "/issues/new" && <header className={styles.header}>
+    {!neighborChat && pathname !== "/issues/new" && <header className={styles.header}>
       <Link href="/" prefetch={false} className={styles.brand} aria-label="Домовед — главная"><BrandWordmark /></Link>
       {inlineBack && <Link href={parent.href} className={styles.headerBack} aria-label={`Назад: ${parent.label}`}><Icon name="back" /></Link>}
     </header>}
-    <main id="main" data-page-path={pathname} className={styles.main} tabIndex={-1}>
-{!inlineBack && !["/", "/issues", "/utilities", "/cameras", "/more", "/issues/new", "/contacts"].includes(pathname) && <Link href={parent.href} className={styles.back} aria-label={`Назад: ${parent.label}`}><Icon name="back" /><span>{parent.label}</span></Link>}
-      <div key={pathname} className={styles.pageTransition}>{children}</div>
+    <main id="main" data-page-path={pathname} className={`${styles.main}${neighborChat ? ` ${styles.chatMain}` : ""}`} tabIndex={-1}>
+{!neighborChat && !inlineBack && !["/", "/issues", "/utilities", "/cameras", "/more", "/issues/new", "/contacts", "/plan"].includes(pathname) && <Link href={parent.href} className={styles.back} aria-label={`Назад: ${parent.label}`}><Icon name="back" /><span>{parent.label}</span></Link>}
+      <div key={pathname} className={`${styles.pageTransition}${neighborChat ? ` ${styles.chatTransition}` : ""}`}>{children}</div>
     </main>
-    {pathname !== "/issues/new" && <BottomNavigation />}
+    {!neighborChat && pathname !== "/issues/new" && <BottomNavigation />}
   </div>;
 }

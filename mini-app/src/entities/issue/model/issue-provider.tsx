@@ -1,5 +1,8 @@
 "use client";
 import { createContext, useContext, useRef, useState, useEffect, type ReactNode } from "react";
+import { chatBody, type ChatDraftPhoto } from "@/shared/api/chat-photos";
+import { useApi } from "@/shared/api/context";
+import { endpoints } from "@/shared/api/client";
 import { type IssueRecord } from "./issue";
 import { useHouseSelection, fallbackLocation, resolveLocation, formatLocation, type HouseLocation } from "@/entities/house";
 import { emptyDraft, initialReportStep, updateIssueDraft, type IssueDraft } from "./issue-draft";
@@ -11,6 +14,12 @@ type IssueState = {
   reload: () => void;
   issues: readonly IssueRecord[];
   draft: IssueDraft;
+  chatDrafts: Record<string, string>;
+  chatSending: readonly string[];
+  sendChat: (issueId: string, text: string, photos: readonly ChatDraftPhoto[]) => Promise<unknown>;
+  chatPhotos: Record<string, ChatDraftPhoto[]>;
+  setChatPhotos: (issueId: string, photos: ChatDraftPhoto[]) => void;
+  setChatDraft: (issueId: string, text: string) => void;
   creating: boolean;
   createdIssueId: string | null;
   dismissCreationNotice: () => void;
@@ -22,6 +31,10 @@ type IssueState = {
 };
 const IssueContext = createContext<IssueState | null>(null);
 export function IssueProvider({ children, gateway }: { children: ReactNode; gateway: IssueGateway }) {
+  const api = useApi();
+  const [chatSending, setChatSending] = useState<readonly string[]>([]);
+  const chatPending = useRef(new Map<string, Promise<unknown>>());
+  const chatRequests = useRef(new Map<string, { fingerprint: string; id: string }>());
   const [issues, setIssues] = useState<readonly IssueRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -38,11 +51,33 @@ export function IssueProvider({ children, gateway }: { children: ReactNode; gate
   }, [gateway, attempt]);
   const { house, selected } = useHouseSelection();
   const [draft, setDraft] = useState(() => emptyDraft(selected));
+  const [chatDrafts, setChatDrafts] = useState<Record<string, string>>({});
+  const [chatPhotos, updateChatPhotos] = useState<Record<string, ChatDraftPhoto[]>>({});
   const [creating, setCreating] = useState(false);
   const [createdIssueId, setCreatedIssueId] = useState<string | null>(null);
   const pending = useRef<Promise<string> | null>(null);
   const requestId = useRef<string | null>(null);
   const requestPayload = useRef("");
+  function sendChat(issueId: string, text: string, photos: readonly ChatDraftPhoto[]) {
+    const pending = chatPending.current.get(issueId);
+    if (pending) return pending;
+    const fingerprint = JSON.stringify([text, photos.map(photo => photo.id)]);
+    const previous = chatRequests.current.get(issueId);
+    const id = previous?.fingerprint === fingerprint ? previous.id : crypto.randomUUID();
+    chatRequests.current.set(issueId, { fingerprint, id });
+    setChatSending(current => [...current, issueId]);
+    const task = api(endpoints.issueMessages(issueId) + (photos.length ? "/with-photos" : ""), { body: chatBody({ text, request_id: id }, photos) }).then(message => {
+      chatRequests.current.delete(issueId);
+      setChatDrafts(current => current[issueId]?.trim() === text ? { ...current, [issueId]: "" } : current);
+      updateChatPhotos(current => ({ ...current, [issueId]: (current[issueId] ?? []).filter(photo => !photos.some(sent => sent.id === photo.id)) }));
+      return message;
+    }).finally(() => {
+      chatPending.current.delete(issueId);
+      setChatSending(current => current.filter(id => id !== issueId));
+    });
+    chatPending.current.set(issueId, task);
+    return task;
+  }
   function resetDraft() { setDraft(emptyDraft(selected)); requestId.current = null; }
   function respondToResolution() {
     throw new Error("Подтверждение решения пока недоступно");
@@ -71,7 +106,7 @@ export function IssueProvider({ children, gateway }: { children: ReactNode; gate
   });
   const draftPlace = fallbackLocation(house, draft.place);
   const currentDraft = updateIssueDraft(draft, { place: draftPlace });
-  return <IssueContext.Provider value={{ loading, error, reload, issues: locatedIssues, draft: currentDraft, creating, createdIssueId, dismissCreationNotice: () => setCreatedIssueId(null), updateDraft: patch => setDraft(current => updateIssueDraft({ ...current, place: fallbackLocation(house, current.place) }, patch)), startAt: place => setDraft(current => updateIssueDraft(current, { place, step: initialReportStep(place) })), resetDraft, addIssue, respondToResolution }}>{children}</IssueContext.Provider>;
+  return <IssueContext.Provider value={{ chatSending, sendChat, chatPhotos, setChatPhotos: (issueId, photos) => updateChatPhotos(current => ({ ...current, [issueId]: photos })), loading, error, reload, issues: locatedIssues, draft: currentDraft, chatDrafts, setChatDraft: (id, text) => setChatDrafts(current => ({ ...current, [id]: text })), creating, createdIssueId, dismissCreationNotice: () => setCreatedIssueId(null), updateDraft: patch => setDraft(current => updateIssueDraft({ ...current, place: fallbackLocation(house, current.place) }, patch)), startAt: place => setDraft(current => updateIssueDraft(current, { place, step: initialReportStep(place) })), resetDraft, addIssue, respondToResolution }}>{children}</IssueContext.Provider>;
 }
 export function useIssues() {
   const context = useContext(IssueContext);

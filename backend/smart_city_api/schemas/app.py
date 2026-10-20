@@ -6,6 +6,7 @@ from uuid import UUID
 from app.database.enums import IssueCategory, IssueStatus
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from smart_city_api.schemas.chat_photo import ChatPhotoOutput
 from smart_city_api.schemas.resident import ApartmentResponse, HouseResponse
 
 
@@ -90,6 +91,7 @@ class SendMessage(BaseModel):
 
 
 class MessageResponse(BaseModel):
+    photos: list[ChatPhotoOutput] = Field(default_factory=list)
     id: int
     apartment: int
     text: str

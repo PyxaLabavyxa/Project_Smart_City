@@ -20,9 +20,10 @@ from smart_city_api.schemas.issue_chat import (
 )
 from smart_city_api.schemas.notifications import NotificationPreferences
 from smart_city_api.schemas.resident import ApartmentPage, ApartmentResponse, HouseResponse
+from smart_city_api.services import chat_photos
 from smart_city_api.services.access import own_apartment_ids, require_house
 from smart_city_api.services.contacts import read_contacts
-from smart_city_api.services.issue_chat import read_messages, send_message
+from smart_city_api.services.issue_chat import own_issue, read_messages, send_message
 from smart_city_api.services.issues import create_issue, get_issue, issue_response, visible_issues
 from smart_city_api.services.photos import MAX_BYTES, MAX_PHOTOS, photo_path, save_photo
 from smart_city_api.services.presence import update_presence
@@ -143,6 +144,17 @@ async def issue_messages(
 async def issue_message(issue_id: int, data: IssueMessageInput, session: Session, user: Resident):
     """Отправить сообщение в УК; повтор с тем же request_id не создаёт дубликат."""
     return await send_message(session, user, issue_id, data)
+
+
+@router.post(
+    "/issues/{issue_id}/messages/with-photos",
+    response_model=IssueMessageOutput,
+    openapi_extra=chat_photos.MULTIPART,
+)
+async def issue_message_photos(issue_id: int, request: Request, session: Session, user: Resident):
+    await own_issue(session, user.id, issue_id)
+    async with chat_photos.upload(request, IssueMessageInput) as (data, photos):
+        return await send_message(session, user, issue_id, data, photos)
 
 
 @router.post("/issues/{issue_id}/presence", status_code=204)

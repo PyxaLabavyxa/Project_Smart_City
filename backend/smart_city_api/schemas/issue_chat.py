@@ -4,6 +4,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from smart_city_api.schemas.chat_photo import ChatPhotoOutput
+
 
 class IssueMessageInput(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
@@ -13,6 +15,7 @@ class IssueMessageInput(BaseModel):
 
 
 class IssueMessageOutput(BaseModel):
+    photos: list[ChatPhotoOutput] = Field(default_factory=list)
     id: int
     direction: Literal["staff", "resident"]
     author: str

@@ -9,6 +9,7 @@ export default defineConfig([
     files: [
       "src/_pages/cameras/ui/camera-preview.tsx",
       "src/entities/issue/ui/issue-photos.tsx",
+      "src/shared/ui/chat-photos.tsx",
       "src/features/report-issue/ui/photo-picker.tsx",
     ],
     rules: { "@next/next/no-img-element": "off" },

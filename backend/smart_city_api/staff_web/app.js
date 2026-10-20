@@ -80,11 +80,11 @@ function showLogin() {
 }
 async function api(path, options = {}) {
   const headers = { ...options.headers };
-  if (options.body) headers["Content-Type"] = "application/json";
+  if (options.body && !(options.body instanceof FormData)) headers["Content-Type"] = "application/json";
   if (state.profile && options.method && options.method !== "GET") headers["X-CSRF-Token"] = state.profile.csrf_token;
   let response;
   try {
-    response = await fetch(apiRoot + path, { ...options, headers, credentials: "same-origin", cache: "no-store", signal: AbortSignal.timeout(20000) });
+    response = await fetch(apiRoot + path, { ...options, headers, credentials: "same-origin", cache: "no-store", signal: AbortSignal.timeout(options.body instanceof FormData ? 120000 : 20000) });
   } catch {
     throw new Error("Нет связи с сервером. Проверьте подключение и повторите попытку.");
   }
@@ -160,7 +160,7 @@ function renderConversation(detail) {
   conversation.innerHTML = detail.messages.length ? detail.messages.map((message) => {
     const delivery = detail.notifications.find((notice) => notice.message_id === message.id);
     const deliveryText = delivery ? { read: "Прочитано в мини-приложении", sent: "Уведомление отправлено в MAX", pending: "Ожидает отправки в MAX", retrying: "Бот повторит отправку в MAX" }[delivery.delivery] : "";
-    return `<div class="bubble ${message.direction}"><div class="message-top"><strong>${esc(message.author)}${message.direction === "staff" ? " · УК" : " · житель"}</strong><time>${esc(date(message.created_at, true))}</time></div><p>${esc(message.text)}</p>${deliveryText ? `<div class="delivery-label">${esc(deliveryText)}</div>` : ""}</div>`;
+    return `<div class="bubble ${message.direction}"><div class="message-top"><strong>${esc(message.author)}${message.direction === "staff" ? " · УК" : " · житель"}</strong><time>${esc(date(message.created_at, true))}</time></div><p>${esc(message.text)}</p>${message.photos?.length ? `<div class="photos">${message.photos.map((photo, index) => `<button type="button" class="photo-thumb" data-chat-photo="${Number(photo.id)}" aria-label="Открыть фото сообщения ${index + 1}"><img src="${esc(apiRoot + "/chat-photos/" + Number(photo.id))}" alt="Фото в сообщении ${index + 1}" loading="lazy"></button>`).join("")}</div>` : ""}${deliveryText ? `<div class="delivery-label">${esc(deliveryText)}</div>` : ""}</div>`;
   }).join("") : '<p class="conversation-empty">Здесь можно уточнить детали у жителя. Он ответит в чате обращения мини-приложения. Если чат закрыт, бот пришлёт уведомление.</p>';
   conversation.scrollTop = atEnd ? conversation.scrollHeight : oldTop;
   const pending = detail.notifications.filter((notice) => !["sent", "read"].includes(notice.delivery)).length;
@@ -183,7 +183,7 @@ async function openDetail(id) {
       <div class="detail-meta"><span>${esc(detail.author)}</span><span>·</span><time>${esc(date(detail.created_at))}</time><span class="priority p${detail.priority}">${esc(priorities[detail.priority])} приоритет</span></div>
       <section class="section"><h3>Что произошло</h3><p class="description">${esc(detail.description)}</p>${detail.photos.length ? `<div class="photos">${detail.photos.map((photo, index) => `<button class="photo-thumb" data-photo="${photo.id}" aria-label="Открыть фото ${index + 1}"><img src="${esc(photo.url)}" alt="Фото ${index + 1}" loading="lazy"></button>`).join("")}</div><p class="form-help">Нажмите на фото, чтобы рассмотреть его</p>` : '<p class="form-help">Житель не прикрепил фотографии</p>'}</section>
       <section class="section"><h3>Статус обращения</h3><form id="status-form" class="status-form"><label class="sr-only" for="status-select">Новый статус</label><select id="status-select">${Object.entries(statuses).map(([value, label]) => `<option value="${value}"${value === detail.status ? " selected" : ""}>${label}</option>`).join("")}</select><button class="primary" type="submit">Сохранить статус</button></form><p class="form-help">Автор получит уведомление в боте. Отмечайте обращение решённым после устранения проблемы.</p><p id="detail-error" class="error detail-error" role="alert" hidden></p><div id="delivery-summary" class="delivery-summary"></div></section>
-      <section class="section"><h3>Чат с жителем</h3><div id="conversation" class="conversation" aria-live="polite"></div><form id="message-form" class="message-form"><label for="message-text">Сообщение жителю</label><textarea id="message-text" maxlength="1500" required placeholder="Здравствуйте! Подскажите, пожалуйста, где именно находится неисправность?"></textarea><div class="composer-footer"><span id="message-count">0 / 1500</span><button class="primary" type="submit">${icon("send")} Отправить в чат</button></div></form><p id="message-error" class="error detail-error" role="alert" hidden></p><p class="form-help">Сообщение появится в чате обращения. Если житель не читает чат, бот уведомит его. Ответ жителя появится здесь автоматически. Показаны последние 200 сообщений.</p></section>
+      <section class="section"><h3>Чат с жителем</h3><div id="conversation" class="conversation" aria-live="polite"></div><form id="message-form" class="message-form"><label for="message-text">Сообщение жителю</label><textarea id="message-text" maxlength="1500" placeholder="Здравствуйте! Подскажите, пожалуйста, где именно находится неисправность?"></textarea><label class="chat-photo-label">Прикрепить фотографии<input id="message-photos" type="file" accept="image/jpeg,image/png,image/webp" multiple></label><small id="chat-photo-hint">До 10 фото · JPG, PNG, WebP · до 10 МБ каждое</small><div class="composer-footer"><span id="message-count">0 / 1500</span><button class="primary" type="submit">${icon("send")} Отправить в чат</button></div></form><p id="message-error" class="error detail-error" role="alert" hidden></p><p class="form-help">Сообщение появится в чате обращения. Если житель не читает чат, бот уведомит его. Ответ жителя появится здесь автоматически. Показаны последние 200 сообщений.</p></section>
       <section class="section"><h3>История статусов</h3><ol id="history" class="timeline"></ol></section>
       <details class="section rejection-section"><summary>${icon("close")} Отклонить обращение</summary><form id="reject-form" class="message-form"><label for="reject-reason">Причина отклонения</label><textarea id="reject-reason" minlength="3" maxlength="1500" required placeholder="Объясните жителю, почему обращение отклонено"></textarea><p class="form-help">Обращение исчезнет из списков. Бот отправит автору указанную причину.</p><button class="danger" type="submit">Отклонить обращение</button></form><p id="reject-error" class="error detail-error" role="alert" hidden></p></details></div>`;
     renderConversation(detail);
@@ -191,12 +191,13 @@ async function openDetail(id) {
     $("status-form").addEventListener("submit", saveStatus);
     $("reject-form").addEventListener("submit", rejectIssue);
     $("message-form").addEventListener("submit", sendMessage);
+    $("message-photos").addEventListener("change", () => { messageAction = null; $("chat-photo-hint").textContent = `Выбрано фото: ${$("message-photos").files.length} / 10`; });
     $("message-text").addEventListener("input", () => { $("message-count").textContent = `${$("message-text").value.length} / 1500`; });
   } catch (error) { toast(error.message); }
 }
 function setBusy(value) {
   state.busy = value;
-  $("detail-content").querySelectorAll("form button, form select, form textarea").forEach((node) => { node.disabled = value; });
+  $("detail-content").querySelectorAll("form button, form select, form textarea, form input").forEach((node) => { node.disabled = value; });
   $("refresh-detail").disabled = value;
 }
 async function saveStatus(event) {
@@ -233,12 +234,18 @@ async function rejectIssue(event) {
 async function sendMessage(event) {
   event.preventDefault(); if (state.busy || !state.detail) return;
   const detail = state.detail, text = $("message-text").value.trim();
-  if (!text) { showError("message-error", "Напишите сообщение жителю"); return; }
+  const photos = Array.from($("message-photos").files);
+  if (!text && !photos.length) { showError("message-error", "Напишите сообщение или прикрепите фото"); return; }
+  if (photos.length > 10 || photos.some(file => !file.size || file.size > 10 * 1024 * 1024 || !/^image\/(jpeg|png|webp)$/.test(file.type))) { showError("message-error", "Выберите до 10 фотографий JPG, PNG или WebP, до 10 МБ каждая"); return; }
   const key = `${detail.id}:${text}`;
   if (messageAction?.key !== key) messageAction = { key, id: uuid() };
   setBusy(true); showError("message-error", "");
   try {
-    await api(`/issues/${detail.id}/messages`, { method: "POST", body: JSON.stringify({ text, request_id: messageAction.id }) });
+    const data = { text, request_id: messageAction.id };
+    let body = JSON.stringify(data);
+    if (photos.length) { body = new FormData(); body.set("data", JSON.stringify(data)); photos.forEach(photo => body.append("photos", photo)); }
+    await api(`/issues/${detail.id}/messages${photos.length ? "/with-photos" : ""}`, { method: "POST", body });
+    $("message-photos").value = ""; $("chat-photo-hint").textContent = "До 10 фото · JPG, PNG, WebP · до 10 МБ каждое";
     $("message-text").value = ""; $("message-count").textContent = "0 / 1500"; messageAction = null;
     toast("Сообщение добавлено в чат обращения.");
     const updated = await api(`/issues/${detail.id}`); renderConversation(updated);
@@ -285,6 +292,8 @@ $("close-detail").addEventListener("click", () => { if (!state.busy) $("issue-di
 $("issue-dialog").addEventListener("cancel", (event) => { if (state.busy) event.preventDefault(); });
 $("issue-dialog").addEventListener("close", () => { state.detail = null; state.detailRequest++; $("detail-content").replaceChildren(); });
 $("detail-content").addEventListener("click", (event) => {
+  const chatPhoto = event.target.closest("[data-chat-photo]");
+  if (chatPhoto) { $("full-photo").src = `${apiRoot}/chat-photos/${Number(chatPhoto.dataset.chatPhoto)}`; $("photo-dialog").showModal(); return; }
   const button = event.target.closest("[data-photo]");
   if (button) { $("full-photo").src = `${apiRoot}/photos/${Number(button.dataset.photo)}`; $("photo-dialog").showModal(); }
 });

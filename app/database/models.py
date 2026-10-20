@@ -423,6 +423,25 @@ class IssueMessage(Base):
     )
 
 
+class ChatPhoto(Base):
+    """Private attachment belonging to exactly one chat message."""
+    __tablename__ = "chat_photos"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    apartment_message_id: Mapped[int | None] = mapped_column(
+        ForeignKey("apartment_messages.id", ondelete="CASCADE"), index=True
+    )
+    issue_message_id: Mapped[int | None] = mapped_column(
+        ForeignKey("issue_messages.id", ondelete="CASCADE"), index=True
+    )
+    file_path: Mapped[str] = mapped_column(String(200), unique=True)
+    content_hash: Mapped[str] = mapped_column(String(64))
+    __table_args__ = (CheckConstraint(
+        "(apartment_message_id IS NOT NULL AND issue_message_id IS NULL) OR "
+        "(apartment_message_id IS NULL AND issue_message_id IS NOT NULL)",
+        name="ck_chat_photo_message",
+    ),)
+
+
 class StaffNotification(Base):
     __tablename__ = "staff_notifications"
     id: Mapped[int] = mapped_column(primary_key=True)

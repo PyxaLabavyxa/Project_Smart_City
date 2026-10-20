@@ -11,7 +11,7 @@ export function HealthPage() {
 }
 
 export function MessagesPage({ from }: { from?: "plan" | "home" }) {
-  return <SectionPage title="Сообщения" description="Переписки с соседями вашего дома"><RecipientSelector openSelected={!!from} /></SectionPage>;
+  return <RecipientSelector openSelected={!!from} />;
 }
 
 export function HouseInfoPage() {

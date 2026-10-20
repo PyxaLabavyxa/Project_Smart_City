@@ -33,6 +33,7 @@ from smart_city_api.schemas.staff import (
     StaffIssuePage,
     StatusInput,
 )
+from smart_city_api.services import chat_photos
 
 
 def house_scope(staff_id: int):
@@ -198,6 +199,7 @@ async def detail(session: AsyncSession, staff_id: int, issue_id: int) -> IssueDe
                 direction="staff" if m.staff_id else "resident",
                 author=staff_name if m.staff_id else resident_name,
                 text=m.text,
+                photos=await chat_photos.outputs(session, m.id, issue=True, staff=True),
                 created_at=m.created_at,
             )
             for m, staff_name, resident_name in reversed(messages)
@@ -210,8 +212,13 @@ async def detail(session: AsyncSession, staff_id: int, issue_id: int) -> IssueDe
                 message_id=n.message_id,
                 author=name,
                 delivery=(
-                    "sent" if n.sent_at else "read" if n.suppressed_at
-                    else "retrying" if n.attempts else "pending"
+                    "sent"
+                    if n.sent_at
+                    else "read"
+                    if n.suppressed_at
+                    else "retrying"
+                    if n.attempts
+                    else "pending"
                 ),
                 created_at=n.created_at,
             )
@@ -261,10 +268,15 @@ async def perform_action(
     staff: StaffUser,
     issue_id: int,
     body: StatusInput | MessageInput,
+    photos=(),
 ) -> ActionOutput:
     kind = "status" if isinstance(body, StatusInput) else "message"
     staff_id = staff.id
     fingerprint = action_hash(issue_id, kind, body)
+    if photos:
+        fingerprint = hashlib.sha256(
+            (fingerprint + json.dumps([digest for _, digest in photos])).encode()
+        ).hexdigest()
     issue = await accessible_issue(session, staff.id, issue_id, lock=True)
     prior = await previous_action(session, staff.id, body.request_id, fingerprint)
     if prior:
@@ -313,6 +325,8 @@ async def perform_action(
         )
     try:
         await session.flush()
+        if message is not None:
+            chat_photos.attach(session, message.id, photos, issue=True)
         notification = StaffNotification(
             issue_id=issue.id,
             staff_id=staff.id,

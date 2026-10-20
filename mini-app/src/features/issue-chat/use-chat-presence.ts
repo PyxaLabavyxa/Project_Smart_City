@@ -10,7 +10,7 @@ export function useChatPresence({ issueId, enabled, refreshedAt, section, histor
   enabled: boolean;
   refreshedAt: number;
   section: RefObject<HTMLElement | null>;
-  history: RefObject<HTMLOListElement | null>;
+  history: RefObject<HTMLElement | null>;
 }) {
   const api = useApi();
   const latestRefresh = useRef(0);

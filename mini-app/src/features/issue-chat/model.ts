@@ -1,8 +1,11 @@
+import { parseChatPhotos, type ChatPhoto } from "../../shared/api/chat-photos.ts";
+
 export type IssueChatMessage = {
   id: number;
   direction: "staff" | "resident";
   author: string;
   text: string;
+  photos?: readonly ChatPhoto[];
   createdAt: string;
 };
 
@@ -15,7 +18,7 @@ export function parseChatMessage(value: unknown): IssueChatMessage {
     || typeof row.created_at !== "string" || !Number.isFinite(Date.parse(row.created_at))) {
     throw new Error("Некорректное сообщение");
   }
-  return { id: row.id, direction: row.direction, author: row.author, text: row.text, createdAt: row.created_at };
+  return { id: row.id, direction: row.direction, author: row.author, text: row.text, photos: parseChatPhotos(row.photos), createdAt: row.created_at };
 }
 
 // A delayed history response must not erase a message confirmed by POST.

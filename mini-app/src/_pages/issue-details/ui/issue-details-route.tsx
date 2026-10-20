@@ -11,11 +11,13 @@ import { IssueDetailsPage } from "./issue-details-page";
 import { IssueNotFoundPage } from "./issue-not-found-page";
 import { IssueCreated } from "./issue-created";
 import { RequestState } from "@/shared/ui/navigation/request-state";
-export function IssueDetailsRoute({ id }: { id: string }) {
-  return <IssueDetailsLoader key={id} id={id} />;
+import { IssueChatPage } from "@/features/issue-chat/issue-chat-page";
+import { ChatScreen } from "@/shared/ui/chat-screen";
+export function IssueDetailsRoute({ id, view = "details" }: { id: string; view?: "details" | "chat" }) {
+  return <IssueDetailsLoader key={`${id}:${view}`} id={id} view={view} />;
 }
 
-function IssueDetailsLoader({ id }: { id: string }) {
+function IssueDetailsLoader({ id, view }: { id: string; view: "details" | "chat" }) {
   const api = useApi();
   const { house, choices, choose } = useHouseSelection();
   const { createdIssueId, dismissCreationNotice } = useIssues();
@@ -34,10 +36,14 @@ function IssueDetailsLoader({ id }: { id: string }) {
   useEffect(() => {
     if (anotherHouse && target) choose(target.id);
   }, [anotherHouse, target, choose]);
-  if (loading || error) return <RequestState loading={loading} error={error} reload={reload} />;
+  if (loading || error) {
+    const state = <RequestState loading={loading} error={error} reload={reload} />;
+    return view === "chat" ? <ChatScreen title="Управляющая компания" subtitle={`Обращение №${id}`} backHref={`/issues/${id}`} backLabel="Назад к обращению">{state}</ChatScreen> : state;
+  }
   if (anotherHouse) return <RequestState loading={!!target} error={target ? "" : "Обновите список квартир, чтобы открыть дом этого обращения."} reload={reload} />;
   const issue = data?.issue;
   if (!issue) return <IssueNotFoundPage />;
+  if (view === "chat") return issue.mine ? <IssueChatPage issue={issue} /> : <IssueNotFoundPage />;
   if (createdIssueId === id) return <IssueCreated issue={issue} onOpen={() => { dismissCreationNotice(); window.scrollTo({ top: 0, behavior: "instant" }); }} />;
   return <IssueDetailsPage issue={issue} />;
 }

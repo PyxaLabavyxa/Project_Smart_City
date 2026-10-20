@@ -2,7 +2,7 @@ schema_version: '1.0'
 schema_file: DATA-API.schema.json
 solution: Домовед
 team: Облачный Код
-updated_at: '2026-09-30'
+updated_at: '2026-10-20'
 base_url: https://201.34.159.33/api/v1
 local_base_url: http://127.0.0.1:8000/api/v1
 openapi: evaluation/openapi.yaml

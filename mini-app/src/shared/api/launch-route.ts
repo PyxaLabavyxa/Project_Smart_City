@@ -14,6 +14,6 @@ export function launchRoute(initData: string, unsafeStartParam?: unknown): strin
   if (typeof key !== "string") return undefined;
   if (Object.hasOwn(routes, key)) return routes[key];
   const issue = /^issue_([1-9]\d{0,9})$/.exec(key);
-  if (issue && Number(issue[1]) <= 2147483647) return `/issues/${issue[1]}?chat=1`;
+  if (issue && Number(issue[1]) <= 2147483647) return `/issues/${issue[1]}/chat`;
   return undefined;
 }

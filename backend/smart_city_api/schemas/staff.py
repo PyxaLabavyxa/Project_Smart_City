@@ -5,6 +5,8 @@ from uuid import UUID
 from app.database.enums import IssueCategory, IssuePriority, IssueStatus
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator
 
+from smart_city_api.schemas.chat_photo import ChatPhotoOutput
+
 
 class LoginInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -94,6 +96,7 @@ class EventOutput(BaseModel):
 
 
 class MessageOutput(BaseModel):
+    photos: list[ChatPhotoOutput] = Field(default_factory=list)
     id: int
     direction: Literal["staff", "resident"]
     author: str

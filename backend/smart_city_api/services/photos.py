@@ -13,7 +13,7 @@ MAX_BYTES = 10 * 1024 * 1024
 
 
 def photo_path(root: Path, key: str) -> Path:
-    if not re.fullmatch(r"issues/[0-9a-f]{32}\.(jpg|png|webp)", key):
+    if not re.fullmatch(r"(?:issues|chat)/[0-9a-f]{32}\.(jpg|png|webp)", key):
         raise FileNotFoundError
     root = root.resolve()
     path = (root / key).resolve()
@@ -22,7 +22,9 @@ def photo_path(root: Path, key: str) -> Path:
     return path
 
 
-def save_photo(root: Path, content: bytes) -> tuple[str, str]:
+def save_photo(root: Path, content: bytes, namespace: str = "issues") -> tuple[str, str]:
+    if namespace not in ("issues", "chat"):
+        raise ValueError("Unknown photo namespace")
     if not content or len(content) > MAX_BYTES:
         raise HTTPException(422, "Размер фотографии должен быть от 1 байта до 10 МБ")
     try:
@@ -46,7 +48,7 @@ def save_photo(root: Path, content: bytes) -> tuple[str, str]:
         raise HTTPException(
             422, "Фотография повреждена или имеет неподдерживаемый размер"
         ) from None
-    key = f"issues/{uuid4().hex}.jpg"
+    key = f"{namespace}/{uuid4().hex}.jpg"
     path = root / key
     path.parent.mkdir(parents=True, exist_ok=True)
     try:
