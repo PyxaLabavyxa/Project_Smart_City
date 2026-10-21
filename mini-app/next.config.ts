@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 import path from "node:path";
 
 const nextConfig: NextConfig = {
+  agentRules: false,
   output: "standalone",
   devIndicators: false,
   experimental: { staleTimes: { dynamic: 300, static: 300 } },

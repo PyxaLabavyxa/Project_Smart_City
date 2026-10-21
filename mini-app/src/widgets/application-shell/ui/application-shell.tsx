@@ -8,10 +8,11 @@ import { BrandWordmark } from "@/shared/ui/brand-mark";
 import { Icon } from "@/shared/ui/icon";
 
 function parentPage(path: string) {
+  if (path.startsWith("/settings/")) return { href:"/settings", label:"Настройки" };
   if (path === "/plan") return { href:"/house", label:"Ваш дом" };
   if (path.startsWith("/issues/")) return { href:"/issues", label:"Обращения" };
   if (path.startsWith("/cameras/")) return { href:"/cameras", label:"Камеры" };
-  if (["/settings", "/health", "/messages", "/info", "/plan", "/house", "/contacts"].includes(path)) return { href:"/more", label:"Ещё" };
+  if (["/invite", "/settings", "/health", "/messages", "/info", "/plan", "/house", "/contacts"].includes(path)) return { href:"/more", label:"Ещё" };
   return { href:"/", label:"На главную" };
 }
 export function ApplicationShell({ children }: { children: ReactNode }) {

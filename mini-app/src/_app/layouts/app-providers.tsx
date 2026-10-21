@@ -11,6 +11,7 @@ import { MessageProvider } from "@/entities/message";
 import { createMessageGateway } from "@/entities/message/model/api-gateway";
 import { ApiContext, useApi } from "@/shared/api/context";
 import { createApiClient, endpoints, maxLaunchData, maxLaunchTarget } from "@/shared/api/client";
+import { browserLaunchTarget, launchNavigationHref } from "@/shared/api/launch-route";
 import { launchApartmentId } from "@/entities/house/model/launch-selection";
 import { readPages } from "@/shared/api/pagination";
 import { useRemote } from "@/shared/api/use-remote";
@@ -61,11 +62,11 @@ function AuthenticatedApp({ children, mode }: { children: ReactNode; mode: "loca
     const api = createApiClient();
     if (mode === "local") await api(endpoints.localLogin, { body: {}, signal });
     else if (initData) await api(endpoints.login, { body: { init_data: initData }, signal });
-    return { api, launch: mode === "max" ? maxLaunchTarget() : undefined };
+    return { api, launch: (mode === "max" ? maxLaunchTarget() : undefined) ?? browserLaunchTarget(window.location.search) };
   }, [mode]);
   const state = useRemote(load);
   if (!state.data) return <StartupScreen error={state.error} actions={state.error ? <RefreshButton onRefresh={state.reload} loading={state.loading}>Повторить</RefreshButton> : undefined} />;
-  return <ApiContext value={state.data.api}><LaunchNavigation target={state.data.launch?.href} /><MiniAppPresence /><ResidentProfileView launchHouseId={state.data.launch?.houseId}>{children}</ResidentProfileView></ApiContext>;
+  return <ApiContext value={state.data.api}><LaunchNavigation target={launchNavigationHref(state.data.launch)} /><MiniAppPresence /><ResidentProfileView launchHouseId={state.data.launch?.houseId}>{children}</ResidentProfileView></ApiContext>;
 }
 
 function ResidentProfileView({ children, launchHouseId }: { children: ReactNode; launchHouseId?: string }) {
@@ -77,6 +78,7 @@ function ResidentProfileView({ children, launchHouseId }: { children: ReactNode;
   if (!state.data) return <StartupScreen error={state.error} actions={state.error ? <RefreshButton onRefresh={state.reload} loading={state.loading}>Повторить</RefreshButton> : undefined} />;
   const targetHouse = chatEntryDismissed ? undefined : launchHouseId;
   if (targetHouse && launchApartmentId(state.data.apartments, targetHouse) === undefined) return <ChatHouseAccess
+    key={targetHouse} houseId={targetHouse}
     hasApartments={state.data.apartments.length > 0}
     onComplete={state.reload}
     onHome={() => { setChatEntryDismissed(true); router.replace("/"); }}
@@ -91,10 +93,10 @@ function ResidentHomes({ profile, children, refreshHomes, launchHouseId }: { pro
   const house = profile.houses.find(h => h.id === resident?.houseId);
   const choices = profile.apartments.map(a => ({ id: a.id, houseId: a.houseId, apartment: a.number, address: profile.houses.find(h => h.id === a.houseId)?.address ?? "Дом" }));
   if (!resident || !house) return <main className="connection-screen"><h1>Дом пока не привязан</h1><p>Добавьте квартиру через чатбот, затем откройте приложение заново.</p></main>;
-  return <ConnectedHouse key={resident.id} userId={profile.id} house={{ ...house, residentApartment: resident.number, residentApartmentId: resident.id }} choices={choices} choose={choose} refreshHomes={refreshHomes}>{children}</ConnectedHouse>;
+  return <ConnectedHouse deferOnboarding={!!launchHouseId} key={resident.id} userId={profile.id} house={{ ...house, residentApartment: resident.number, residentApartmentId: resident.id }} choices={choices} choose={choose} refreshHomes={refreshHomes}>{children}</ConnectedHouse>;
 }
 
-function ConnectedHouse({ userId, house, choices, choose, children, refreshHomes }: { userId: number; house: House; choices: { id: number; houseId: string; apartment: number; address: string }[]; choose: (id: number) => void; children: ReactNode; refreshHomes: () => void }) {
+function ConnectedHouse({ userId, house, choices, choose, children, refreshHomes, deferOnboarding }: { deferOnboarding: boolean; userId: number; house: House; choices: { id: number; houseId: string; apartment: number; address: string }[]; choose: (id: number) => void; children: ReactNode; refreshHomes: () => void }) {
   const api = useApi();
   const load = useCallback((signal: AbortSignal) => readPages(api, endpoints.apartments(house.id), parseApartment, signal), [api, house.id]);
   const state = useRemote(load);
@@ -105,7 +107,7 @@ function ConnectedHouse({ userId, house, choices, choose, children, refreshHomes
   if (!state.data) return <StartupScreen error={state.error} actions={state.error ? <RefreshButton onRefresh={state.reload} loading={state.loading}>Повторить</RefreshButton> : undefined} />;
   return <HouseSelectionProvider house={currentHouse} choices={choices} choose={choose} refreshHomes={refreshHomes}>
     <IssueProvider gateway={issueGateway}><MessageProvider gateway={messageGateway}>
-      <UtilitiesProvider gateway={utilitiesGateway}><OnboardingProvider userId={userId}>{children}</OnboardingProvider></UtilitiesProvider>
+      <UtilitiesProvider gateway={utilitiesGateway}><OnboardingProvider userId={userId} deferAutomatic={deferOnboarding}>{children}</OnboardingProvider></UtilitiesProvider>
     </MessageProvider></IssueProvider>
   </HouseSelectionProvider>;
 }

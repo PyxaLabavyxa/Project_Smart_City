@@ -2,16 +2,17 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from app.database.registration_demo import seed_registration_demo
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.exc import SQLAlchemyError
 
+from app.database.registration_demo import seed_registration_demo
 from smart_city_api.api.router import router
 from smart_city_api.api.routes.auth import router as auth_router
 from smart_city_api.api.routes.house_chats import router as house_chats_router
+from smart_city_api.api.routes.invitations import router as invitations_router
 from smart_city_api.api.routes.registration import router as registration_router
 from smart_city_api.api.routes.resident import router as resident_router
 from smart_city_api.api.routes.services import router as services_router
@@ -98,6 +99,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(staff_router)
     app.include_router(house_chats_router)
     app.include_router(registration_router)
+    app.include_router(invitations_router)
     app.mount(
         "/staff",
         StaticFiles(directory=Path(__file__).parent / "staff_web", html=True),

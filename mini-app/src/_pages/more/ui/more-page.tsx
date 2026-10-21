@@ -9,11 +9,11 @@ import { useOnboarding } from "@/features/onboarding/onboarding";
 import styles from "./more-page.module.css";
 const items = [
  { href:"/settings", icon:"settings", title:"Настройки", description:"Тема и уведомления" },
- { href:"/house", icon:"building", title:"План дома", description:"Этажи, квартиры и общие зоны" },
- { href:"/utilities", icon:"receipt", title:"ЖКХ", description:"Квитанции и показания" },
  { href:"/messages", icon:"messages", title:"Сообщения", description:"Переписки с соседями" },
+ { href:"/house", icon:"building", title:"План дома", description:"Этажи, квартиры и общие зоны" },
  { href:"/health", icon:"health", title:"Здоровье дома", description:"Состояние и история" },
  { href:"/info", icon:"issues", title:"Информация о доме", description:"Характеристики и документы" },
+ { href:"/invite", icon:"people", title:"Пригласить соседей", description:"Ссылка и QR-код" },
 ] as const;
 export function MorePage() {
  const { start }=useOnboarding(); const { house }=useHouseSelection();

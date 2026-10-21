@@ -3577,6 +3577,144 @@
           }
         ]
       }
+    },
+    "/api/v1/registration/houses/{house_id}": {
+      "get": {
+        "tags": [
+          "registration"
+        ],
+        "summary": "House State",
+        "operationId": "house_state_api_v1_registration_houses__house_id__get",
+        "security": [
+          {
+            "MAXLaunchData": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "house_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 2147483647,
+              "exclusiveMinimum": 0,
+              "title": "House Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/houses/{house_id}/invitation": {
+      "get": {
+        "tags": [
+          "invitations"
+        ],
+        "summary": "Invitation",
+        "operationId": "invitation_api_v1_houses__house_id__invitation_get",
+        "security": [
+          {
+            "MAXLaunchData": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "house_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "House Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitationOutput"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/invitations/houses/{house_id}/{filename}": {
+      "get": {
+        "tags": [
+          "invitations"
+        ],
+        "summary": "Invitation File",
+        "operationId": "invitation_file_api_v1_invitations_houses__house_id___filename__get",
+        "parameters": [
+          {
+            "name": "house_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "House Id"
+            }
+          },
+          {
+            "name": "filename",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Filename"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -4748,6 +4886,44 @@
           "apartments_per_floor"
         ],
         "title": "HouseResponse"
+      },
+      "InvitationOutput": {
+        "properties": {
+          "house_id": {
+            "type": "integer",
+            "title": "House Id"
+          },
+          "address": {
+            "type": "string",
+            "title": "Address"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "qr_path": {
+            "type": "string",
+            "title": "Qr Path"
+          },
+          "poster_path": {
+            "type": "string",
+            "title": "Poster Path"
+          },
+          "pdf_path": {
+            "type": "string",
+            "title": "Pdf Path"
+          }
+        },
+        "type": "object",
+        "required": [
+          "house_id",
+          "address",
+          "url",
+          "qr_path",
+          "poster_path",
+          "pdf_path"
+        ],
+        "title": "InvitationOutput"
       },
       "IssueCategory": {
         "type": "string",

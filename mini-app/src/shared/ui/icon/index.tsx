@@ -1,5 +1,7 @@
 import type { CSSProperties } from "react";
 const paths = {
+  bell: "M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9ZM10 21h4",
+  copy: "M8 8h13v13H8ZM4 16H2V2h14v2",
   device: "M7 2h10v20H7ZM11 18h2",
   clock:"M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM12 6v6l4 2",
   people:"M14 7a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM3 22v-4a6 6 0 0 1 12 0v4M18 4a3 3 0 0 1 0 6m1 4a5 5 0 0 1 3 4v4",

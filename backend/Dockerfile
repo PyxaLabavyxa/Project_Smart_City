@@ -12,6 +12,7 @@ COPY app/database/sample_data.py app/database/camera_data.py app/database/regist
 COPY app/database/repositories ./app/database/repositories
 COPY app/services/registration.py app/services/house_chats.py app/services/announcement_audience.py app/services/__init__.py ./app/services/
 COPY backend/smart_city_api ./smart_city_api
+COPY chatbot/assets/welcome-house.png ./chatbot/assets/welcome-house.png
 COPY backend/migrations ./migrations
 COPY backend/alembic.ini ./alembic.ini
 COPY backend/scripts ./scripts

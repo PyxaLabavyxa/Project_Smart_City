@@ -17,9 +17,10 @@ const Context = createContext<{ start: () => void; activeTarget: string | null; 
 export const useOnboarding = () => useContext(Context);
 type Position = { spot: TourRect; card: { left: number; top: number } };
 
-export function OnboardingProvider({ userId, children }: { userId: number; children: ReactNode }) {
+export function OnboardingProvider({ userId, children, deferAutomatic = false }: { userId: number; children: ReactNode; deferAutomatic?: boolean }) {
   const router = useRouter();
   const pathname = usePathname();
+  const initialPath = useRef(pathname);
   const [step, setStep] = useState<number | null>(null);
   const [excluded, setExcluded] = useState<string[]>([]);
   const [preparation, setPreparation] = useState<{ percent: number; error?: string } | null>({ percent: 0 });
@@ -85,8 +86,10 @@ export function OnboardingProvider({ userId, children }: { userId: number; child
     router.replace(returnTo.current, { scroll: true });
   }, [router, storageKey]);
   useEffect(() => {
-    let showGuide = true;
-    try { showGuide = localStorage.getItem(storageKey) !== "done"; } catch {}
+    // A house invitation must finish at its requested section, including after registration.
+    // The resident can still start the guide manually from More.
+    let showGuide = !deferAutomatic && initialPath.current !== "/invite";
+    try { showGuide = showGuide && localStorage.getItem(storageKey) !== "done"; } catch {}
     const timer = window.setInterval(() => {
       if (!document.querySelector("#main")) return;
       // The initial issue may still be resolving its house. Starting the tour
@@ -96,7 +99,7 @@ export function OnboardingProvider({ userId, children }: { userId: number; child
       void prepare(showGuide);
     }, 60);
     return () => window.clearInterval(timer);
-  }, [storageKey, prepare]);
+  }, [storageKey, prepare, deferAutomatic]);
   useEffect(() => {
     const element = dialog.current;
     if (!isOpen || !element) return;

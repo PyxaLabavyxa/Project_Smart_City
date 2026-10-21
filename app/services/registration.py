@@ -21,8 +21,7 @@ WELCOME = (
     "👋 Добро пожаловать в Домовед!\n\n🏡 Здесь ваш дом всегда на связи: "
     "сообщайте о проблемах, следите за их решением и общайтесь с УК.\n\n"
     "🔑 Вам пока не назначены квартиры. Для назначения обратитесь в свою УК "
-    "или оставьте заявку в зарегистрированную управляющую компанию.\n\n"
-    + STAFF_SITE_NOTICE
+    "или оставьте заявку в зарегистрированную управляющую компанию.\n\n" + STAFF_SITE_NOTICE
 )
 TEST_NOTICE = "🧪 Тестовый режим: все заявки принимаются автоматически."
 
@@ -34,17 +33,19 @@ def normalize_name(name):
     return name
 
 
-async def registration_state(session, user_id):
+async def registration_state(session, user_id, *, house_id=None):
     user = await session.get(User, user_id)
-    complete = await session.scalar(
-        select(UserApartment.id).where(UserApartment.user_id == user_id).limit(1)
-    )
-    latest = await session.scalar(
-        select(RegistrationRequest)
-        .where(RegistrationRequest.user_id == user_id)
-        .order_by(RegistrationRequest.id.desc())
-        .limit(1)
-    )
+    apartments = select(UserApartment.id).where(UserApartment.user_id == user_id)
+    requests = select(RegistrationRequest).where(RegistrationRequest.user_id == user_id)
+    if house_id is not None:
+        apartments = apartments.join(Apartment, Apartment.id == UserApartment.apartment_id).where(
+            Apartment.house_id == house_id
+        )
+        requests = requests.join(Apartment, Apartment.id == RegistrationRequest.apartment_id).where(
+            Apartment.house_id == house_id
+        )
+    complete = await session.scalar(apartments.limit(1))
+    latest = await session.scalar(requests.order_by(RegistrationRequest.id.desc()).limit(1))
     return {
         "name": user.name,
         "complete": complete is not None,

@@ -4,6 +4,10 @@ export class ApiError extends Error {
   constructor(message: string, public status: number) { super(message); }
 }
 
+export function apiUrl(path: string) {
+  return `${(process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api/v1").replace(/\/$/, "")}${path}`;
+}
+
 export type ApiClient = ReturnType<typeof createApiClient>;
 export function createApiClient() {
   const cache = new Map<string, { data: unknown; expires: number }>();
@@ -49,6 +53,8 @@ export const endpoints = {
   me: "/me",
   notifications: "/me/notifications",
   registration: "/registration",
+  registrationState: (houseId?: string) => houseId ? `/registration/houses/${encodeURIComponent(houseId)}` : "/registration",
+  invitation: (houseId: string) => `/houses/${encodeURIComponent(houseId)}/invitation`,
   apartments: (house: string) => `/houses/${encodeURIComponent(house)}/apartments`,
   issues: (house: string) => `/houses/${encodeURIComponent(house)}/issues`,
   issue: (id: string) => `/issues/${encodeURIComponent(id)}`,

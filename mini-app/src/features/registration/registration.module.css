@@ -14,6 +14,9 @@
 .card .hint { font-size:12px; }
 .primary { composes:primary from "@/shared/styles/controls.module.css"; width:100%; margin-top:16px; }
 .secondary { width:100%; min-height:46px; padding:12px 4px; margin-top:6px; border:0; background:transparent; color:var(--color-muted); font-size:13px; }
+.sourceAddress { padding:12px 14px; border-radius:12px; background:var(--color-soft); color:var(--color-ink) !important; font-weight:600; }
+.sourceAddress small { display:block; margin-top:4px; color:var(--color-muted); font-size:12px; font-weight:400; }
+.card select:disabled { opacity:1; color:var(--color-ink); background:var(--color-soft); }
 .error { color:var(--color-danger) !important; }
 .embedded { width:100%; color:var(--color-ink); text-align:left; }
 .embedded .card { padding:0; background:transparent; border-radius:0; }

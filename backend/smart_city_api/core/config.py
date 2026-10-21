@@ -8,6 +8,9 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     app_name: str = "Домовед API"
+    mini_app_bot_username: str = Field(
+        default="t282_hakaton_max_bot", pattern=r"^@?[A-Za-z0-9_]{1,64}$"
+    )
     database_url: SecretStr | None = None
     bot_token: SecretStr | None = None
     local_login_enabled: bool = False
