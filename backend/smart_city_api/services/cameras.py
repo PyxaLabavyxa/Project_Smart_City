@@ -1,3 +1,4 @@
+import asyncio
 import hashlib
 import json
 import re
@@ -5,6 +6,7 @@ from datetime import UTC, datetime
 from urllib.parse import urlsplit
 
 from app.database.models import House, HouseCamera, User
+from app.paths import project_path
 from fastapi import HTTPException
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.exc import IntegrityError
@@ -18,10 +20,12 @@ from smart_city_api.schemas.cameras import (
     ModerateCamera,
     StaffCameraPage,
     StaffCameraResponse,
+    StaffCreateCamera,
     UpdateCamera,
 )
 from smart_city_api.services import camera_media
 from smart_city_api.services.access import require_house
+from smart_city_api.services.contacts import staff_house
 from smart_city_api.services.locations import OUTDOOR_ZONES, validate_location
 from smart_city_api.services.staff import house_scope
 
@@ -75,11 +79,12 @@ async def create_camera(
 ):
     house = await require_house(session, user_id, house_id)
     await validate_location(session, user_id, house, data.place)
+    source = data.connection()
     values = {
         "house_id": house_id,
         "name": data.name,
         "note": data.note,
-        "source_type": data.source_type,
+        "source_type": source.source_type,
         "visibility": "public" if data.is_public else "private",
         **data.place.model_dump(),
     }
@@ -106,12 +111,13 @@ async def create_camera(
     existing = await session.scalar(query)
     if existing:
         return previous(existing)
-    await camera_media.frame(data.connection(), settings)
+    await camera_media.frame(source, settings)
+    values["source_type"] = source.source_type
     camera = HouseCamera(
         **values,
         owner_id=user_id,
         request_id=str(data.request_id),
-        source_config=camera_media.encode(data.connection(), settings),
+        source_config=camera_media.encode(source, settings),
         status="online",
         moderation_status="pending" if data.is_public else "approved",
         captured_at=datetime.now(UTC),
@@ -126,6 +132,78 @@ async def create_camera(
             raise
         return previous(existing)
     return camera_response(camera, user_id)
+
+
+async def probe_camera(session, user_id, house_id, data, settings):
+    await require_house(session, user_id, house_id)
+    source = data.connection()
+    if data.camera_id is not None:
+        camera = await owned_camera(session, user_id, data.camera_id)
+        if camera.house_id != house_id:
+            raise HTTPException(404, "Камера не найдена")
+        original = stored_source(camera, settings)
+        if data.keep_password and original:
+            source.password = original.password
+    return await camera_media.probe(source, settings)
+
+
+async def create_staff_camera(session, staff_id, data: StaffCreateCamera, settings):
+    await staff_house(session, staff_id, data.house_id)
+    house = await session.get(House, data.house_id)
+    if data.place.zone == "apartment":
+        raise HTTPException(422, "Камера УК должна находиться в общей зоне дома")
+    await validate_location(session, None, house, data.place)
+    source = data.connection()
+    values = {
+        "house_id": data.house_id,
+        "name": data.name,
+        "note": data.note,
+        **data.place.model_dump(),
+    }
+    query = select(HouseCamera).where(
+        HouseCamera.created_by_staff_id == staff_id,
+        HouseCamera.request_id == str(data.request_id),
+    )
+
+    def previous(camera):
+        if camera.deleted_at is not None:
+            raise HTTPException(409, "Эта камера удалена. Создайте новую заявку")
+        stored = camera_media.decode(camera.source_config, settings).private_dict()
+        expected = source.private_dict()
+        if stored != expected or any(
+            getattr(camera, key) != value for key, value in values.items()
+        ):
+            raise HTTPException(409, "Этот ключ запроса уже использован для другой камеры")
+        return camera_response(camera, None)
+
+    existing = await session.scalar(query)
+    if existing:
+        return previous(existing)
+    await camera_media.frame(source, settings)
+    await staff_house(session, staff_id, data.house_id)
+    camera = HouseCamera(
+        **values,
+        created_by_staff_id=staff_id,
+        request_id=str(data.request_id),
+        source_type=source.source_type,
+        source_config=camera_media.encode(source, settings),
+        status="online",
+        visibility="public",
+        moderation_status="approved",
+        reviewed_by=staff_id,
+        reviewed_at=datetime.now(UTC),
+        captured_at=datetime.now(UTC),
+    )
+    session.add(camera)
+    try:
+        await session.commit()
+    except IntegrityError:
+        await session.rollback()
+        existing = await session.scalar(query)
+        if existing is None:
+            raise
+        return previous(existing)
+    return camera_response(camera, None)
 
 
 async def accessible_camera(session: AsyncSession, user_id: int, camera_id: int):
@@ -331,7 +409,11 @@ async def list_moderation(
                 **camera_response(camera, None).model_dump(),
                 house_id=house.id,
                 address=house.address,
-                owner_name=owner.name if owner else "Камера дома",
+                owner_name=owner.name
+                if owner
+                else "Камера УК"
+                if camera.created_by_staff_id
+                else "Камера дома",
                 source_url=camera.preview_url,
                 connection_available=camera.source_config is not None,
             )
@@ -403,5 +485,16 @@ async def staff_preview(session: AsyncSession, staff_id: int, camera_id: int, se
     if camera is None:
         raise HTTPException(404, "Камера не найдена")
     if not camera.source_config:
+        if camera.preview_url and re.fullmatch(
+            r"/images/cameras/(entrance-[12]|yard)-1\.png", camera.preview_url
+        ):
+            frame = int(datetime.now(UTC).timestamp() // 5) % 2 + 1
+            path = project_path(
+                "mini-app/public" + camera.preview_url.replace("-1.png", f"-{frame}.png")
+            )
+            if path.is_file():
+                return await asyncio.to_thread(path.read_bytes)
+        if camera.preview_url and camera.preview_url.startswith("https://"):
+            return await camera_media.frame(CameraSource(source_url=camera.preview_url), settings)
         raise HTTPException(404, "Серверное подключение для этой камеры не настроено")
     return await camera_media.frame(camera_media.decode(camera.source_config, settings), settings)

@@ -68,6 +68,9 @@ async def frame(source, settings):
                 if response.status_code == 429:
                     raise HTTPException(429, "Слишком много подключений к камерам. Повторите позже")
                 response.raise_for_status()
+                kind = response.headers.get("X-Camera-Source-Type")
+                if kind in {"snapshot", "mjpeg", "hls", "rtsp", "rtmp", "onvif", "http_video"}:
+                    source.source_type = kind
                 data = bytearray()
                 async for chunk in response.aiter_bytes():
                     data.extend(chunk)
@@ -102,3 +105,8 @@ async def live_chunks(source, settings):
 
 def data_url(data):
     return "data:image/jpeg;base64," + base64.b64encode(data).decode()
+
+
+async def probe(source: CameraSource, settings):
+    data = await frame(source, settings)
+    return {"source_type": source.source_type, "src": data_url(data)}

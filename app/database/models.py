@@ -330,6 +330,9 @@ class HouseCamera(Base):
     captured_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     owner_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    created_by_staff_id: Mapped[int | None] = mapped_column(
+        ForeignKey("staff_users.id", ondelete="SET NULL")
+    )
     visibility: Mapped[str] = mapped_column(String(20), default="public", server_default="public")
     moderation_status: Mapped[str] = mapped_column(
         String(20), default="approved", server_default="approved"
@@ -344,6 +347,7 @@ class HouseCamera(Base):
     request_id: Mapped[str | None] = mapped_column(String(36))
     __table_args__ = (
         UniqueConstraint("owner_id", "request_id", name="uq_camera_request"),
+        UniqueConstraint("created_by_staff_id", "request_id", name="uq_staff_camera_request"),
         CheckConstraint("visibility IN ('private', 'public')", name="ck_camera_visibility"),
         CheckConstraint(
             "moderation_status IN ('pending', 'approved', 'rejected')", name="ck_camera_moderation"

@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { filterCameras } from '../src/_pages/cameras/model/camera.ts';
+import { changeLocationFilter } from '../src/entities/house/model/house.ts';
 
 const cameras = [
   { id: 'legacy', mine: false, visibility: 'public', moderationStatus: 'approved' },
@@ -19,4 +20,13 @@ test('my cameras and location filters combine without hiding legacy cameras by d
   assert.deepEqual(ids({ type: 'mine', entrance: '2', floor: '3', zone: 'corridor' }), ['own-floor']);
   assert.deepEqual(ids({ zone: 'courtyard' }), ['own-yard']);
   assert.deepEqual(ids({ type: 'mine', entrance: '1', floor: '3' }), []);
+});
+
+test('outdoor locations clear incompatible filters and stay outside floor searches', () => {
+  for (const zone of ['courtyard', 'parking', 'house']) {
+    assert.deepEqual(changeLocationFilter({ ...defaults, entrance: '2', floor: '5' }, 'zone', zone), { ...defaults, zone });
+  }
+  assert.equal(changeLocationFilter({ ...defaults, floor: '5' }, 'zone', 'entrance').floor, '1');
+  assert.deepEqual(filterCameras(cameras, { ...defaults, floor: '1' }), []);
+  assert.deepEqual(filterCameras(cameras, { ...defaults, entrance: '1' }), []);
 });

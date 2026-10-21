@@ -1,12 +1,15 @@
-import { NavigationLinks, SectionPage } from "@/shared/ui/navigation";
+import Link from "next/link";
+import { SectionPage } from "@/shared/ui/navigation";
+import { Icon } from "@/shared/ui/icon";
 import { RecipientSelector } from "@/features/select-recipient";
 import { HealthSummary } from "./health-summary";
 import { HouseInformation } from "./house-information";
+import styles from "./health-summary.module.css";
 
 export function HealthPage() {
   return <SectionPage title="Здоровье дома" description="Состояние систем вашего дома">
     <HealthSummary />
-    <NavigationLinks label="Обращения дома" items={[{ href: "/issues", title: "Посмотреть обращения" }]} />
+    <Link href="/issues" className={styles.allIssues}><Icon name="issues" size={21} /><span>Все обращения дома</span><Icon name="arrow" size={18} /></Link>
   </SectionPage>;
 }
 

@@ -17,7 +17,7 @@
   .segments button { flex: 1; min-width: 32px; min-height: 44px; padding: 8px; border: 0; border-radius: 6px; color: var(--color-muted); background: var(--color-neutral); cursor: pointer; font-size: 13px; }
   .segments button[aria-pressed="true"] { color: var(--color-on-action); background: var(--color-action); }
 }
-.controls select { min-width: 0; width: 100%; min-height: var(--control-height); padding: 12px 14px; border: 1px solid var(--color-line); border-radius: var(--radius-input); font: inherit; color: var(--color-ink); background: var(--color-surface); }
+.controls select:not([multiple]) { min-width: 0; width: 100%; min-height: 52px; padding: 12px 14px; border: 1px solid var(--color-line); border-radius: var(--radius-input); font: inherit; font-size:16px; color: var(--color-ink); background: var(--color-surface); }
 .locationField { display: grid; gap: 8px; margin-top: 20px; font-size: 14px; }
 .locationField select { width: 100%; min-width: 0; min-height: 48px; padding: 12px 14px; border: 1px solid var(--color-line); border-radius: var(--radius-input); background: var(--color-surface); color: var(--color-ink); font: inherit; }
 @media (max-width: 760px) { .controls select, .locationField select { font-size: 16px; } }
@@ -28,3 +28,5 @@
 
 .selectedLocation { display:flex; align-items:center; gap:calc(10 * var(--u)); margin:calc(10 * var(--u)) 0 0; min-height:calc(46 * var(--u)); padding:calc(8 * var(--u)) calc(12 * var(--u)); border:1px solid var(--color-line); border-radius:calc(8 * var(--u)); color:var(--color-muted); background:var(--color-surface); font-size:calc(17 * var(--u)); }
 .selectedLocation svg { flex-shrink:0; color:var(--color-primary); }
+.controls > label { display:grid; gap:6px; min-width:0; font-size:13px; }
+.controls > label select:disabled { width:100%; min-height:52px; padding:10px; border:1px solid var(--color-line); border-radius:12px; background:var(--color-surface); color:var(--color-text-secondary); opacity:.65; cursor:not-allowed; }

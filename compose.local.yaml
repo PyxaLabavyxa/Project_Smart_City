@@ -1,5 +1,8 @@
 # Explicit local-development override; never use this file on a public server.
 services:
+  camera-worker:
+    ports:
+      - "127.0.0.1:8001:8001"
   seed:
     build:
       context: .

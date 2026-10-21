@@ -5,6 +5,8 @@ export { FloorPlan } from "./ui/floor-plan";
 export { defaultPlace, HouseSelectionProvider, useHouseSelection } from "./model/selection-provider";
 export { PlaceLink } from "./ui/place-link";
 export { LocationSelector } from "./ui/location-selector";
+export { LocationFilters } from "./ui/location-filters";
+export { changeLocationFilter } from "./model/house";
 export { validLocation, locationQuery, parseLocation } from "./model/house";
 export { floorCount, validStructure, resolveLocation, fallbackLocation } from "./model/house";
 export { HouseElevation } from "./ui/house-elevation";

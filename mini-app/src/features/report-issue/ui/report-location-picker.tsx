@@ -31,7 +31,7 @@ export function ReportLocationPicker({ value, onChange, details = false, showSco
         </button>)}
     </div>}
     {details && scope === "entrance" && <div className={styles.placeDetails}>
-      <FloorControls house={house} entrance={value.entrance} floor={value.floor} onChange={(entrance, floor) => onChange({ houseId: house.id, entrance, floor, zone: "corridor" })} />
+      <FloorControls dropdown house={house} entrance={value.entrance} floor={value.floor} zone={value.zone} onChange={(entrance, floor) => onChange({ houseId: house.id, entrance, floor, zone: value.zone === "entrance" ? "entrance" : "corridor" })} />
       <p className={styles.placeHint}>Выберите подъезд и этаж, затем отметьте на плане общую зону: холл, лифт, лестницу или другое помещение.</p>
       <FloorPlan house={house} selected={value} onSelect={onChange} allowApartmentSelection={false} />
       <label className={styles.field}>Общая зона

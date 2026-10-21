@@ -1374,6 +1374,63 @@
         }
       }
     },
+    "/api/v1/houses/{house_id}/cameras/probe": {
+      "post": {
+        "tags": [
+          "services"
+        ],
+        "summary": "Probe Camera",
+        "operationId": "probe_camera_api_v1_houses__house_id__cameras_probe_post",
+        "security": [
+          {
+            "MAXLaunchData": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "house_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "House Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProbeCamera"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CameraProbeResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/cameras/{camera_id}/preview": {
       "get": {
         "tags": [
@@ -1805,6 +1862,96 @@
             }
           }
         }
+      },
+      "post": {
+        "tags": [
+          "Staff"
+        ],
+        "summary": "Add Camera",
+        "operationId": "add_camera_api_v1_staff_cameras_post",
+        "security": [
+          {
+            "StaffSession": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StaffCreateCamera"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CameraResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/staff/cameras/probe": {
+      "post": {
+        "tags": [
+          "Staff"
+        ],
+        "summary": "Probe Camera",
+        "operationId": "probe_camera_api_v1_staff_cameras_probe_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StaffProbeCamera"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CameraProbeResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "StaffSession": []
+          }
+        ]
       }
     },
     "/api/v1/staff/cameras/{camera_id}/moderate": {
@@ -3874,6 +4021,33 @@
         ],
         "title": "CameraFrame"
       },
+      "CameraProbeResult": {
+        "properties": {
+          "source_type": {
+            "type": "string",
+            "enum": [
+              "snapshot",
+              "mjpeg",
+              "hls",
+              "rtsp",
+              "rtmp",
+              "onvif",
+              "http_video"
+            ],
+            "title": "Source Type"
+          },
+          "src": {
+            "type": "string",
+            "title": "Src"
+          }
+        },
+        "type": "object",
+        "required": [
+          "source_type",
+          "src"
+        ],
+        "title": "CameraProbeResult"
+      },
       "CameraResponse": {
         "properties": {
           "id": {
@@ -5571,6 +5745,97 @@
         ],
         "title": "PrivateAnnouncementDeliveryOutput"
       },
+      "ProbeCamera": {
+        "properties": {
+          "source_type": {
+            "type": "string",
+            "enum": [
+              "auto",
+              "snapshot",
+              "mjpeg",
+              "hls",
+              "rtsp",
+              "rtmp",
+              "onvif",
+              "http_video"
+            ],
+            "title": "Source Type",
+            "default": "auto"
+          },
+          "source_url": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Source Url"
+          },
+          "username": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Username",
+            "default": ""
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 500,
+            "format": "password",
+            "title": "Password",
+            "default": "",
+            "writeOnly": true
+          },
+          "auth_type": {
+            "type": "string",
+            "enum": [
+              "digest",
+              "basic"
+            ],
+            "title": "Auth Type",
+            "default": "digest"
+          },
+          "profile": {
+            "type": "string",
+            "maxLength": 128,
+            "pattern": "^[\\w.\\-]*$",
+            "title": "Profile",
+            "default": ""
+          },
+          "rtsp_port": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 65535.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rtsp Port"
+          },
+          "camera_id": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Camera Id"
+          },
+          "keep_password": {
+            "type": "boolean",
+            "title": "Keep Password",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "source_url"
+        ],
+        "title": "ProbeCamera"
+      },
       "Profile": {
         "properties": {
           "id": {
@@ -5972,6 +6237,114 @@
         ],
         "title": "StaffCameraResponse"
       },
+      "StaffCreateCamera": {
+        "properties": {
+          "source_type": {
+            "type": "string",
+            "enum": [
+              "snapshot",
+              "mjpeg",
+              "hls",
+              "rtsp",
+              "rtmp",
+              "onvif",
+              "http_video"
+            ],
+            "title": "Source Type",
+            "default": "snapshot"
+          },
+          "source_url": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Source Url"
+          },
+          "username": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Username",
+            "default": ""
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 500,
+            "format": "password",
+            "title": "Password",
+            "default": "",
+            "writeOnly": true
+          },
+          "auth_type": {
+            "type": "string",
+            "enum": [
+              "digest",
+              "basic"
+            ],
+            "title": "Auth Type",
+            "default": "digest"
+          },
+          "profile": {
+            "type": "string",
+            "maxLength": 128,
+            "pattern": "^[\\w.\\-]*$",
+            "title": "Profile",
+            "default": ""
+          },
+          "rtsp_port": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 65535.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rtsp Port"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 1000,
+            "title": "Note",
+            "default": ""
+          },
+          "is_public": {
+            "type": "boolean",
+            "const": true,
+            "title": "Is Public",
+            "default": true
+          },
+          "place": {
+            "$ref": "#/components/schemas/Location"
+          },
+          "request_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Request Id"
+          },
+          "house_id": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "House Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "source_url",
+          "name",
+          "place",
+          "request_id",
+          "house_id"
+        ],
+        "title": "StaffCreateCamera"
+      },
       "StaffIssuePage": {
         "properties": {
           "items": {
@@ -6010,6 +6383,103 @@
           "counts"
         ],
         "title": "StaffIssuePage"
+      },
+      "StaffProbeCamera": {
+        "properties": {
+          "source_type": {
+            "type": "string",
+            "enum": [
+              "auto",
+              "snapshot",
+              "mjpeg",
+              "hls",
+              "rtsp",
+              "rtmp",
+              "onvif",
+              "http_video"
+            ],
+            "title": "Source Type",
+            "default": "auto"
+          },
+          "source_url": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Source Url"
+          },
+          "username": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Username",
+            "default": ""
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 500,
+            "format": "password",
+            "title": "Password",
+            "default": "",
+            "writeOnly": true
+          },
+          "auth_type": {
+            "type": "string",
+            "enum": [
+              "digest",
+              "basic"
+            ],
+            "title": "Auth Type",
+            "default": "digest"
+          },
+          "profile": {
+            "type": "string",
+            "maxLength": 128,
+            "pattern": "^[\\w.\\-]*$",
+            "title": "Profile",
+            "default": ""
+          },
+          "rtsp_port": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 65535.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rtsp Port"
+          },
+          "camera_id": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Camera Id"
+          },
+          "keep_password": {
+            "type": "boolean",
+            "title": "Keep Password",
+            "default": false
+          },
+          "house_id": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "House Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "source_url",
+          "house_id"
+        ],
+        "title": "StaffProbeCamera"
       },
       "StaffTokenOutput": {
         "properties": {

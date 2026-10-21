@@ -3,7 +3,7 @@ import { useState } from "react";
 import { SectionPage } from "@/shared/ui/navigation";
 import { RequestState } from "@/shared/ui/navigation/request-state";
 import Link from "next/link";
-import { commonZones, formatLocation, useHouseSelection } from "@/entities/house";
+import { LocationFilters, changeLocationFilter, formatLocation, useHouseSelection } from "@/entities/house";
 import { useIssues } from "@/entities/issue";
 import { initialReportStep } from "@/entities/issue/model/issue-draft";
 import { cameraIssueContext } from "../model/camera-issue-context";
@@ -31,7 +31,7 @@ function LoadedCamerasPage() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const filterCount = [filters.type !== "all", filters.entrance, filters.floor, filters.zone].filter(Boolean).length;
   const cameras = filterCameras(state.data ?? [], filters);
-  const updateLocationFilter = (name: "entrance" | "floor" | "zone", value: string) => setFilters(previous => ({ ...previous, [name]: value }));
+  const updateLocationFilter = (name: "entrance" | "floor" | "zone", value: string) => setFilters(previous => changeLocationFilter(previous, name, value));
   return <SectionPage title="Камеры" description="Личные и общедоступные камеры" backHref="/" backLabel="На главную">
     <p className={styles.address}><Icon name="pin" size={20} />{house.address}</p>
     <div className={styles.toolbar}><Link href="/cameras/new" className={styles.addButton}><Icon name="plus" size={18} />Добавить</Link><button type="button" className={styles.filterToggle} aria-expanded={filtersOpen} aria-controls="camera-filters" onClick={() => setFiltersOpen(open => !open)}><Icon name="settings" size={20} /><span>Фильтры</span>{filterCount > 0 && <span className={styles.filterCount}>{filterCount}</span>}</button><RefreshButton className={styles.refreshList} loading={state.loading} onRefresh={state.reload} iconSize={20} aria-label="Обновить список камер" /></div>
@@ -42,9 +42,7 @@ function LoadedCamerasPage() {
           const type = event.target.value;
           if (type === "all" || type === "mine" || type === "public") setFilters(previous => ({ ...previous, type }));
         }}><option value="all">Все камеры</option><option value="mine">Мои камеры</option><option value="public">Общедоступные</option></select></label>
-        <label>Подъезд<select value={filters.entrance} onChange={event => updateLocationFilter("entrance", event.target.value)}><option value="">Все подъезды</option>{Array.from({ length: house.entrances }, (_, i) => <option key={i + 1} value={i + 1}>Подъезд {i + 1}</option>)}</select></label>
-        <label>Этаж<select value={filters.floor} onChange={event => updateLocationFilter("floor", event.target.value)}><option value="">Все этажи</option>{Array.from({ length: house.floors }, (_, i) => <option key={i + 1} value={i + 1}>Этаж {i + 1}</option>)}</select></label>
-        <label>Место<select value={filters.zone} onChange={event => updateLocationFilter("zone", event.target.value)}><option value="">Все места</option>{Object.entries(commonZones).map(([zone, title]) => <option key={zone} value={zone}>{title}</option>)}<option value="apartment">Квартира</option></select></label>
+        <LocationFilters house={house} value={filters} onChange={updateLocationFilter} />
       </div>
       <button type="button" className={styles.resetFilters} onClick={() => setFilters(emptyFilters)}>Сбросить фильтры</button>
     </fieldset>

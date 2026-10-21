@@ -17,7 +17,13 @@ from smart_city_api.schemas.app import (
     SendMessage,
     WorkResponse,
 )
-from smart_city_api.schemas.cameras import CameraSettings, CreateCamera, UpdateCamera
+from smart_city_api.schemas.cameras import (
+    CameraProbeResult,
+    CameraSettings,
+    CreateCamera,
+    ProbeCamera,
+    UpdateCamera,
+)
 from smart_city_api.services import camera_media, chat_photos
 from smart_city_api.services import cameras as camera_service
 from smart_city_api.services.access import own_apartment_ids, require_apartment, require_house
@@ -118,6 +124,15 @@ async def add_camera(
     house_id: int, data: CreateCamera, request: Request, session: Session, user: Resident
 ):
     return await camera_service.create_camera(
+        session, user.id, house_id, data, request.app.state.settings
+    )
+
+
+@router.post("/houses/{house_id}/cameras/probe", response_model=CameraProbeResult)
+async def probe_camera(
+    house_id: int, data: ProbeCamera, request: Request, session: Session, user: Resident
+):
+    return await camera_service.probe_camera(
         session, user.id, house_id, data, request.app.state.settings
     )
 

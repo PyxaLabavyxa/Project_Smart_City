@@ -81,7 +81,7 @@ select:not([multiple]):disabled { opacity:.55; cursor:not-allowed; }
   select:not([multiple])::picker-icon { content:""; flex-shrink:0; width:8px; height:8px; margin-inline-start:auto; margin-inline-end:2px; border-right:1.5px solid var(--color-muted); border-bottom:1.5px solid var(--color-muted); rotate:45deg; translate:0 -2px; }
   select:not([multiple]):open { border-color:var(--color-action); }
   select:not([multiple]):open::picker-icon { rotate:225deg; translate:0 2px; }
-  ::picker(select) { padding:5px; margin-block:6px; max-height:min(320px,45dvh); overflow-y:auto; border:1px solid var(--color-line); border-radius:var(--radius-button); color:var(--color-ink); background:var(--color-surface); box-shadow:0 8px 28px color-mix(in srgb,var(--color-ink) 14%,transparent); }
+  ::picker(select) { position-try-order:normal; padding:5px; margin-block:6px; max-height:min(320px,45dvh); overflow-y:auto; border:1px solid var(--color-line); border-radius:var(--radius-button); color:var(--color-ink); background:var(--color-surface); box-shadow:0 8px 28px color-mix(in srgb,var(--color-ink) 14%,transparent); }
   select:not([multiple]) option { display:flex; align-items:center; gap:10px; min-height:44px; padding:10px 12px; border:0; border-radius:9px; color:var(--color-ink); background:var(--color-surface); white-space:normal; overflow-wrap:anywhere; cursor:pointer; }
   select:not([multiple]) option:checked { color:var(--color-action); background:var(--color-soft); }
   select:not([multiple]) option:focus-visible { outline:0; background:var(--color-soft); }

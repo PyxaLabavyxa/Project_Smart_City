@@ -9,11 +9,35 @@ from urllib.parse import urlsplit
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 
 
+def detect_source_type(value: str):
+    url = urlsplit(value.strip())
+    if url.scheme in {"rtsp", "rtsps"}:
+        return "rtsp"
+    if url.scheme in {"rtmp", "rtmps"}:
+        return "rtmp"
+    path = url.path.lower()
+    if "/onvif" in path:
+        return "onvif"
+    if path.endswith(".m3u8"):
+        return "hls"
+    if path.endswith((".mjpg", ".mjpeg")):
+        return "mjpeg"
+    if path.endswith((".jpg", ".jpeg", ".png", ".webp")):
+        return "snapshot"
+    if path.endswith((".mp4", ".flv", ".ts", ".webm")):
+        return "http_video"
+    return "auto"
+
+
+CameraConnectionType = Literal["snapshot", "mjpeg", "hls", "rtsp", "rtmp", "onvif", "http_video"]
+CameraSourceType = Literal[
+    "auto", "snapshot", "mjpeg", "hls", "rtsp", "rtmp", "onvif", "http_video"
+]
+
+
 class CameraSource(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    source_type: Literal["snapshot", "mjpeg", "hls", "rtsp", "rtmp", "onvif", "http_video"] = (
-        "snapshot"
-    )
+    source_type: CameraSourceType = "snapshot"
     source_url: str = Field(min_length=1, max_length=2000)
     username: str = Field(default="", max_length=200)
     password: SecretStr = Field(default=SecretStr(""), max_length=500)
@@ -25,6 +49,8 @@ class CameraSource(BaseModel):
     def validate_url(self):
         self.source_url = self.source_url.strip()
         try:
+            if self.source_type == "auto":
+                self.source_type = detect_source_type(self.source_url)
             url = urlsplit(self.source_url)
             allowed = (
                 {"rtsp", "rtsps"}
