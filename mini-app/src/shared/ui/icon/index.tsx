@@ -49,7 +49,7 @@ export function Icon({ name, size = 21, style, active = false }: { name: keyof t
   const filled: Partial<Record<keyof typeof paths,string>> = {
     home:"M12 2 1 10v12h8v-7h6v7h8V10L12 2Z",
     receipt:"M4 1h16v22l-4-2-4 2-4-2-4 2V1Zm4 4v2h8V5H8Zm0 5v2h8v-2H8Zm0 5v2h5v-2H8Z",
-    messages:"M3 2h18v17H10l-7 4V2Zm4 4v2h10V6H7Zm0 5v2h7v-2H7Z",
+    messages:"M4 3h13v12H9l-5 4V3Zm15 5h2v13l-5-3h-4v-2h4.6l2.4 1.4V8Z",
     camera:"M3 4 21 9l-3 7-9-3-2 7H2v-2h4l2-5-7-2Z",
     cameras:"M3 4 21 9l-3 7-9-3-2 7H2v-2h4l2-5-7-2Z",
     more:paths.more,

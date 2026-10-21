@@ -1,26 +1,49 @@
 "use client";
 import { useState } from "react";
-import { IssueList, useIssues, filterIssues, initialIssueFilters } from "@/entities/issue";
+import { IssueList, useIssues, filterIssues, initialIssueFilters, selectIssueTab } from "@/entities/issue";
 import { ReportIssueLink } from "@/features/report-issue";
 import { IssueFilters } from "./issue-filters";
 import { HomeAddress } from "@/_pages/home/ui/home-address";
 import styles from "./issues-page.module.css";
 import { RequestState } from "@/shared/ui/navigation/request-state";
+import { RefreshButton } from "@/shared/ui/refresh-button";
+
+const tabs = [
+  { value: "all", label: "Все" },
+  { value: "mine", label: "Мои" },
+] as const;
+
 export function IssuesPage({ initialCategory = "" }: { initialCategory?: string }) {
   const { issues, loading, error, reload } = useIssues();
   const [filters, setFilters] = useState({ ...initialIssueFilters, category: initialCategory });
   const visible = filterIssues(issues, filters);
+  const mineCount = issues.filter(issue => issue.mine).length;
+  const noPersonalIssues = filters.onlyMine && mineCount === 0;
+  function resetFilters() {
+    setFilters(current => ({ ...initialIssueFilters, onlyMine: current.onlyMine }));
+  }
   if ((loading || error) && !issues.length) return <RequestState loading={loading} error={error} reload={reload} />;
-  return <div className={styles.content}><HomeAddress compact /><header className={styles.heading}><h1>Обращения</h1></header>
-    <div data-tour="issue-controls"><div data-tour="issue-status" className={styles.statusRow}><nav className={styles.tabs} aria-label="Статус обращений">{([{ value: "active", label: "Активные" }, { value: "completed", label: "Решённые" }, { value: "all", label: "Все" }] as const).map(tab => <button key={tab.value} type="button" aria-pressed={filters.status === tab.value} onClick={() => setFilters({ ...filters, status: tab.value })}>{tab.label}<span>{issues.filter(issue => tab.value === "all" || (tab.value === "active" ? issue.status !== "completed" : issue.status === "completed")).length}</span></button>)}</nav></div>
+  return <div className={styles.content}><HomeAddress compact /><header className={styles.heading}>
+    <h1>Обращения</h1>
+  </header>
+    <div data-tour="issue-controls"><div data-tour="issue-status" className={styles.statusRow}>
+      <nav className={styles.tabs} aria-label="Список обращений">{tabs.map(tab => {
+        const count = tab.value === "mine" ? mineCount : issues.length;
+        const selected = tab.value === "mine" ? !!filters.onlyMine : !filters.onlyMine;
+        return <button key={tab.value} type="button" aria-pressed={selected} aria-label={`${tab.label}: ${count}`} onClick={() => setFilters(current => selectIssueTab(current, tab.value))}>
+          {tab.label}<span aria-hidden="true">{count}</span>
+        </button>;
+      })}</nav>
+      <RefreshButton className={styles.refresh} onRefresh={reload} loading={loading} iconSize={21} aria-label="Обновить обращения" title="Обновить обращения" />
+    </div>
 
-    <IssueFilters filters={filters} categories={issues.map(issue => issue.category)} onChange={setFilters} onReset={() => setFilters(initialIssueFilters)} onRefresh={reload} refreshing={loading} /></div>
+    <IssueFilters filters={filters} categories={issues.map(issue => issue.category)} onChange={setFilters} onReset={resetFilters} /></div>
     <RequestState loading={false} error={error} reload={reload} />
     <div className={styles.summary} role="status"><span>Найдено: <b>{visible.length}</b> из {issues.length}</span></div>
     {visible.length ? <IssueList issues={visible} wide /> : <div className={styles.empty}>
-      <h2>{issues.length ? "Обращения не найдены" : "Обращений ещё нет"}</h2>
-      <p>{issues.length ? "Измените условия поиска или сбросьте фильтры." : "Сообщите о проблеме с помощью кнопки выше."}</p>
-      {issues.length > 0 && <button type="button" className={styles.emptyButton} onClick={() => setFilters(initialIssueFilters)}>Сбросить фильтры</button>}
+      <h2>{noPersonalIssues ? "У вас пока нет обращений" : issues.length ? "Обращения не найдены" : "Обращений ещё нет"}</h2>
+      <p>{noPersonalIssues ? "Здесь появятся обращения, которые вы создадите в этом доме." : issues.length ? "Измените условия поиска или сбросьте фильтры." : "Расскажите о проблеме — нажмите «Создать обращение»."}</p>
+      {issues.length > 0 && !noPersonalIssues && <button type="button" className={styles.emptyButton} onClick={resetFilters}>Сбросить фильтры</button>}
     </div>}
     <div className={styles.create}><ReportIssueLink /></div>
   </div>;

@@ -21,9 +21,15 @@ export type IssueFilters = {
   onlyMine?: boolean;
 };
 
+export type IssueTab = "all" | "mine";
+
 export const initialIssueFilters: IssueFilters = {
   status: "all", category: "", entrance: "", floor: "", zone: "", query: "",
 };
+
+export function selectIssueTab(filters: IssueFilters, tab: IssueTab): IssueFilters {
+  return { ...filters, onlyMine: tab === "mine" };
+}
 
 export function filterIssues(issues: readonly IssueRecord[], filters: IssueFilters) {
   const query = filters.query.trim().toLocaleLowerCase("ru");

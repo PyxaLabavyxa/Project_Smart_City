@@ -1,23 +1,21 @@
 import { useState } from "react";
 import { Icon } from "@/shared/ui/icon";
-import { RefreshButton } from "@/shared/ui/refresh-button";
 import { issueStatusLabels, issueCategories, type IssueFilters as Filters } from "@/entities/issue";
 import { commonZones, useHouseSelection } from "@/entities/house";
 import { useOnboarding } from "@/features/onboarding/onboarding";
 import styles from "./issues-page.module.css";
 
-export function IssueFilters({ filters, categories, onChange, onReset, onRefresh, refreshing = false }: {
+export function IssueFilters({ filters, categories, onChange, onReset }: {
   filters: Filters;
   categories: readonly string[];
   onChange: (filters: Filters) => void;
   onReset: () => void;
-  onRefresh: () => void;
-  refreshing?: boolean;
 }) {
   const { activeTarget } = useOnboarding();
   const { house } = useHouseSelection();
-  const statusOptions = { all: "Все статусы", active: "Активные", ...issueStatusLabels };
-  const count = [filters.category, filters.entrance, filters.floor, filters.zone, filters.onlyMine].filter(Boolean).length;
+  const statusOptions = { all: "Все статусы", active: "Активные", ...issueStatusLabels, completed: "Решённые" };
+  const filteredStatus = filters.status !== "all";
+  const count = [filters.category, filters.entrance, filters.floor, filters.zone, filteredStatus].filter(Boolean).length;
   const [expanded,setExpanded]=useState(false);
   const open=expanded || activeTarget === "issue-controls";
   const upstairs = Number(filters.floor) > 1;
@@ -48,7 +46,6 @@ export function IssueFilters({ filters, categories, onChange, onReset, onRefresh
       {Object.entries(commonZones).filter(([value]) => !upstairs || !["entrance", "courtyard", "parking", "house"].includes(value)).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
       <option value="apartment">Квартира</option>
     </select></label>
-    <label>Автор<select value={filters.onlyMine ? "mine" : "all"} onChange={event => onChange({ ...filters, onlyMine: event.target.value === "mine" })}><option value="all">Все обращения</option><option value="mine">Мои обращения</option></select></label>
-    <div className={styles.filterActions}><button type="button" onClick={onReset}>Сбросить фильтры</button><RefreshButton onRefresh={onRefresh} loading={refreshing}>Обновить обращения</RefreshButton></div>
+    <div className={styles.filterActions}><button type="button" onClick={onReset}>Сбросить фильтры</button></div>
   </section>}</div>;
 }
