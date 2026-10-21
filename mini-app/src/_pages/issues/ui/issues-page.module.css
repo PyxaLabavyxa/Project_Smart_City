@@ -29,3 +29,4 @@
 
 .filterActions { display:grid; grid-column:1 / -1; }
 .filterActions button { display:flex; align-items:center; justify-content:center; gap:6px; padding:8px; font-size:13px; }
+.filters select:disabled { opacity:.65; cursor:not-allowed; background:var(--color-surface); }

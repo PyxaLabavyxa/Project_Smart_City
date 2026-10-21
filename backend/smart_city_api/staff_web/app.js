@@ -2,7 +2,7 @@
 
 const $ = (id) => document.getElementById(id);
 const apiRoot = "/api/v1/staff";
-const cameraPageSize = 5;
+const cameraPageSize = 8;
 const statuses = { new: "Новое", in_progress: "В работе", resolved: "Решено" };
 const priorities = { 1: "Высокий", 2: "Средний", 3: "Низкий" };
 const categories = {
@@ -17,7 +17,10 @@ const iconPaths = {
   phone: '<path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.79 19.79 0 0 1 11.19 19a19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-2.91-8.67A2 2 0 0 1 4.27 2.14h3a2 2 0 0 1 2 1.72c.12.96.35 1.9.69 2.79a2 2 0 0 1-.45 2.11L8.24 10a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.89.34 1.83.57 2.79.69A2 2 0 0 1 22 16.92z"/>',
   message: '<path d="M21 15a3 3 0 0 1-3 3H8l-5 4V6a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3zM7 8h10M7 12h6"/>',
   building: '<path d="M4 21V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v16M2 21h20M9 21v-4h6v4M8 7h1m6 0h1M8 11h1m6 0h1"/>',
-  refresh: '<path d="M20 7v5h-5M4 17v-5h5"/><path d="M6 7a7 7 0 0 1 11.6-1L20 9M4 15l2.4 3A7 7 0 0 0 18 17"/>',
+  refresh: '<path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1.01 6.74 2.82L21 8"/><path d="M21 3v5h-5"/>',
+  grid: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+  list: '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
+  camera: '<rect x="3" y="5" width="13" height="14" rx="3"/><path d="m16 10 5-3v10l-5-3z"/>',
   search: '<circle cx="10.5" cy="10.5" r="7.5"/><path d="m16 16 5 5"/>',
   tool: '<path d="M14.7 6.3a5 5 0 0 0-6.3 6.3l-5.7 5.7a2.1 2.1 0 0 0 3 3l5.7-5.7a5 5 0 0 0 6.3-6.3l-3 3-3-3z"/>',
   "check-circle": '<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>',
@@ -71,12 +74,13 @@ function toast(text) {
 function showLogin() {
   confirmationDialog.close("cancel");
   $("camera-action-menu").hidePopover();
+  window.resetCameraManagement?.();
   window.resetChatManagement?.();
   state.profile = null; state.detail = null; state.listRequest++; state.detailRequest++;
   $("issue-dialog").close(); $("photo-dialog").close();
   $("full-photo").removeAttribute("src"); $("detail-content").replaceChildren();
   $("registrations-body").replaceChildren();
-  cameraRequest++; $("cameras-body").replaceChildren();
+  cameraRequest++; cameraItems = []; $("cameras-body").replaceChildren(); $("camera-table-body").replaceChildren();
   contactState.request++; contactState.house = ""; contactState.loaded = false; contactState.dirty = false; contactState.loading = false;
   $("contact-rows").replaceChildren(); $("contacts-form").hidden = true;
   $("issues-body").replaceChildren(); $("workspace").hidden = true;
@@ -88,7 +92,7 @@ async function api(path, options = {}) {
   if (state.profile && options.method && options.method !== "GET") headers["X-CSRF-Token"] = state.profile.csrf_token;
   let response;
   try {
-    response = await fetch(apiRoot + path, { ...options, headers, credentials: "same-origin", cache: "no-store", signal: AbortSignal.timeout(options.body instanceof FormData ? 120000 : 20000) });
+    response = await fetch(apiRoot + path, { ...options, headers, credentials: "same-origin", cache: "no-store", signal: options.signal ?? AbortSignal.timeout(options.body instanceof FormData ? 120000 : path.startsWith("/cameras") ? 30000 : 20000) });
   } catch {
     throw new Error("Нет связи с сервером. Проверьте подключение и повторите попытку.");
   }
@@ -304,7 +308,7 @@ $("detail-content").addEventListener("click", (event) => {
 $("close-photo").addEventListener("click", () => $("photo-dialog").close());
 $("photo-dialog").addEventListener("close", () => $("full-photo").removeAttribute("src"));
 setInterval(async () => {
-  if (!state.profile || document.hidden || state.busy || confirmationDialog.open || $("camera-action-menu").matches(":popover-open")) return;
+  if (!state.profile || document.hidden || state.busy || confirmationDialog.open || $("staff-camera-form-dialog").open || $("staff-camera-view-dialog").open || $("camera-action-menu").matches(":popover-open")) return;
   if (window.location.hash === "#registrations") await loadRegistrations();
   else if (window.location.hash === "#cameras") await loadCameras();
   else if (window.location.hash !== "#contacts") await loadList();
@@ -319,6 +323,42 @@ enterWorkspace().catch((error) => { showLogin(); if (error.status !== 401) showE
 
 let registrationPage = 1, registrationTotal = 0, registrationRequest = 0;
 let cameraPage = 1, cameraTotal = 0, cameraRequest = 0;
+let cameraItems = [], cameraView = "grid";
+try { if (localStorage.getItem("dompulse.staff.camera-view") === "list") cameraView = "list"; } catch { /* View selection also works without storage. */ }
+function renderCameraItems(items = cameraItems) {
+  cameraItems = items;
+  $("camera-results-count").textContent = String(cameraTotal);
+  $("camera-results-count").setAttribute("aria-label", `Найдено камер: ${cameraTotal}`);
+  $("camera-action-menu").hidePopover();
+  $("cameras-body").hidden = cameraView !== "grid";
+  $("camera-table-view").hidden = cameraView !== "list";
+  $("camera-view-grid").setAttribute("aria-pressed", String(cameraView === "grid"));
+  $("camera-view-list").setAttribute("aria-pressed", String(cameraView === "list"));
+  const html = cameraItems.map(camera => {
+      const place = camera.place;
+      const location = !place ? "Место не указано" : ["house", "courtyard", "parking"].includes(place.zone) ? zones[place.zone] : `Подъезд ${place.entrance} · этаж ${place.floor} · ${zones[place.zone] || place.zone}`;
+      const decision = camera.moderation_status === "pending" ? "Заявка жителя" : camera.moderation_status === "approved" ? "Доступна жителям" : "Отклонена";
+      if (cameraView === "list") return `<tr><td><strong>${esc(camera.name)}</strong><span class="row-meta">${esc(camera.owner_name)}</span></td>
+        <td data-label="Место">${esc(camera.address)}<span class="row-meta">${esc(location)}</span></td>
+        <td data-label="Описание"><p class="camera-list-note" title="${esc(camera.note)}">${esc(camera.note) || '<span class="muted">—</span>'}</p></td>
+        <td data-label="Статус"><span class="badge camera-${esc(camera.moderation_status)}"><span class="status-dot"></span>${esc(decision)}</span></td>
+        <td data-label="Пояснение">${camera.moderation_status === "rejected" && camera.moderation_reason ? `<p class="camera-explanation">${esc(camera.moderation_reason)}</p>` : '<span class="muted">—</span>'}</td>
+        <td data-label="Управление"><button type="button" class="camera-menu-trigger" data-camera="${Number(camera.id)}" data-status="${esc(camera.moderation_status)}" popovertarget="camera-action-menu" aria-expanded="false" aria-label="Действия с камерой: ${esc(camera.name)}">Действия ${icon("chevron")}</button></td></tr>`;
+      return `<article class="staff-camera-card">
+        <button type="button" class="staff-camera-preview" data-view-camera="${Number(camera.id)}" data-name="${esc(camera.name)}" data-place="${esc(camera.address + " · " + location)}" aria-label="Смотреть камеру: ${esc(camera.name)}"><img data-frame-src="${apiRoot}/cameras/${Number(camera.id)}/frame" alt="" loading="lazy"><span class="camera-preview-fallback">${icon("camera")}<span>Получаем кадр…</span></span><span class="camera-preview-open">Смотреть камеру ↗</span></button>
+        <div class="staff-camera-card-body"><span class="badge camera-${esc(camera.moderation_status)}"><span class="status-dot"></span>${esc(decision)}</span><h2>${esc(camera.name)}</h2><p class="camera-card-address">${esc(camera.address)}</p><p class="muted">${esc(location)}</p><p class="row-meta">${esc(camera.owner_name)}</p>${camera.note ? `<p class="camera-card-note">${esc(camera.note)}</p>` : ""}${camera.moderation_status === "rejected" && camera.moderation_reason ? `<p class="camera-explanation">${esc(camera.moderation_reason)}</p>` : ""}
+        <button type="button" class="camera-menu-trigger" data-camera="${Number(camera.id)}" data-status="${esc(camera.moderation_status)}" popovertarget="camera-action-menu" aria-expanded="false" aria-label="Действия с камерой: ${esc(camera.name)}">Действия ${icon("chevron")}</button></div></article>`;
+    }).join("");
+  $("cameras-body").innerHTML = cameraView === "grid" ? html : "";
+  $("camera-table-body").innerHTML = cameraView === "list" ? html : "";
+  window.bindCameraPreviews?.();
+}
+for (const [id, view] of [["camera-view-grid", "grid"], ["camera-view-list", "list"]]) $(id).addEventListener("click", () => {
+  cameraView = view;
+  try { localStorage.setItem("dompulse.staff.camera-view", view); } catch { /* Optional preference. */ }
+  renderCameraItems();
+});
+
 function updateCameraLocationOptions() {
   const houses = state.profile.houses.filter(house => !$("camera-house").value || String(house.id) === $("camera-house").value);
   const zone = $("camera-zone").value;
@@ -354,22 +394,7 @@ async function loadCameras() {
     cameraTotal = data.total;
     showError("cameras-error", "");
     $("camera-action-menu").hidePopover();
-    $("cameras-body").innerHTML = data.items.map(camera => {
-      const place = camera.place;
-      const location = !place ? "Место не указано" : ["house", "courtyard", "parking"].includes(place.zone) ? zones[place.zone] : `Подъезд ${place.entrance} · этаж ${place.floor} · ${zones[place.zone] || place.zone}`;
-      const snapshot = camera.connection_available
-        ? `<a class="row-meta" href="${apiRoot}/cameras/${Number(camera.id)}/frame" target="_blank" rel="noopener noreferrer">Проверить кадр ↗</a>`
-        : camera.source_url?.startsWith("https://")
-        ? `<a class="row-meta" href="${esc(camera.source_url)}" target="_blank" rel="noopener noreferrer">Открыть снимок в новой вкладке ↗</a>`
-        : `<span class="row-meta">${camera.source_url?.startsWith("/images/cameras/") ? "Демонстрационная камера" : "Снимок недоступен"}</span>`;
-      const decision = camera.moderation_status === "pending" ? "На модерации" : camera.moderation_status === "approved" ? "Одобрена" : "Отклонена";
-      return `<tr><td><strong>${esc(camera.name)}</strong><span class="row-meta">${esc(camera.owner_name)}</span></td>
-        <td data-label="Место">${esc(camera.address)}<span class="row-meta">${esc(location)}</span></td>
-        <td data-label="Снимок">${esc(camera.note)}${snapshot}</td>
-        <td data-label="Статус"><span class="badge camera-${esc(camera.moderation_status)}"><span class="status-dot"></span>${esc(decision)}</span></td>
-        <td data-label="Пояснение">${camera.moderation_status === "rejected" && camera.moderation_reason ? `<p class="camera-explanation">${esc(camera.moderation_reason)}</p>` : `<span class="muted">—</span>`}</td>
-        <td data-label="Управление" class="camera-management"><button type="button" class="camera-menu-trigger" data-camera="${Number(camera.id)}" data-status="${esc(camera.moderation_status)}" popovertarget="camera-action-menu" aria-expanded="false" aria-label="Действия с камерой: ${esc(camera.name)}">Действия ${icon("chevron")}</button></td></tr>`;
-    }).join("");
+    renderCameraItems(data.items);
     $("cameras-empty").hidden = cameraTotal !== 0;
     $("cameras-page").textContent = cameraTotal ? `Страница ${cameraPage} из ${Math.ceil(cameraTotal / cameraPageSize)} · всего камер: ${cameraTotal}` : "Нет камер";
     $("cameras-prev").disabled = cameraPage <= 1;
@@ -391,15 +416,15 @@ $("cameras-prev").addEventListener("click", () => { if (cameraPage > 1) { camera
 $("cameras-next").addEventListener("click", () => { if (cameraPage * cameraPageSize < cameraTotal) { cameraPage++; void loadCameras(); } });
 let cameraMenuControl = null;
 const cameraMenu = $("camera-action-menu");
-$("cameras-body").addEventListener("click", event => {
+$("cameras-section").addEventListener("click", event => {
   const control = event.target.closest("button[data-camera]");
   if (!control || state.busy) return;
   if (cameraMenu.matches(":popover-open") && cameraMenuControl !== control) cameraMenu.hidePopover();
   cameraMenuControl?.setAttribute("aria-expanded", "false");
   cameraMenuControl = control;
-  cameraMenu.innerHTML = `${control.dataset.status === "pending" ? `<button data-decision="approved">${icon("check")}Одобрить</button><button data-decision="rejected">${icon("close")}Отклонить</button>` : ""}<button data-decision="delete" class="camera-delete">${icon("trash")}Удалить камеру</button>`;
+  cameraMenu.innerHTML = `<button data-decision="view">${icon("camera")}Смотреть камеру</button>${control.dataset.status === "pending" ? `<button data-decision="approved">${icon("check")}Одобрить</button><button data-decision="rejected">${icon("close")}Отклонить</button>` : ""}<button data-decision="delete" class="camera-delete">${icon("trash")}Удалить камеру</button>`;
   const rect = control.getBoundingClientRect();
-  const height = control.dataset.status === "pending" ? 152 : 56;
+  const height = 12 + cameraMenu.querySelectorAll("button").length * 46;
   cameraMenu.style.left = `${Math.max(8, Math.min(rect.right - 208, innerWidth - 216))}px`;
   cameraMenu.style.top = `${Math.max(8, rect.bottom + height + 8 > innerHeight ? rect.top - height - 6 : rect.bottom + 6)}px`;
 });
@@ -420,6 +445,7 @@ cameraMenu.addEventListener("click", async event => {
   if (!action || !control) return;
   const decision = action.dataset.decision;
   cameraMenu.hidePopover();
+  if (decision === "view") { window.openStaffCamera?.(Number(control.dataset.camera)); return; }
   if (state.busy || !["approved", "rejected", "delete"].includes(decision)) return;
   const profile = state.profile;
   if (decision === "delete" && !await confirmAction({ title: "Удалить камеру?", description: "Камера исчезнет у владельца и жителей дома. Это действие нельзя отменить.", confirmLabel: "Удалить", destructive: true })) return;
@@ -457,7 +483,7 @@ function switchSection() {
   $("registrations-section").hidden = !registrations;
   $("contacts-section").hidden = !contacts;
   $("cameras-section").hidden = !cameras;
-  $("section-name").textContent = maxChats ? "MAX-чаты" : announcements ? "Рассылки" : cameras ? "Камеры" : contacts ? "Контакты" : registrations ? "Заявки" : "Обращения";
+  $("section-name").textContent = maxChats ? "MAX-чаты" : announcements ? "Рассылки" : cameras ? "Управление камерами" : contacts ? "Контакты" : registrations ? "Заявки" : "Обращения";
   for (const [id, active] of [["nav-issues", !registrations && !contacts && !cameras && !maxChats && !announcements], ["nav-registrations", registrations], ["nav-contacts", contacts], ["nav-cameras", cameras], ["nav-max-chats", maxChats], ["nav-announcements", announcements]]) {
     $(id).classList.toggle("active", active);
     if (active) $(id).setAttribute("aria-current", "page"); else $(id).removeAttribute("aria-current");

@@ -233,6 +233,32 @@ async def snapshot(source):
 
 async def prepare(source):
     await require_public_address(source.source_url)
+    if source.source_type == "auto":
+        # Runs only inside the isolated worker with its egress firewall.
+        async with httpx.AsyncClient(timeout=8, trust_env=False, auth=auth(source)) as client:
+            async with client.stream("GET", source.source_url) as response:
+                response.raise_for_status()
+                content_type = response.headers.get("content-type", "").lower()
+                if content_type.startswith("image/"):
+                    kind = "snapshot"
+                elif "multipart/x-mixed-replace" in content_type:
+                    kind = "mjpeg"
+                elif "mpegurl" in content_type:
+                    kind = "hls"
+                elif content_type.startswith("video/"):
+                    kind = "http_video"
+                else:
+                    prefix = bytearray()
+                    async for chunk in response.aiter_bytes(512):
+                        prefix.extend(chunk)
+                        break
+                    if prefix.startswith((b"\xff\xd8", b"\x89PNG", b"RIFF")):
+                        kind = "snapshot"
+                    elif prefix.lstrip().startswith(b"#EXTM3U"):
+                        kind = "hls"
+                    else:
+                        kind = "http_video"
+        source.source_type = kind
     return await onvif_stream(source) if source.source_type == "onvif" else source
 
 
@@ -241,6 +267,7 @@ async def frame(source: CameraSource):
     async with capacity():
         try:
             async with asyncio.timeout(18):
+                requested_type = source.source_type
                 source = await prepare(source)
                 if source.source_type == "snapshot":
                     data = await snapshot(source)
@@ -262,7 +289,15 @@ async def frame(source: CameraSource):
                             or not data.endswith(b"\xff\xd9")
                         ):
                             raise ValueError("No video frame")
-            return Response(data, media_type="image/jpeg")
+            return Response(
+                data,
+                media_type="image/jpeg",
+                headers={
+                    "X-Camera-Source-Type": "onvif"
+                    if requested_type == "onvif"
+                    else source.source_type
+                },
+            )
         except (
             ValueError,
             OSError,

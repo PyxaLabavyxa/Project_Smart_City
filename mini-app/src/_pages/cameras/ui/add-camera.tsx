@@ -10,6 +10,8 @@ import { RequestState } from "@/shared/ui/navigation/request-state";
 import { useRemote } from "@/shared/api/use-remote";
 import { record, string, number } from "@/shared/api/parse";
 import { parseCamera } from "../model/api";
+import { useCameraProbe } from "../model/use-camera-probe";
+import { cameraLinkError } from "../model/camera-source";
 import { Icon } from "@/shared/ui/icon";
 import { useConfirmation } from "@/shared/ui/confirmation";
 import styles from "./cameras.module.css";
@@ -41,7 +43,7 @@ function CameraForm({ initial }: { initial?: CameraSettings }) {
   const [place, setPlace] = useState<HouseLocation>(selected);
   const [name, setName] = useState(initial?.name ?? "");
   const [source, setSource] = useState(initial?.source_url ?? "");
-  const [sourceType, setSourceType] = useState(initial?.source_type ?? "rtsp");
+  const [sourceType, setSourceType] = useState(initial?.source_type ?? "auto");
   const [username, setUsername] = useState(initial?.username ?? "");
   const [password, setPassword] = useState("");
   const [keepPassword, setKeepPassword] = useState(initial?.password_set ?? false);
@@ -57,17 +59,19 @@ function CameraForm({ initial }: { initial?: CameraSettings }) {
   const submitted = useRef(false);
   const api = useApi();
   const router = useRouter();
+  const connection = { source_url: source.trim(), source_type: sourceType, username, password, auth_type: authType, profile: sourceType === "onvif" || sourceType === "auto" ? profile : "", rtsp_port: (sourceType === "onvif" || sourceType === "auto") && rtspPort ? Number(rtspPort) : null };
+  const linkError = cameraLinkError(source, sourceType);
+  const probe = useCameraProbe(api, `${endpoints.cameras(house.id)}/probe`, JSON.stringify({ ...connection, camera_id: initial ? Number(initial.id) : null, keep_password: keepPassword }), !linkError);
+  const probeStatus = source.trim() && linkError ? "invalid" : probe.status;
+  const detectedType = probe.status === "success" ? probe.sourceType ?? sourceType : sourceType;
+  const typeLabels: Record<string, string> = { snapshot: "Снимки", mjpeg: "MJPEG", hls: "HLS", rtsp: "RTSP", rtmp: "RTMP", onvif: "ONVIF", http_video: "HTTP-видео" };
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (submitted.current) return;
     const problems: Record<string, string> = {};
     if (!name.trim()) problems.name = "Укажите название камеры";
-    try {
-      const url = new URL(source.trim());
-      const protocols = sourceType === "rtsp" ? ["rtsp:", "rtsps:"] : sourceType === "rtmp" ? ["rtmp:", "rtmps:"] : ["http:", "https:"];
-      if (!protocols.includes(url.protocol) || url.username || url.password || url.hash || !url.hostname) throw new Error();
-    } catch { problems.source = "Укажите адрес выбранного протокола, логин и пароль — отдельно"; }
+    if (linkError) problems.source = linkError;
     if (!initial && !validLocation(house, place)) problems.place = "Выберите место камеры";
     if (!initial && place.zone === "apartment" && !choices.some(choice => choice.houseId === house.id && choice.apartment === place.apartment)) problems.place = "Выберите свою квартиру или общую зону";
     setErrors(problems);
@@ -77,8 +81,9 @@ function CameraForm({ initial }: { initial?: CameraSettings }) {
       return;
     }
     const apartment = place.zone === "apartment" ? house.apartments?.find(a => a.number === place.apartment) : null;
-    const data = { name: name.trim(), source_url: source.trim(), source_type: sourceType, username, password, auth_type: authType, profile: sourceType === "onvif" ? profile : "", rtsp_port: sourceType === "onvif" && rtspPort ? Number(rtspPort) : null, note: note.trim(), is_public: isPublic };
-    const body = JSON.stringify(data);
+    if (probe.status !== "success") return;
+    const data = { ...connection, source_type: detectedType, name: name.trim(), note: note.trim(), is_public: isPublic };
+    const body = JSON.stringify({ ...data, ...(!initial ? { place } : {}) });
     if (request.current?.body !== body) request.current = { body, id: crypto.randomUUID() };
     submitted.current = true; setSaving(true); setError("");
     try {
@@ -113,7 +118,18 @@ function CameraForm({ initial }: { initial?: CameraSettings }) {
       </fieldset>
       <fieldset disabled={saving}>
         <legend><Icon name="settings" size={20} />Подключение</legend>
+        <label>Ссылка на камеру<input name="camera-source" type="url" inputMode="url" value={source} onChange={event => { setSource(event.target.value); setSourceType("auto"); }} maxLength={2000} placeholder="Вставьте ссылку на камеру" aria-invalid={probeStatus === "invalid"} aria-describedby="camera-probe" /></label>
+        <div id="camera-probe" className={styles.connectionCheck} data-status={probeStatus} role="status" aria-live="polite">
+          <span title={probe.status === "error" ? probe.error : undefined}>{probeStatus === "invalid" ? linkError : probe.status === "idle" ? "Тип определится автоматически" : probe.status === "checking" ? "Проверяем камеру…" : probe.status === "success" ? `Кадр получен · ${typeLabels[detectedType] ?? detectedType}` : "Не удалось подключиться"}</span>
+          {(probe.status === "success" || probe.status === "error") && probeStatus !== "invalid" && <button type="button" onClick={probe.retry}>{probe.status === "error" ? "Повторить" : "Обновить"}</button>}
+        </div>
+        {/* Live camera frames must bypass image optimization and its cache. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        {probe.status === "success" && probe.src && <img className={styles.probePreview} src={probe.src} alt="Проверочный кадр с камеры" width={640} height={360} />}
+        <details className={styles.connectionOptions}><summary>Тип подключения и дополнительные параметры</summary>
+        <p className={styles.hint}>Камера должна быть доступна по публичному адресу.</p>
         <label>Тип подключения<select value={sourceType} onChange={event => setSourceType(event.target.value)}>
+          <option value="auto">Определить автоматически</option>
           <option value="rtsp">RTSP / RTSPS</option>
           <option value="onvif">ONVIF</option>
           <option value="snapshot">Снимки HTTP / HTTPS</option>
@@ -122,17 +138,15 @@ function CameraForm({ initial }: { initial?: CameraSettings }) {
           <option value="rtmp">RTMP / RTMPS</option>
           <option value="http_video">HTTP-видео</option>
         </select></label>
-        <label>Адрес камеры<input name="camera-source" type="url" inputMode="url" value={source} onChange={event => setSource(event.target.value)} maxLength={2000} placeholder={sourceType === "rtsp" ? "rtsp://camera.example:554/stream1" : sourceType === "rtmp" ? "rtmp://camera.example/live/stream" : sourceType === "onvif" ? "https://camera.example/onvif/device_service" : sourceType === "hls" ? "https://camera.example/live.m3u8" : "https://camera.example/snapshot.jpg"} aria-invalid={!!errors.source} aria-describedby={errors.source ? "camera-source-error" : "camera-source-help"} />{fieldError("source")}</label>
-        <p id="camera-source-help" className={styles.hint}>Камера должна быть доступна серверу по публичному адресу.</p>
+        {(sourceType === "onvif" || sourceType === "auto" || detectedType === "onvif") && <><label>Профиль ONVIF (необязательно)<input value={profile} onChange={event => setProfile(event.target.value)} maxLength={128} placeholder="Первый профиль по умолчанию" /></label><label>Внешний RTSP-порт (необязательно)<input type="number" min="1" max="65535" value={rtspPort} onChange={event => setRtspPort(event.target.value)} placeholder="Обычно 554" /></label></>}
+        </details>
         <details className={styles.connectionOptions}><summary><Icon name="lock" size={18} /><span>Логин и пароль камеры</span><Icon name="arrow" size={16} /></summary>
           <label>Логин<input name="camera-username" value={username} onChange={event => setUsername(event.target.value)} maxLength={200} autoComplete="off" /></label>
           <label>Пароль<input name="camera-password" type="password" value={password} onChange={event => { setPassword(event.target.value); setKeepPassword(!event.target.value && !!initial?.password_set); }} maxLength={500} autoComplete="new-password" placeholder={keepPassword ? "Сохранённый пароль не изменится" : undefined} /></label>
           {initial?.password_set && <button type="button" className={styles.resetFilters} onClick={() => { setPassword(""); setKeepPassword(false); }}>Очистить сохранённый пароль</button>}
-          {(sourceType === "snapshot" || sourceType === "onvif") && <label>Авторизация<select value={authType} onChange={event => setAuthType(event.target.value)}><option value="digest">Digest — обычно для IP-камер</option><option value="basic">Basic</option></select></label>}
+          <label>Авторизация<select value={authType} onChange={event => setAuthType(event.target.value)}><option value="digest">Digest — обычно для IP-камер</option><option value="basic">Basic</option></select></label>
           <p className={styles.hint}>Сохранённые данные подключения зашифрованы и не передаются другим жителям.</p>
         </details>
-        {sourceType === "onvif" && <label>Профиль ONVIF (необязательно)<input value={profile} onChange={event => setProfile(event.target.value)} maxLength={128} placeholder="Первый профиль по умолчанию" /></label>}
-        {sourceType === "onvif" && <label>Внешний RTSP-порт (необязательно)<input type="number" min="1" max="65535" value={rtspPort} onChange={event => setRtspPort(event.target.value)} placeholder="Обычно 554" /><span className={styles.hint}>ONVIF и RTSP должны быть доступны на одном публичном адресе. Укажите порт, если он изменён при пробросе.</span></label>}
       </fieldset>
       {!initial && <fieldset disabled={saving} tabIndex={-1} aria-invalid={!!errors.place} aria-describedby={errors.place ? "camera-place-error" : undefined}>
         <legend>Где расположена камера?</legend>
@@ -146,7 +160,7 @@ function CameraForm({ initial }: { initial?: CameraSettings }) {
       {error && <p role="alert" className={styles.error}>{error}</p>}
       {initial && isPublic && <p className={styles.hint}>После изменения общедоступная камера снова отправится на модерацию.</p>}
       <div className={styles.formActions}>
-      <button className={styles.addButton} type="submit" disabled={saving}>{saving ? "Сохраняем…" : initial ? "Сохранить" : isPublic ? "Проверить и отправить на модерацию" : "Проверить и добавить"}</button>
+      <button className={styles.addButton} type="submit" disabled={saving || probe.status !== "success"}>{saving ? "Сохраняем…" : initial ? "Сохранить" : isPublic ? "Отправить на модерацию" : "Добавить камеру"}</button>
       {initial && <button type="button" className={styles.deleteCamera} onClick={remove} disabled={saving}>Удалить камеру</button>}
       <Link className={styles.cancel} href={initial ? `/cameras/${initial.id}` : "/cameras"} aria-disabled={saving} onClick={event => { if (saving) event.preventDefault(); }}>Отмена</Link>
       </div>

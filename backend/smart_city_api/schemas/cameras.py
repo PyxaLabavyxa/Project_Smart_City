@@ -3,11 +3,12 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from smart_city_api.core.camera_source import CameraSource
+from smart_city_api.core.camera_source import CameraConnectionType, CameraSource, CameraSourceType
 from smart_city_api.schemas.app import CameraResponse, Location
 
 
 class CameraInput(CameraSource):
+    source_type: CameraConnectionType = "snapshot"
     name: str = Field(min_length=1, max_length=200)
     note: str = Field(default="", max_length=1000)
     is_public: bool = Field(default=False, strict=True)
@@ -26,6 +27,31 @@ class CameraInput(CameraSource):
 class CreateCamera(CameraInput):
     place: Location
     request_id: UUID
+
+
+class StaffCreateCamera(CreateCamera):
+    house_id: int = Field(gt=0)
+    is_public: Literal[True] = True
+
+
+class ProbeCamera(CameraSource):
+    source_type: CameraSourceType = "auto"
+    camera_id: int | None = Field(default=None, gt=0)
+    keep_password: bool = Field(default=False, strict=True)
+
+    def connection(self):
+        return CameraSource.model_validate(
+            {key: getattr(self, key) for key in CameraSource.model_fields}
+        )
+
+
+class StaffProbeCamera(ProbeCamera):
+    house_id: int = Field(gt=0)
+
+
+class CameraProbeResult(BaseModel):
+    source_type: CameraConnectionType
+    src: str
 
 
 class UpdateCamera(CameraInput):

@@ -25,6 +25,15 @@ export function isOutdoorZone(zone: string) {
   return ["house", "courtyard", "parking"].includes(zone);
 }
 
+export type LocationFilterValues = { entrance: string; floor: string; zone: string };
+
+export function changeLocationFilter<T extends LocationFilterValues>(filters: T, key: keyof LocationFilterValues, value: string): T {
+  const next = { ...filters, [key]: value };
+  if (isOutdoorZone(next.zone)) return { ...next, entrance: "", floor: "" };
+  if (next.zone === "entrance") return { ...next, floor: "1" };
+  return next;
+}
+
 export type CommonZone = keyof typeof commonZones;
 export type HouseLocation = { houseId: string; entrance: number; floor: number } & (
   { zone: "apartment"; apartment: number } | { zone: CommonZone }

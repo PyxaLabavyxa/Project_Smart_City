@@ -29,7 +29,13 @@ from smart_city_api.core.staff_auth import (
     token_hash,
 )
 from smart_city_api.schemas.app import CameraResponse
-from smart_city_api.schemas.cameras import ModerateCamera, StaffCameraPage
+from smart_city_api.schemas.cameras import (
+    CameraProbeResult,
+    ModerateCamera,
+    StaffCameraPage,
+    StaffCreateCamera,
+    StaffProbeCamera,
+)
 from smart_city_api.schemas.contacts import ContactsInput, ContactsOutput
 from smart_city_api.schemas.staff import (
     ActionOutput,
@@ -43,8 +49,8 @@ from smart_city_api.schemas.staff import (
     StaffTokenOutput,
     StatusInput,
 )
+from smart_city_api.services import camera_media, chat_photos
 from smart_city_api.services import cameras as camera_service
-from smart_city_api.services import chat_photos
 from smart_city_api.services import staff as service
 from smart_city_api.services.contacts import read_contacts, save_contacts, staff_house
 from smart_city_api.services.photos import photo_path
@@ -70,6 +76,21 @@ async def cameras_for_moderation(
     )
 
 
+@router.post("/cameras/probe", response_model=CameraProbeResult)
+async def probe_camera(data: StaffProbeCamera, request: Request, session: Session, employee: Staff):
+    await staff_house(session, employee.id, data.house_id)
+    if data.camera_id is not None:
+        raise HTTPException(422, "Для проверки новой камеры укажите её адрес")
+    return await camera_media.probe(data.connection(), request.app.state.settings)
+
+
+@router.post("/cameras", response_model=CameraResponse, status_code=201)
+async def add_camera(data: StaffCreateCamera, request: Request, session: Session, employee: Staff):
+    return await camera_service.create_staff_camera(
+        session, employee.id, data, request.app.state.settings
+    )
+
+
 @router.post("/cameras/{camera_id}/moderate", response_model=CameraResponse)
 async def review_camera(
     camera_id: int,
@@ -85,7 +106,11 @@ async def camera_frame(camera_id: int, request: Request, session: Session, emplo
     data = await camera_service.staff_preview(
         session, employee.id, camera_id, request.app.state.settings
     )
-    return Response(data, media_type="image/jpeg", headers={"X-Content-Type-Options": "nosniff"})
+    return Response(
+        data,
+        media_type="image/png" if data.startswith(b"\x89PNG") else "image/jpeg",
+        headers={"X-Content-Type-Options": "nosniff"},
+    )
 
 
 @router.delete("/cameras/{camera_id}", status_code=204)

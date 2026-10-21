@@ -72,7 +72,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             response.headers["Referrer-Policy"] = "same-origin"
             response.headers["Content-Security-Policy"] = (
                 "default-src 'self'; script-src 'self'; style-src 'self'; "
-                "img-src 'self'; connect-src 'self'; frame-ancestors 'none'; "
+                "img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; "
                 "base-uri 'none'; form-action 'self'"
             )
         return response

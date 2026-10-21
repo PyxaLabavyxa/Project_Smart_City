@@ -15,6 +15,7 @@ COPY backend/smart_city_api ./smart_city_api
 COPY backend/migrations ./migrations
 COPY backend/alembic.ini ./alembic.ini
 COPY backend/scripts ./scripts
+COPY mini-app/public/images/cameras ./mini-app/public/images/cameras
 USER api
 EXPOSE 8000
 CMD ["python", "-m", "uvicorn", "smart_city_api.main:app", "--host", "0.0.0.0", "--port", "8000"]
