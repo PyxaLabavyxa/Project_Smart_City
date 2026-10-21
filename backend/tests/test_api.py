@@ -219,7 +219,7 @@ def test_categories_follow_the_location_instead_of_the_floor(api):
 
 def test_issues_persist_idempotently_with_history_and_private_location(api):
     client, engine, _ = api
-    body = issue_body()
+    body = issue_body(place={"zone": "courtyard"})
     first = client.post("/api/v1/houses/1/issues", json=body, headers=headers())
     assert first.status_code == 201, first.text
     issue = first.json()

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useIssues, similarIssues, IssueCategoryIcon } from "@/entities/issue";
 import { formatLocation, validLocation, useHouseSelection } from "@/entities/house";
 import styles from "./report-issue.module.css";
-import { categoriesForPlace, reportCategoryLabel, reportScope } from "@/entities/issue/model/report-categories";
+import { categoriesForPlace, reportCategoryLabel, reportScope, reportVisibilityLabel } from "@/entities/issue/model/report-categories";
 import { ReportLocationPicker } from "./report-location-picker";
 import { initialReportStep } from "@/entities/issue/model/issue-draft";
 import { PhotoPicker } from "./photo-picker";
@@ -105,6 +105,7 @@ export function ReportIssueForm({ cancelHref = "/issues", cancelLabel = "Все 
         {([{icon:"pin",label:"Место",value:`${house.address} · ${formatLocation(draft.place)}`,step:-1},{icon:"settings",label:"Подкатегория",value:categoryLabel,step:1},{icon:"receipt",label:"Заголовок",value:draft.title,step:2},{icon:"messages",label:"Описание",value:draft.description,step:2}] as const).map(item => <div className={styles.reviewRow} key={item.label}><span className={styles.reviewIcon}><Icon name={item.icon} size={29} /></span><span><strong>{item.label}</strong><p>{item.value}</p></span><button type="button" onClick={() => goToStep(item.step)}>Изменить</button></div>)}
       </div>}
       {draft.step === 3 && draft.photos.length > 0 && <PhotoPicker photos={draft.photos} />}
+      <p className={styles.visibility} aria-live="polite"><Icon name="lock" size={17} /><span>{reportVisibilityLabel(draft.place)}</span></p>
     </fieldset>
     {matches.length > 0 && draft.step >= 1 && <aside className={styles.similar} aria-label="Похожие обращения"><strong>Возможно, об этой проблеме уже сообщили</strong><p>В этом месте есть активные обращения той же категории. Можно открыть их или продолжить создание.</p>{matches.map(issue => <Link key={issue.id} href={"/issues/" + issue.id}>{issue.title}</Link>)}</aside>}
     {failure && <p role="alert" className={styles.error}>{failure}</p>}

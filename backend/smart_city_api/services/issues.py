@@ -1,7 +1,7 @@
 import hashlib
 
 from app.database.enums import IssueCategory, IssuePriority, IssueStatus
-from app.database.models import House, Issue, IssueEvent, IssuePhoto
+from app.database.models import Apartment, House, Issue, IssueEvent, IssuePhoto
 from fastapi import HTTPException
 from sqlalchemy import and_, or_, select
 from sqlalchemy.exc import IntegrityError
@@ -32,12 +32,28 @@ CATEGORIES_BY_SCOPE = {
 
 
 def visible_issues(user_id: int):
+    """Resident visibility; unknown legacy locations stay author-only."""
+    apartments = select(Apartment.id).where(
+        Apartment.id.in_(own_apartment_ids(user_id)),
+        Apartment.house_id == Issue.house_id,
+    )
     return and_(
         Issue.rejected_at.is_(None),
+        apartments.exists(),
         or_(
-            Issue.apartment_id.is_(None),
             Issue.user_id == user_id,
-            Issue.apartment_id.in_(own_apartment_ids(user_id)),
+            and_(
+                Issue.apartment_id.is_(None),
+                or_(
+                    Issue.zone.in_(OUTDOOR_ZONES),
+                    and_(
+                        Issue.zone.in_(
+                            ("entrance", "corridor", "stairs", "elevator", "technical")
+                        ),
+                        apartments.where(Apartment.entrance == Issue.entrance).exists(),
+                    ),
+                ),
+            ),
         ),
     )
 

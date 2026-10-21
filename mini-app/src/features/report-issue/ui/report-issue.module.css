@@ -67,6 +67,8 @@
 .pageHeader a { display:grid; place-items:center; min-height:40px; }
 .pageHeader > button { display:grid; place-items:center; min-height:40px; padding:0; border:0; background:transparent; color:var(--color-ink); }
 .srOnly { position:absolute; width:1px; height:1px; clip-path:inset(50%); overflow:hidden; }
+.visibility { display:flex; align-items:flex-start; gap:8px; margin:0; padding:12px 14px; border-radius:12px; background:var(--color-soft); color:var(--color-muted); font-size:14px; line-height:1.5; }
+.visibility svg { flex-shrink:0; margin-top:2px; }
 .form { gap:calc(24 * var(--u)); padding-top:calc(12 * var(--u)); padding-bottom:calc(90 * var(--u)); }
 .steps { margin-bottom:calc(8 * var(--u)); }
 .steps li { font-size:calc(16 * var(--u)); gap:calc(8 * var(--u)); line-height:1.3; }

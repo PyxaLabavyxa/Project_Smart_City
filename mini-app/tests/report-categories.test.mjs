@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { categoriesForPlace, reportScope, reportCategoryLabel } from '../src/entities/issue/model/report-categories.ts';
+import { categoriesForPlace, reportScope, reportCategoryLabel, reportVisibilityLabel } from '../src/entities/issue/model/report-categories.ts';
 import { emptyDraft, initialReportStep, updateIssueDraft } from '../src/entities/issue/model/issue-draft.ts';
 import { sameLocation, formatLocation, locationQuery, parseLocation } from '../src/entities/house/model/house.ts';
 import { similarIssues } from '../src/entities/issue/model/similar-issues.ts';
@@ -8,6 +8,16 @@ import { filterIssues, initialIssueFilters } from '../src/entities/issue/model/i
 
 const place = zone => ({ houseId: '1', entrance: 1, floor: 1, zone });
 const values = zone => categoriesForPlace(place(zone)).map(item => item.value);
+
+test('visibility hints follow the selected place and entrance', () => {
+  assert.match(reportVisibilityLabel(place('apartment')), /только вы и сотрудники/);
+  for (const zone of ['courtyard', 'parking', 'house']) {
+    assert.match(reportVisibilityLabel(place(zone)), /все жители дома/);
+  }
+  for (const zone of ['corridor', 'stairs', 'elevator', 'technical', 'entrance']) {
+    assert.match(reportVisibilityLabel({ ...place(zone), entrance: 3 }), /подъезда №3/);
+  }
+});
 
 test('courtyard has outdoor subcategories without lift, entrance or heating', () => {
   for (const zone of ['courtyard', 'parking', 'house']) {

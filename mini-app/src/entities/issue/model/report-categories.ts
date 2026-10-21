@@ -43,3 +43,11 @@ export function categoriesForPlace(place: HouseLocation) {
 export function reportCategoryLabel(place: HouseLocation, category: string) {
   return categoriesForPlace(place).find(item => item.value === category)?.label ?? category;
 }
+
+export function reportVisibilityLabel(place: HouseLocation): string {
+  switch (reportScope(place)) {
+    case "apartment": return "Обращение увидите только вы и сотрудники вашей УК.";
+    case "courtyard": return "Обращение увидят все жители дома и сотрудники вашей УК.";
+    case "entrance": return `Обращение увидят жители подъезда №${place.entrance} и сотрудники вашей УК.`;
+  }
+}

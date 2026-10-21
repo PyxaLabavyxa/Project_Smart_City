@@ -62,7 +62,7 @@ def test_rejected_uploads_leave_no_files_or_issues(api, tmp_path):
 def test_shared_issue_photos_visible_only_to_same_house(api, tmp_path):
     client, _, _ = api
     client.app.state.settings.media_root = tmp_path / "media"
-    issue = upload(client, issue_body(), [image(), image("red")]).json()
+    issue = upload(client, issue_body(place={"zone": "courtyard"}), [image(), image("red")]).json()
     path = f"/api/v1/issues/{issue['id']}/photos/{issue['photo_ids'][0]}"
     assert client.get(path, headers=headers(102)).status_code == 200
     assert client.get(path, headers=headers(103)).status_code == 404
