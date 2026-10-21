@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 from alembic.migration import MigrationContext
 from alembic.operations import Operations
-from app.database.models import CompanyHouse, ManagementCompany
+from app.database.models import CompanyHouse, ManagementCompany, StaffHouse
 from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import Session
 
@@ -128,5 +128,75 @@ def test_contacts_migration_upgrades_and_downgrades_without_changing_houses(tmp_
                 assert connection.scalar(text("SELECT address FROM houses")) == "Existing house"
                 module.upgrade()
                 assert "house_contacts" in inspect(connection).get_table_names()
+    finally:
+        engine.dispose()
+
+
+def test_bulk_contacts_authorizes_every_house_before_replacing_any(staff_api):
+    client, _, _ = staff_api
+    path = ROOT + "/contacts/bulk"
+    body = {"house_ids": [1, 2], "items": [contact("schedule", "Mon-Fri 09:00-18:00")]}
+    assert client.post(path, json=body).status_code == 401
+    csrf = login(client)
+    original = [contact()]
+    assert client.post(ROOT + "/houses/1/contacts", headers=csrf, json={"items": original}).status_code == 200
+    assert client.post(path, json=body).status_code == 403
+    assert client.post(path, headers=csrf, json=body).status_code == 404
+    assert client.get(ROOT + "/houses/1/contacts").json()["items"] == original
+    assert client.get("/api/v1/houses/2/contacts", headers=headers(103)).json()["items"] == []
+
+
+def test_bulk_contacts_schedules_and_later_individual_edit(staff_api):
+    client, engine, _ = staff_api
+    with Session(engine) as session:
+        session.add(StaffHouse(staff_id=1, house_id=2))
+        session.commit()
+    csrf = login(client)
+    items = [contact(), contact("schedule", "Mon-Fri 09:00-18:00", label="График работы", note="")]
+    saved = client.post(ROOT + "/contacts/bulk", headers=csrf, json={"house_ids": [2, 1], "items": items})
+    assert saved.status_code == 200, saved.text
+    assert saved.json() == {"house_ids": [2, 1], "updated_count": 2}
+    for house, resident in ((1, 101), (2, 103)):
+        assert client.get(f"/api/v1/houses/{house}/contacts", headers=headers(resident)).json()["items"] == items
+    assert client.post(ROOT + "/houses/1/contacts", headers=csrf, json={"items": []}).status_code == 200
+    assert client.get(ROOT + "/houses/1/contacts").json()["items"] == []
+    assert client.get(ROOT + "/houses/2/contacts").json()["items"] == items
+
+
+@pytest.mark.parametrize("ids", [[], [1, 1], [0], [-1], [1] * 501])
+def test_invalid_bulk_house_selection_preserves_contacts(staff_api, ids):
+    client, _, _ = staff_api
+    csrf = login(client)
+    path = ROOT + "/houses/1/contacts"
+    client.post(path, headers=csrf, json={"items": [contact()]})
+    assert client.post(ROOT + "/contacts/bulk", headers=csrf, json={"house_ids": ids, "items": []}).status_code == 422
+    assert client.get(path).json()["items"] == [contact()]
+
+
+def test_schedule_migration_preserves_contacts_and_refuses_lossy_downgrade(tmp_path):
+    modules = []
+    for name in ("0007_house_contacts", "0018_contact_schedules"):
+        spec = importlib.util.spec_from_file_location(name, Path(__file__).resolve().parents[1] / f"migrations/versions/{name}.py")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        modules.append(module)
+    original, schedules = modules
+    engine = create_engine(f"sqlite:///{tmp_path / 'schedules.db'}")
+    try:
+        with engine.begin() as connection, Operations.context(MigrationContext.configure(connection)):
+            connection.execute(text("CREATE TABLE houses (id INTEGER PRIMARY KEY)"))
+            connection.execute(text("INSERT INTO houses VALUES (1)"))
+            original.upgrade()
+            connection.execute(text("INSERT INTO house_contacts (house_id, position, label, kind, value) VALUES (1, 0, 'Office', 'phone', '112')"))
+            schedules.upgrade()
+            assert connection.scalar(text("SELECT value FROM house_contacts")) == "112"
+            connection.execute(text("INSERT INTO house_contacts (house_id, position, label, kind, value) VALUES (1, 1, 'Hours', 'schedule', 'Mon-Fri')"))
+            with pytest.raises(RuntimeError, match="schedules"):
+                schedules.downgrade()
+            assert connection.scalar(text("SELECT count(*) FROM house_contacts")) == 2
+            connection.execute(text("DELETE FROM house_contacts WHERE kind = 'schedule'"))
+            schedules.downgrade()
+            assert connection.scalar(text("SELECT value FROM house_contacts")) == "112"
+            assert "schedule" not in inspect(connection).get_check_constraints("house_contacts")[0]["sqltext"]
     finally:
         engine.dispose()

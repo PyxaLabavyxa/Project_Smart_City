@@ -24,7 +24,13 @@ from smart_city_api.services import chat_photos
 from smart_city_api.services.access import own_apartment_ids, require_house
 from smart_city_api.services.contacts import read_contacts
 from smart_city_api.services.issue_chat import own_issue, read_messages, send_message
-from smart_city_api.services.issues import create_issue, get_issue, issue_response, visible_issues
+from smart_city_api.services.issues import (
+    create_issue,
+    delete_issue,
+    get_issue,
+    issue_response,
+    visible_issues,
+)
 from smart_city_api.services.photos import MAX_BYTES, MAX_PHOTOS, photo_path, save_photo
 from smart_city_api.services.presence import update_presence
 
@@ -130,6 +136,12 @@ async def issues(
 @router.get("/issues/{issue_id}", response_model=IssueResponse)
 async def detail(issue_id: int, session: Session, user: Resident):
     return await get_issue(session, user.id, issue_id)
+
+
+@router.delete("/issues/{issue_id}", status_code=204)
+async def remove_issue(issue_id: int, session: Session, user: Resident):
+    """Удалить своё обращение, которое ещё не было принято в работу."""
+    await delete_issue(session, user.id, issue_id)
 
 
 @router.get("/issues/{issue_id}/messages", response_model=IssueMessagePage)

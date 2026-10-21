@@ -1,9 +1,10 @@
 import hashlib
+from datetime import UTC, datetime
 
 from app.database.enums import ISSUE_CATEGORIES_BY_SCOPE, IssuePriority, IssueStatus
-from app.database.models import Apartment, House, Issue, IssueEvent, IssuePhoto
+from app.database.models import Apartment, House, Issue, IssueEvent, IssuePhoto, StaffNotification
 from fastapi import HTTPException
-from sqlalchemy import and_, or_, select
+from sqlalchemy import and_, or_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -22,6 +23,7 @@ def visible_issues(user_id: int):
     )
     return and_(
         Issue.rejected_at.is_(None),
+        Issue.deleted_at.is_(None),
         apartments.exists(),
         or_(
             Issue.user_id == user_id,
@@ -127,6 +129,8 @@ async def create_issue(
     )
 
     def check_retry(existing: Issue):
+        if existing.deleted_at is not None:
+            raise HTTPException(409, "Обращение удалено. Для нового обращения отправьте новую заявку")
         if existing.rejected_at is not None:
             raise HTTPException(
                 409, "Обращение отклонено. Для нового обращения отправьте новую заявку"
@@ -172,3 +176,44 @@ async def create_issue(
         check_retry(existing)
         return await get_issue(session, user_id, existing.id)
     return await issue_response(session, issue, house, user_id)
+
+
+async def delete_issue(session: AsyncSession, user_id: int, issue_id: int) -> None:
+    issue = await session.scalar(
+        select(Issue)
+        .where(Issue.id == issue_id, Issue.user_id == user_id, Issue.rejected_at.is_(None))
+        .with_for_update()
+    )
+    if issue is None:
+        raise HTTPException(404, "Обращение не найдено")
+    await require_house(session, user_id, issue.house_id)
+    if issue.deleted_at is not None:
+        return
+    accepted_before = await session.scalar(
+        select(IssueEvent.id)
+        .where(IssueEvent.issue_id == issue_id, IssueEvent.status != IssueStatus.NEW.value)
+        .limit(1)
+    )
+    if issue.status != IssueStatus.NEW or accepted_before is not None:
+        raise HTTPException(409, "Обращение уже принято в работу — удалить его нельзя")
+    now = datetime.now(UTC)
+    # Conditional update also guards status races on databases without row locks.
+    changed = await session.execute(
+        update(Issue)
+        .where(
+            Issue.id == issue_id,
+            Issue.status == IssueStatus.NEW,
+            Issue.rejected_at.is_(None),
+            Issue.deleted_at.is_(None),
+        )
+        .values(deleted_at=now)
+    )
+    if changed.rowcount != 1:
+        await session.rollback()
+        raise HTTPException(409, "Обращение уже изменено. Обновите страницу")
+    await session.execute(
+        update(StaffNotification)
+        .where(StaffNotification.issue_id == issue_id, StaffNotification.sent_at.is_(None))
+        .values(suppressed_at=now, lease_token=None)
+    )
+    await session.commit()

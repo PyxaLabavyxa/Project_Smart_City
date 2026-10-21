@@ -10,8 +10,10 @@
   <link rel="preload" href="/staff/assets/onest-regular.ttf" as="font" type="font/ttf" crossorigin>
   <link rel="stylesheet" href="/staff/style.css?v=20261021-cameras-13">
   <link rel="stylesheet" href="/staff/camera-management.css?v=20261021-7">
+  <link rel="stylesheet" href="/staff/contacts-management.css?v=20261022-contacts-2">
   <script src="/staff/confirmation.js?v=20261021-motion-4" defer></script>
-  <script src="/staff/app.js?v=20261021-cameras-11" defer></script>
+  <script src="/staff/app.js?v=20261022-contacts-2" defer></script>
+  <script src="/staff/contacts-management.js?v=20261022-contacts-2" defer></script>
   <script src="/staff/camera-management.js?v=20261021-7" defer></script>
   <link rel="stylesheet" href="/staff/chat-management.css?v=20261021-announcement-copy-2">
   <script src="/staff/chat-management.js?v=20261021-announcement-copy-2" defer></script>
@@ -62,7 +64,7 @@
         </section>
         <section class="inbox" aria-label="Список обращений">
           <div class="inbox-heading"><div><h2><span id="list-title">Все обращения</span> <span id="total-label" class="count-pill">0</span></h2><p>Каждое обращение — возможность сделать дом лучше</p></div><span class="table-caption"><span data-icon="clock" aria-hidden="true"></span> Сначала новые</span></div>
-          <div class="filters"><label class="search-field"><span data-icon="search" aria-hidden="true"></span><span class="sr-only">Поиск по номеру, заголовку или описанию</span><input id="search" type="search" placeholder="Найти обращение" maxlength="200"></label><label><span class="sr-only">Дом</span><select id="house-filter"><option value="">Все мои дома</option></select></label><label><span class="sr-only">Приоритет</span><select id="priority-filter"><option value="">Любой приоритет</option><option value="1">Высокий приоритет</option><option value="2">Средний приоритет</option><option value="3">Низкий приоритет</option></select></label></div>
+          <div class="filters"><label class="search-field"><span data-icon="search" aria-hidden="true"></span><span class="sr-only">Поиск по номеру, заголовку или описанию</span><input id="search" type="search" placeholder="Найти обращение" maxlength="200"></label><label><span class="sr-only">Дом</span><select id="house-filter"><option value="">Все дома</option></select></label><label><span class="sr-only">Приоритет</span><select id="priority-filter"><option value="">Любой приоритет</option><option value="1">Высокий приоритет</option><option value="2">Средний приоритет</option><option value="3">Низкий приоритет</option></select></label></div>
           <p id="list-error" class="error list-error" role="alert" hidden></p>
           <div class="table-scroll"><table><thead><tr><th scope="col">Обращение</th><th scope="col">Дом / автор</th><th scope="col">Приоритет</th><th scope="col">Статус</th><th scope="col">Получено</th><th scope="col"><span class="sr-only">Открыть</span></th></tr></thead><tbody id="issues-body"></tbody></table></div>
           <div id="empty" class="empty" hidden><span data-icon="check-circle" aria-hidden="true"></span><h3>Здесь пока тихо</h3><p>Обращения жителей появятся автоматически.<br>Если включены фильтры, попробуйте их изменить.</p></div>
@@ -86,7 +88,7 @@
           <header class="camera-view-toolbar"><div class="camera-collection-title"><h2>Камеры домов</h2><span id="camera-results-count" class="camera-results-count" aria-label="Количество найденных камер">—</span></div><div class="camera-view-switch" role="group" aria-label="Вид камер"><button id="camera-view-grid" type="button" aria-pressed="true" aria-label="Карточки" title="Показать карточками"><span data-icon="grid" aria-hidden="true"></span><span class="camera-view-label">Карточки</span></button><button id="camera-view-list" type="button" aria-pressed="false" aria-label="Список" title="Показать списком"><span data-icon="list" aria-hidden="true"></span><span class="camera-view-label">Список</span></button></div></header>
           <div class="camera-filters">
             <label>Статус<select id="camera-status"><option value="all">Все камеры</option><option value="pending">Заявки жителей</option><option value="approved">Доступны жителям</option><option value="rejected">Отклонены</option></select></label>
-            <label>Дом<select id="camera-house"><option value="">Все мои дома</option></select></label>
+            <label>Дом<select id="camera-house"><option value="">Все дома</option></select></label>
             <label>Подъезд<select id="camera-entrance"><option value="">Все подъезды</option></select></label>
             <label>Этаж<select id="camera-floor"><option value="">Все этажи</option></select></label>
             <label>Место<select id="camera-zone"><option value="">Все места</option><option value="entrance">Входная группа</option><option value="corridor">Коридор</option><option value="stairs">Лестница</option><option value="elevator">Лифт</option><option value="technical">Техническая зона</option><option value="house">Дом</option><option value="courtyard">Двор</option><option value="parking">Парковка</option><option value="apartment">Квартира</option></select></label>
@@ -101,20 +103,24 @@
       <div id="contacts-section" class="content" hidden>
         <div class="page-heading"><div><span class="eyebrow">ВСЕГДА НА СВЯЗИ</span><h1>Контакты УК</h1><p class="muted">Подскажите жителям, где вас найти и как связаться.</p></div><button id="refresh-contacts" class="secondary"><span data-icon="refresh" aria-hidden="true"></span> Обновить</button></div>
         <section class="inbox contacts-panel" aria-label="Редактор контактов">
-          <label class="contact-house-label" for="contact-house">Дом</label><select id="contact-house"></select>
-          <p id="contact-company" class="muted"></p>
-          <p id="contacts-status" role="status"></p>
-          <p id="contacts-error" class="error" role="alert" hidden></p>
-          <form id="contacts-form" hidden>
-            <fieldset id="contacts-fields"><legend class="sr-only">Контакты для жителей</legend>
-              <div id="contact-rows" class="contact-rows"></div>
-              <p id="contacts-empty" class="muted" hidden>Контактов пока нет. Добавьте телефон диспетчерской, почту или адрес приёмной.</p>
-              <button id="add-contact" type="button" class="secondary"><span data-icon="plus" aria-hidden="true"></span> Добавить контакт</button>
-              <p class="form-help">Можно добавить до 12 контактов. В примечании укажите часы работы или пояснение. Чтобы убрать контакт из приложения, удалите строку и сохраните изменения.</p>
-              <button id="save-contacts" type="submit" class="primary">Сохранить контакты</button>
-            </fieldset>
-          </form>
+          <div class="contact-context">
+            <fieldset id="contact-scope" class="contact-scope"><legend>Для каких домов</legend><div class="contact-scope-options"><label><input type="radio" name="contact-scope" value="house" checked><span>Один дом</span></label><label><input type="radio" name="contact-scope" value="all"><span>Все дома <small id="contact-house-count"></small></span></label></div></fieldset>
+            <label id="contact-house-field" class="contact-house-field" for="contact-house">Дом<select id="contact-house"></select></label>
+            <div id="contact-all-notice" class="contact-all-notice" hidden><button id="show-contact-houses" class="secondary" type="button" aria-haspopup="dialog">Посмотреть дома</button></div>
+          </div>
+          <div class="contacts-feedback"><p id="contacts-status" role="status"></p><p id="contacts-error" class="error" role="alert" hidden></p></div>
+          <div id="contacts-body" class="contacts-body" hidden>
+            <form id="contacts-form" hidden>
+              <fieldset id="contacts-fields"><legend class="sr-only">Контакты для жителей</legend>
+                <div id="contact-rows"></div>
+                <details id="contact-extra" class="contact-extra"><summary>Другие контакты <span id="contact-extra-count"></span></summary><div id="contact-extra-rows"></div><button id="add-contact" type="button" class="secondary"><span data-icon="plus" aria-hidden="true"></span>Добавить контакт</button></details>
+              </fieldset>
+              <footer class="contact-save-bar"><button id="save-contacts" type="submit" class="primary">Сохранить контакты</button></footer>
+            </form>
+            <aside class="contact-preview" aria-labelledby="contact-preview-title"><div class="contact-preview-heading"><h2 id="contact-preview-title">Предпросмотр</h2></div><div class="contact-preview-company"><span data-icon="building" aria-hidden="true"></span><div><strong id="contact-company"></strong><p id="contact-preview-address"></p></div></div><div id="contact-preview-content"></div></aside>
+          </div>
         </section>
+        <dialog id="contact-houses-dialog" class="contact-houses-dialog" aria-labelledby="contact-houses-title"><div class="contact-houses-heading"><h2 id="contact-houses-title">Дома для сохранения</h2><button id="close-contact-houses" type="button" aria-label="Закрыть список домов">×</button></div><ul id="contact-target-houses"></ul></dialog>
       </div>
       <div id="max-chats-section" class="content" hidden>
         <div class="page-heading"><div><h1>MAX-чаты</h1><p class="muted">Подключите домовые группы к Домоведу, чтобы жители видели меню, а УК могла отправлять объявления.</p></div><button id="refresh-max-chats" class="secondary">Обновить</button></div>

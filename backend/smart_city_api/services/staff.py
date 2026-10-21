@@ -47,6 +47,7 @@ async def accessible_issue(
         Issue.id == issue_id,
         Issue.house_id.in_(house_scope(staff_id)),
         Issue.rejected_at.is_(None),
+        Issue.deleted_at.is_(None),
     )
     if lock:
         query = query.with_for_update()
@@ -103,7 +104,11 @@ async def list_issues(
     page: int,
     page_size: int,
 ) -> StaffIssuePage:
-    conditions = [Issue.house_id.in_(house_scope(staff_id)), Issue.rejected_at.is_(None)]
+    conditions = [
+        Issue.house_id.in_(house_scope(staff_id)),
+        Issue.rejected_at.is_(None),
+        Issue.deleted_at.is_(None),
+    ]
     if house_id is not None:
         conditions.append(Issue.house_id == house_id)
     if priority is not None:
@@ -152,6 +157,7 @@ async def detail(session: AsyncSession, staff_id: int, issue_id: int) -> IssueDe
                 Issue.id == issue_id,
                 Issue.house_id.in_(house_scope(staff_id)),
                 Issue.rejected_at.is_(None),
+                Issue.deleted_at.is_(None),
             )
         )
     ).one_or_none()
@@ -295,6 +301,7 @@ async def perform_action(
                 Issue.id == issue.id,
                 Issue.status == body.expected_status,
                 Issue.rejected_at.is_(None),
+                Issue.deleted_at.is_(None),
             )
             .values(status=body.status)
         )
@@ -358,7 +365,11 @@ async def reject_issue(
     fingerprint = action_hash(issue_id, "rejection", body)
     issue = await session.scalar(
         select(Issue)
-        .where(Issue.id == issue_id, Issue.house_id.in_(house_scope(staff_id)))
+        .where(
+            Issue.id == issue_id,
+            Issue.house_id.in_(house_scope(staff_id)),
+            Issue.deleted_at.is_(None),
+        )
         .with_for_update()
     )
     if issue is None:
@@ -375,6 +386,7 @@ async def reject_issue(
         .where(
             Issue.id == issue_id,
             Issue.rejected_at.is_(None),
+            Issue.deleted_at.is_(None),
             Issue.status == body.expected_status,
         )
         .values(rejected_at=datetime.now(UTC), rejection_reason=body.reason)

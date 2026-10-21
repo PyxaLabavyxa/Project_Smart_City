@@ -225,6 +225,7 @@ class Issue(Base):
     request_hash: Mapped[str | None] = mapped_column(String(64))
     rejected_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     rejection_reason: Mapped[str | None] = mapped_column(String(1500))
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     __table_args__ = (UniqueConstraint("user_id", "request_id", name="uq_issue_request"),)
 
@@ -505,7 +506,9 @@ class HouseContact(Base):
     value: Mapped[str] = mapped_column(String(300))
     note: Mapped[str] = mapped_column(String(200), default="", server_default="")
     __table_args__ = (
-        CheckConstraint("kind IN ('phone', 'email', 'address', 'website')", name="ck_contact_kind"),
+        CheckConstraint(
+            "kind IN ('phone', 'email', 'address', 'website', 'schedule')", name="ck_contact_kind"
+        ),
         UniqueConstraint("house_id", "position", name="uq_house_contact_position"),
     )
 

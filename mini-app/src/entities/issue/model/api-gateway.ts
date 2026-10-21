@@ -40,6 +40,7 @@ export function createIssueGateway(api: ApiClient, house: House): IssueGateway {
   return {
     list: signal => readPages(api, endpoints.issues(house.id), value => parseIssue(value, house), signal),
     get: async (id, signal) => parseIssue(await api(endpoints.issue(id), { signal }), house),
+    async remove(id) { await api(endpoints.issue(id), { method: "DELETE" }); },
     async create(input, requestId) {
       const category = Object.keys(categories).find(key => categories[key] === input.category);
       if (!category) throw new Error("Выберите доступную категорию");

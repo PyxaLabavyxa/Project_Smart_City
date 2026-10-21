@@ -19,7 +19,8 @@ async def own_issue(
     session: AsyncSession, user_id: int, issue_id: int, *, lock: bool = False
 ) -> Issue:
     statement = select(Issue).where(
-        Issue.id == issue_id, Issue.user_id == user_id, Issue.rejected_at.is_(None)
+        Issue.id == issue_id, Issue.user_id == user_id, Issue.rejected_at.is_(None),
+        Issue.deleted_at.is_(None),
     )
     issue = await session.scalar(statement.with_for_update() if lock else statement)
     if issue is None:

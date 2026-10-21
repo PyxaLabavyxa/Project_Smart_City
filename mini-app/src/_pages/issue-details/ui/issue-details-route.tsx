@@ -45,5 +45,5 @@ function IssueDetailsLoader({ id, view }: { id: string; view: "details" | "chat"
   if (!issue) return <IssueNotFoundPage />;
   if (view === "chat") return issue.mine ? <IssueChatPage issue={issue} /> : <IssueNotFoundPage />;
   if (createdIssueId === id) return <IssueCreated issue={issue} onOpen={() => { dismissCreationNotice(); window.scrollTo({ top: 0, behavior: "instant" }); }} />;
-  return <IssueDetailsPage issue={issue} />;
+  return <IssueDetailsPage issue={issue} onChanged={reload} />;
 }

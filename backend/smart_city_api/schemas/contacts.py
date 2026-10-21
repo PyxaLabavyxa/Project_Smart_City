@@ -8,7 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 class ContactInput(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
     label: str = Field(min_length=1, max_length=100)
-    kind: Literal["phone", "email", "address", "website"]
+    kind: Literal["phone", "email", "address", "website", "schedule"]
     value: str = Field(min_length=1, max_length=300)
     note: str = Field(default="", max_length=200)
 
@@ -49,3 +49,20 @@ class ContactsInput(BaseModel):
 class ContactsOutput(BaseModel):
     company_name: str
     items: list[ContactInput]
+
+
+class BulkContactsInput(ContactsInput):
+    house_ids: list[int] = Field(min_length=1, max_length=500)
+
+    @model_validator(mode="after")
+    def unique_houses(self):
+        if any(house_id < 1 for house_id in self.house_ids) or len(set(self.house_ids)) != len(
+            self.house_ids
+        ):
+            raise ValueError("Укажите разные дома с корректными идентификаторами")
+        return self
+
+
+class BulkContactsOutput(BaseModel):
+    house_ids: list[int]
+    updated_count: int

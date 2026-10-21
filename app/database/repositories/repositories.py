@@ -101,6 +101,7 @@ class IssueRepository:
                     User.max_user_id == max_user_id,
                     Issue.house_id == house_id,
                     Issue.rejected_at.is_(None),
+                    Issue.deleted_at.is_(None),
                 )
             )
             .order_by(Issue.created_at.desc(), Issue.id.desc())
@@ -137,6 +138,7 @@ class IssueRepository:
                     User.max_user_id == max_user_id,
                     Issue.house_id == house_id,
                     Issue.rejected_at.is_(None),
+                    Issue.deleted_at.is_(None),
                 )
             )
         )

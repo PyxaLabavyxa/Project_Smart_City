@@ -10,7 +10,7 @@ export async function getManagementContacts(api: ApiClient, house: string, signa
     items: array(response.items, value => {
       const item = record(value);
       const kind = string(item.kind);
-      if (kind !== "phone" && kind !== "email" && kind !== "address" && kind !== "website") throw new Error("Неизвестный тип контакта");
+      if (kind !== "phone" && kind !== "email" && kind !== "address" && kind !== "website" && kind !== "schedule") throw new Error("Неизвестный тип контакта");
       return { kind, label: string(item.label), value: string(item.value), note: string(item.note) } satisfies ManagementContact;
     }),
   };

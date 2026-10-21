@@ -534,6 +534,45 @@
             }
           }
         }
+      },
+      "delete": {
+        "tags": [
+          "resident"
+        ],
+        "summary": "Remove Issue",
+        "description": "Удалить своё обращение, которое ещё не было принято в работу.",
+        "operationId": "remove_issue_api_v1_issues__issue_id__delete",
+        "security": [
+          {
+            "MAXLaunchData": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "issue_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Issue Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/issues/{issue_id}/messages": {
@@ -2196,6 +2235,52 @@
             }
           }
         }
+      }
+    },
+    "/api/v1/staff/contacts/bulk": {
+      "post": {
+        "tags": [
+          "Staff"
+        ],
+        "summary": "Update Contacts Bulk",
+        "operationId": "update_contacts_bulk_api_v1_staff_contacts_bulk_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkContactsInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkContactsOutput"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "StaffSession": []
+          }
+        ]
       }
     },
     "/api/v1/staff/auth/login": {
@@ -4140,6 +4225,55 @@
         ],
         "title": "ApartmentResponse"
       },
+      "BulkContactsInput": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ContactInput"
+            },
+            "type": "array",
+            "maxItems": 12,
+            "title": "Items"
+          },
+          "house_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "maxItems": 500,
+            "minItems": 1,
+            "title": "House Ids"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "items",
+          "house_ids"
+        ],
+        "title": "BulkContactsInput"
+      },
+      "BulkContactsOutput": {
+        "properties": {
+          "house_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "House Ids"
+          },
+          "updated_count": {
+            "type": "integer",
+            "title": "Updated Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "house_ids",
+          "updated_count"
+        ],
+        "title": "BulkContactsOutput"
+      },
       "CameraFrame": {
         "properties": {
           "src": {
@@ -4503,7 +4637,8 @@
               "phone",
               "email",
               "address",
-              "website"
+              "website",
+              "schedule"
             ],
             "title": "Kind"
           },

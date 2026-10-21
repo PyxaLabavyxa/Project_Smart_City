@@ -36,7 +36,12 @@ from smart_city_api.schemas.cameras import (
     StaffCreateCamera,
     StaffProbeCamera,
 )
-from smart_city_api.schemas.contacts import ContactsInput, ContactsOutput
+from smart_city_api.schemas.contacts import (
+    BulkContactsInput,
+    BulkContactsOutput,
+    ContactsInput,
+    ContactsOutput,
+)
 from smart_city_api.schemas.staff import (
     ActionOutput,
     HouseOutput,
@@ -52,7 +57,12 @@ from smart_city_api.schemas.staff import (
 from smart_city_api.services import camera_media, chat_photos
 from smart_city_api.services import cameras as camera_service
 from smart_city_api.services import staff as service
-from smart_city_api.services.contacts import read_contacts, save_contacts, staff_house
+from smart_city_api.services.contacts import (
+    read_contacts,
+    save_contacts,
+    save_contacts_bulk,
+    staff_house,
+)
 from smart_city_api.services.photos import photo_path
 from smart_city_api.services.staff_accounts import delete_registration
 
@@ -127,6 +137,11 @@ async def contacts(house_id: int, session: Session, employee: Staff):
 @router.post("/houses/{house_id}/contacts", response_model=ContactsOutput)
 async def update_contacts(house_id: int, body: ContactsInput, session: Session, employee: Staff):
     return await save_contacts(session, employee.id, house_id, body)
+
+
+@router.post("/contacts/bulk", response_model=BulkContactsOutput)
+async def update_contacts_bulk(body: BulkContactsInput, session: Session, employee: Staff):
+    return await save_contacts_bulk(session, employee.id, body)
 
 
 async def authenticate_login(body: LoginInput, request: Request, session: Session):
