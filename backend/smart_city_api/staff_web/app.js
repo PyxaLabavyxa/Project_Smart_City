@@ -482,7 +482,8 @@ async function loadRegistrations() {
       <td data-label="Источник">${item.source === "bot" ? "Чатбот" : "Мини-приложение"}</td>
       <td data-label="Статус">${esc({ pending: "Ожидает решения", approved: "Принята", rejected: "Отклонена" }[item.status])}${item.auto_approved ? '<span class="row-meta">Автоматически · тестовый режим</span>' : ""}</td>
       <td data-label="Получено">${esc(date(item.created_at, true))}</td>
-      <td>${item.status === "approved" ? `<button class="danger" data-delete-user="${item.id}" data-resident="${esc(item.full_name)}">Удалить пользователя</button>` : item.status === "pending" ? `<button class="secondary" data-registration="${item.id}" data-decision="approve">Принять</button> <button class="text-button" data-registration="${item.id}" data-decision="reject">Отклонить</button>` : `<span class="muted">${item.auto_approved ? "Принято автоматически" : "Рассмотрено"}</span>`}</td></tr>`).join("");
+      <td>${item.status === "pending" ? `<button class="secondary" data-registration="${item.id}" data-decision="approve">Принять</button> <button class="text-button" data-registration="${item.id}" data-decision="reject">Отклонить</button>` : ""}
+      <button class="danger" data-delete-registration="${item.id}" data-resident="${esc(item.full_name)}" data-apartment-label="${esc(item.address)}, кв. ${item.apartment}" data-status="${esc(item.status)}">Удалить заявку</button></td></tr>`).join("");
     $("registrations-empty").hidden = data.total !== 0;
     $("registrations-page").textContent = data.total ? `Страница ${registrationPage} · всего заявок: ${data.total}` : "Нет заявок";
     $("registrations-prev").disabled = registrationPage <= 1;
@@ -495,18 +496,19 @@ $("refresh-registrations").addEventListener("click", loadRegistrations);
 $("registrations-prev").addEventListener("click", () => { if (registrationPage > 1) { registrationPage--; void loadRegistrations(); } });
 $("registrations-next").addEventListener("click", () => { if (registrationPage * 25 < registrationTotal) { registrationPage++; void loadRegistrations(); } });
 $("registrations-body").addEventListener("click", async event => {
-  const button = event.target.closest("[data-registration], [data-delete-user]");
+  const button = event.target.closest("[data-registration], [data-delete-registration]");
   if (!button || state.busy) return;
-  const deleting = button.hasAttribute("data-delete-user");
+  const deleting = button.hasAttribute("data-delete-registration");
   const profile = state.profile;
-  if (deleting && !await confirmAction({ title: "Удалить аккаунт?", description: `Аккаунт «${button.dataset.resident}», его обращения, переписка, показания и привязки к квартирам будут удалены. Квартиры и данные других жильцов сохранятся. Это действие нельзя отменить.`, confirmLabel: "Удалить аккаунт", destructive: true })) return;
+  const unlinking = button.dataset.status === "approved";
+  if (deleting && !await confirmAction({ title: `Удалить заявку №${Number(button.dataset.deleteRegistration)}?`, description: `Заявка «${button.dataset.resident}» на квартиру «${button.dataset.apartmentLabel}» будет удалена.${unlinking ? " Эта квартира будет отвязана от пользователя." : ""} Аккаунт, остальные заявки и квартиры, обращения и переписка сохранятся.`, confirmLabel: "Удалить заявку", destructive: true })) return;
   if (state.busy || state.profile !== profile || !button.isConnected) return;
   state.busy = true; button.disabled = true;
   try {
     if (deleting) {
-      try { await api(`/registrations/${Number(button.dataset.deleteUser)}/user`, { method: "DELETE" }); }
+      try { await api(`/registrations/${Number(button.dataset.deleteRegistration)}`, { method: "DELETE" }); }
       catch (error) { if (error.status !== 404) throw error; }
-      toast("Аккаунт пользователя удалён из системы.");
+      toast(unlinking ? "Заявка удалена. Квартира отвязана от пользователя." : "Заявка удалена.");
     } else {
       await api(`/registrations/${Number(button.dataset.registration)}/${button.dataset.decision}`, { method: "POST" });
       toast(button.dataset.decision === "approve" ? "Заявка принята. Квартира привязана." : "Заявка отклонена.");
@@ -515,7 +517,6 @@ $("registrations-body").addEventListener("click", async event => {
     if (registrationPage > 1 && (registrationPage - 1) * 25 >= registrationTotal) {
       registrationPage = Math.max(1, Math.ceil(registrationTotal / 25)); await loadRegistrations();
     }
-    if (deleting) await loadList();
   } catch (error) { showError("registrations-error", error.message); }
   finally { state.busy = false; button.disabled = false; }
 });

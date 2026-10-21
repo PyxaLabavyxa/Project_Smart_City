@@ -1655,6 +1655,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/staff/registrations/{application_id}:
+    delete:
+      tags:
+      - Staff
+      summary: Delete Application
+      operationId: delete_application_api_v1_staff_registrations__application_id__delete
+      security:
+      - StaffSession: []
+      parameters:
+      - name: application_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Application Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /api/v1/staff/registrations/{application_id}/user:
     delete:
       tags:

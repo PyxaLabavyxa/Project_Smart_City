@@ -3,8 +3,10 @@ from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock
 from uuid import uuid4
 
+import pytest
 from app.database.demo_contacts import seed_demo_contacts
 from app.database.models import (
+    Apartment,
     ApartmentMessage,
     CompanyHouse,
     House,
@@ -140,11 +142,17 @@ def registration_rows(engine):
         session.commit()
 
 
-def test_account_deletion_removes_dependencies_and_preserves_family(staff_api):
+@pytest.mark.parametrize("suffix", ["", "/user"])
+def test_registration_deletion_preserves_account_other_applications_and_family(staff_api, suffix):
     client, engine, _ = staff_api
     registration_rows(engine)
     with Session(engine) as session:
         session.add(UserApartment(user_id=2, apartment_id=1))
+        session.add(UserApartment(user_id=1, apartment_id=2))
+        session.add(RegistrationRequest(
+            id=4, user_id=1, company_id=1, apartment_id=2,
+            full_name="Житель 1 · другая квартира", source="mini_app", status="approved",
+        ))
         session.add_all(
             [
                 IssueEvent(issue_id=1, status="new"),
@@ -194,46 +202,96 @@ def test_account_deletion_removes_dependencies_and_preserves_family(staff_api):
             ]
         )
         session.commit()
-    assert client.delete(ROOT + "/registrations/1/user").status_code == 401
+    preserved = (
+        User, Issue, IssuePhoto, IssueEvent, IssueMessage, StaffNotification,
+        MeterReading, MiniAppPresence, ApartmentMessage, MessageNotification,
+        HouseCamera, UtilityAccount,
+    )
+    with Session(engine) as session:
+        counts = {
+            model: session.scalar(select(func.count()).select_from(model)) for model in preserved
+        }
+    path = ROOT + "/registrations/1" + suffix
+    assert client.delete(path).status_code == 401
     csrf = login(client)
-    assert client.delete(ROOT + "/registrations/1/user").status_code == 403
-    assert client.delete(ROOT + "/registrations/3/user", headers=csrf).status_code == 404
-    response = client.delete(ROOT + "/registrations/1/user", headers=csrf)
+    assert client.delete(path).status_code == 403
+    assert client.delete(ROOT + "/registrations/3" + suffix, headers=csrf).status_code == 404
+    response = client.delete(path, headers=csrf)
     assert response.status_code == 204, response.text
     with Session(engine) as session:
-        assert session.get(User, 1) is None
-        assert session.get(User, 2) is not None
-        assert session.get(Issue, 1) is None and session.get(Issue, 2) is not None
-        for model in (
-            IssueEvent,
-            IssueMessage,
-            StaffNotification,
-            MeterReading,
-            MiniAppPresence,
-            ApartmentMessage,
-            MessageNotification,
-        ):
-            assert session.scalar(select(func.count()).select_from(model)) == 0
-        assert session.get(IssuePhoto, 2) is not None
+        for model, count in counts.items():
+            assert session.scalar(select(func.count()).select_from(model)) == count, model
+        assert session.get(RegistrationRequest, 1) is None
+        assert session.get(RegistrationRequest, 4).user_id == 1
+        assert session.scalar(select(UserApartment.id).where(
+            UserApartment.user_id == 1, UserApartment.apartment_id == 1,
+        )) is None
+        assert session.scalar(select(UserApartment.id).where(
+            UserApartment.user_id == 1, UserApartment.apartment_id == 2,
+        )) is not None
         assert session.scalar(
             select(UserApartment.id).where(
                 UserApartment.user_id == 2, UserApartment.apartment_id == 1
             )
         )
-        assert session.get(HouseCamera, 1) and session.get(UtilityAccount, 1)
-        assert session.scalar(select(func.count()).select_from(RegistrationRequest)) == 2
+        assert session.scalar(select(func.count()).select_from(RegistrationRequest)) == 3
+    assert client.delete(path, headers=csrf).status_code == 404
 
 
-def test_account_in_other_company_cannot_be_deleted(staff_api):
+def test_registration_deletion_keeps_apartment_and_application_in_another_company(staff_api):
     client, engine, _ = staff_api
     registration_rows(engine)
     with Session(engine) as session:
         session.add(UserApartment(user_id=1, apartment_id=3))
+        company = ManagementCompany(name="Другая УК")
+        session.add(company)
+        session.flush()
+        session.add(CompanyHouse(house_id=2, company_id=company.id))
+        session.add(RegistrationRequest(
+            id=4, user_id=1, company_id=company.id, apartment_id=3,
+            full_name="Житель 1", source="bot", status="approved",
+        ))
         session.commit()
-    response = client.delete(ROOT + "/registrations/1/user", headers=login(client))
-    assert response.status_code == 409, response.text
+    response = client.delete(ROOT + "/registrations/1", headers=login(client))
+    assert response.status_code == 204, response.text
     with Session(engine) as session:
         assert session.get(User, 1) and session.get(Issue, 1)
+        assert session.get(RegistrationRequest, 4).user_id == 1
+        assert session.scalar(select(UserApartment.id).where(
+            UserApartment.user_id == 1, UserApartment.apartment_id == 3,
+        )) is not None
+
+
+@pytest.mark.parametrize("status", ["pending", "rejected"])
+def test_deleting_unapproved_registration_does_not_revoke_existing_apartment(staff_api, status):
+    client, engine, _ = staff_api
+    registration_rows(engine)
+    with Session(engine) as session:
+        session.get(RegistrationRequest, 1).status = status
+        session.commit()
+    assert client.delete(ROOT + "/registrations/1", headers=login(client)).status_code == 204
+    with Session(engine) as session:
+        assert session.get(RegistrationRequest, 1) is None
+        assert session.scalar(select(UserApartment.id).where(
+            UserApartment.user_id == 1, UserApartment.apartment_id == 1,
+        )) is not None
+
+
+def test_deleting_last_registration_allows_resident_to_register_again(staff_api):
+    client, engine, _ = staff_api
+    registration_rows(engine)
+    assert client.delete(ROOT + "/registrations/1", headers=login(client)).status_code == 204
+    state = client.get("/api/v1/registration", headers=headers()).json()
+    assert state["complete"] is False and state["status"] is None
+    with Session(engine) as session:
+        assert session.get(User, 1) is not None
+        number = session.get(Apartment, 1).number
+    client.app.state.settings.onboarding_test_mode = True
+    response = client.post("/api/v1/registration", headers=headers(), json={
+        "full_name": "Житель 1", "company_id": 1, "house_id": 1, "apartment_number": number,
+    })
+    assert response.status_code == 200, response.text
+    assert response.json()["complete"] is True
 
 
 def test_contacts_only_list_company_houses_and_keep_existing_values(staff_api):

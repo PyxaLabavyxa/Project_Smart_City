@@ -174,7 +174,7 @@ def test_photo_retry_cannot_be_replaced_by_text_only(staff_api):
     assert client.post(NEIGHBOR, json=data, headers=headers()).status_code == 409
 
 
-def test_deleting_author_removes_owned_chat_files_but_keeps_neighbor_files(staff_api):
+def test_deleting_registration_preserves_all_chat_photos_and_messages(staff_api):
     client, engine, _ = staff_api
     registration_rows(engine)
     assert upload(client, ISSUE).status_code == 200
@@ -186,9 +186,9 @@ def test_deleting_author_removes_owned_chat_files_but_keeps_neighbor_files(staff
     csrf = login(client)
     assert upload(client, ROOT + "/issues/1/messages", auth=csrf).status_code == 200
     assert len(media(client)) == 4
-    deleted = client.delete(ROOT + "/registrations/1/user", headers=csrf)
+    deleted = client.delete(ROOT + "/registrations/1", headers=csrf)
     assert deleted.status_code == 204, deleted.text
-    assert len(media(client)) == 1
+    assert len(media(client)) == 4
     with Session(engine) as session:
-        assert session.scalar(select(func.count()).select_from(ChatPhoto)) == 1
+        assert session.scalar(select(func.count()).select_from(ChatPhoto)) == 4
     assert client.get(incoming.json()["photos"][0]["url"], headers=headers(102)).status_code == 200

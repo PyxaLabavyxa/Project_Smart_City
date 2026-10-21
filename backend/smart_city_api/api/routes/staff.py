@@ -48,7 +48,7 @@ from smart_city_api.services import chat_photos
 from smart_city_api.services import staff as service
 from smart_city_api.services.contacts import read_contacts, save_contacts, staff_house
 from smart_city_api.services.photos import photo_path
-from smart_city_api.services.staff_accounts import delete_registered_user
+from smart_city_api.services.staff_accounts import delete_registration
 
 router = APIRouter(prefix="/api/v1/staff", tags=["Staff"])
 
@@ -325,11 +325,15 @@ async def registrations(session: Session, employee: Staff, page: Annotated[int, 
     }
 
 
+@router.delete("/registrations/{application_id}", status_code=204)
+async def delete_application(application_id: int, session: Session, employee: Staff):
+    await delete_registration(session, employee.id, application_id)
+
+
 @router.delete("/registrations/{application_id}/user", status_code=204)
 async def delete_account(application_id: int, request: Request, session: Session, employee: Staff):
-    await delete_registered_user(
-        session, employee.id, application_id, request.app.state.settings.media_root
-    )
+    # Cached staff pages still use this URL. It must never delete the resident account.
+    await delete_registration(session, employee.id, application_id)
 
 
 @router.post("/registrations/{application_id}/{decision}")
