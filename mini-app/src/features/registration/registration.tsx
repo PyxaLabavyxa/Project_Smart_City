@@ -9,7 +9,7 @@ import { RequestState } from "@/shared/ui/navigation/request-state";
 import { parseRegistration, type Registration } from "./model";
 import styles from "./registration.module.css";
 
-export function RegistrationScreen({ onComplete, onApproved, additional = false }: { onComplete: () => void; onApproved?: () => void; additional?: boolean }) {
+export function RegistrationScreen({ onComplete, onApproved, additional = false, embedded = additional }: { onComplete: () => void; onApproved?: () => void; additional?: boolean; embedded?: boolean }) {
   const api = useApi();
   const complete = useRef(onComplete);
   useEffect(() => { complete.current = onComplete; }, [onComplete]);
@@ -30,8 +30,8 @@ export function RegistrationScreen({ onComplete, onApproved, additional = false 
     return () => { controller.abort(); window.clearInterval(timer); window.removeEventListener("focus", check); };
   }, [api, additional]);
   useEffect(() => { if (!additional && state.data?.complete) complete.current(); }, [state.data?.complete, additional]);
-  return <div className={additional ? styles.embedded : styles.screen}>
-    {!additional && <div className={styles.brand}><BrandWordmark /></div>}
+  return <div className={embedded ? styles.embedded : styles.screen}>
+    {!embedded && <div className={styles.brand}><BrandWordmark /></div>}
     {!state.data ? <RequestState {...state} /> : !additional && state.data.complete ? <p role="status">Открываем ваш дом…</p> :
       <RegistrationForm initial={state.data} onComplete={onComplete} refresh={state.reload} additional={additional} onApproved={onApproved} />}
     {state.data && state.error && <p role="alert">{state.error}</p>}

@@ -1,6 +1,7 @@
 "use strict";
 
-const chatTopics = { outage: "Отключение", works: "Работы", meeting: "Собрание", other: "Другое" };
+const chatTopics = { outage: "Отключение коммунальных услуг", works: "Ремонт и обслуживание дома", meeting: "Собрание жителей", other: "Информация для жителей" };
+const announcementTopics = { outage: "⚠️ Отключение коммунальных услуг", works: "🚧 Ремонт и обслуживание дома", meeting: "👥 Собрание жителей", other: "📌 Информация для жителей" };
 const deliveryLabels = { draft: "Черновик", pending: "В очереди", sending: "Отправляется", sent: "Отправлено", failed: "Не отправлено", uncertain: "Нужно проверить чат", cancelled: "Отменено" };
 let maxChatRows = [], maxChatRequest = 0, announcementRequest = 0, maxChatBusy = false;
 let announcementPage = 1, announcementTotal = 0, announcementBusy = false;
@@ -45,6 +46,7 @@ function updateAnnouncementPreview() {
   $("announcement-channel-help").textContent = people ? "Выбранные жители получат сообщения лично от Домоведа. В общих группах публикации не будет." : "Можно выбрать оба канала. В группу попадёт одно объявление, лично — по одному сообщению каждому получателю.";
   $("house-audience-controls").hidden = people;
   $("resident-audience-controls").hidden = !people;
+  $("announcement-live-topic").textContent = announcementTopics[$("announcement-topic").value] || announcementTopics.other;
   $("announcement-live-title").textContent = $("announcement-title").value || "Заголовок объявления";
   $("announcement-live-text").textContent = $("announcement-text").value || "Текст появится здесь, когда вы начнёте писать.";
   $("announcement-count").textContent = `${$("announcement-text").value.length} / 3000`;
@@ -65,7 +67,7 @@ function renderAnnouncementHouses(selected) {
   updateAnnouncementPreview();
 }
 function renderResidents() {
-  $("announcement-residents").innerHTML = residentOptions.length ? residentOptions.map(r => `<label class="announcement-house resident-choice"><input type="checkbox" value="${r.id}"${selectedResidentIds.has(r.id) ? " checked" : ""}${!r.available ? " disabled" : ""}><span><strong>${esc(r.name)}</strong><small>MAX ID ${r.max_user_id}</small><small>${r.apartments.map(esc).join("; ")}</small>${r.reason ? `<small class="resident-unavailable">${esc(r.reason)}</small>` : ""}</span></label>`).join("") : '<p class="form-help">Жители не найдены. Попробуйте другое имя или MAX ID.</p>';
+  $("announcement-residents").innerHTML = residentOptions.length ? residentOptions.map(r => `<label class="announcement-house resident-choice"><input type="checkbox" value="${r.id}"${selectedResidentIds.has(r.id) ? " checked" : ""}${!r.available ? " disabled" : ""}><span><strong>${esc(r.name)}</strong><small>MAX ID ${r.max_user_id}</small><small>${r.apartments.map(esc).join("; ")}</small>${r.reason ? `<small class="resident-unavailable">${esc(r.reason)}</small>` : ""}</span></label>`).join("") : '<p class="form-help">Жители не найдены. Попробуйте имя, MAX ID или адрес с номером квартиры.</p>';
   $("selected-announcement-residents").innerHTML = [...selectedResidentIds].map(id => `<button type="button" class="resident-chip" data-remove-resident="${id}" aria-label="Убрать ${esc(residentDirectory.get(id)?.name || 'получателя')}">${esc(residentDirectory.get(id)?.name || 'Недоступный получатель')} <span aria-hidden="true">×</span></button>`).join("");
   $("announcement-residents-more").hidden = residentOptions.length >= residentTotal;
   updateAnnouncementPreview();
@@ -229,6 +231,7 @@ $("preview-announcement").addEventListener("click", () => void saveOrPreview(tru
 function showAnnouncement(item) {
   previewAnnouncement = item;
   $("announcement-dialog-title").textContent = item.status === "draft" ? "Проверьте объявление" : "Результат отправки";
+  $("announcement-final-topic").textContent = announcementTopics[item.topic] || announcementTopics.other;
   $("announcement-final-title").textContent = item.title;
   $("announcement-final-text").textContent = item.text;
   const personal = item.private_deliveries || [], draft = item.status === "draft";

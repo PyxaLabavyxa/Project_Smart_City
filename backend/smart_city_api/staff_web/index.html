@@ -13,8 +13,8 @@
   <script src="/staff/confirmation.js?v=20261021-motion-4" defer></script>
   <script src="/staff/app.js?v=20261021-cameras-11" defer></script>
   <script src="/staff/camera-management.js?v=20261021-7" defer></script>
-  <link rel="stylesheet" href="/staff/chat-management.css?v=20261020-audience-2">
-  <script src="/staff/chat-management.js?v=20261021-motion-4" defer></script>
+  <link rel="stylesheet" href="/staff/chat-management.css?v=20261021-announcement-copy-2">
+  <script src="/staff/chat-management.js?v=20261021-announcement-copy-2" defer></script>
 </head>
 <body>
   <section id="login-screen" class="login-screen" hidden>
@@ -130,7 +130,7 @@
             <h2 id="announcement-editor-title">Новое объявление</h2>
             <p class="form-help">Подготовьте объявление от вашей УК, выберите каналы доставки и получателей.</p>
             <form id="announcement-form"><fieldset id="announcement-fields" class="announcement-fields">
-              <label for="announcement-topic">Тема<select id="announcement-topic"><option value="outage">Отключение</option><option value="works">Работы</option><option value="meeting">Собрание</option><option value="other">Другое</option></select></label>
+              <label for="announcement-topic">Тема<select id="announcement-topic"><option value="outage">Отключение коммунальных услуг</option><option value="works">Ремонт и обслуживание дома</option><option value="meeting">Собрание жителей</option><option value="other">Информация для жителей</option></select></label>
               <label for="announcement-title">Заголовок<input id="announcement-title" maxlength="150" required placeholder="Плановое отключение воды"></label>
               <label for="announcement-text">Текст<textarea id="announcement-text" maxlength="3000" required placeholder="Укажите даты, время, адрес и что нужно знать жителям."></textarea><span id="announcement-count" class="form-help">0 / 3000</span></label>
               <div class="audience-section"><h3>Куда отправить</h3>
@@ -152,10 +152,10 @@
                   <div id="announcement-houses" class="announcement-houses"></div>
                 </div>
                 <div id="resident-audience-controls" hidden>
-                  <div class="audience-search"><label class="sr-only" for="announcement-resident-search">Поиск жителя по имени или MAX ID</label><input id="announcement-resident-search" type="search" placeholder="Найти по имени или MAX ID" autocomplete="off"></div>
+                  <div class="audience-search"><label class="sr-only" for="announcement-resident-search">Поиск жителя по имени, MAX ID, адресу или квартире</label><input id="announcement-resident-search" type="search" placeholder="Имя, MAX ID или адрес и квартира" maxlength="100" autocomplete="off"></div>
                   <div id="selected-announcement-residents" class="selected-residents" aria-label="Выбранные жители"></div>
                   <p id="announcement-residents-error" class="error" role="alert" hidden></p>
-                  <div id="announcement-residents" class="announcement-houses" aria-live="polite"></div>
+                  <p class="form-help">Например: Солнечная, кв 9</p><div id="announcement-residents" class="announcement-houses" aria-live="polite"></div>
                   <button id="announcement-residents-more" class="chat-text-button" type="button" hidden>Показать ещё</button>
                 </div>
                 <p class="form-help">Доступны только жители домов вашей УК. Личные объявления получают жители, открывшие бота и не отключившие уведомления.</p>
@@ -165,7 +165,7 @@
               <p id="announcement-save-state" class="form-help" role="status"></p>
             </fieldset></form>
           </section>
-          <aside class="announcement-side"><section class="inbox announcement-live-preview" aria-labelledby="announcement-preview-label"><h2 id="announcement-preview-label">В домовом чате</h2><p class="form-help">Предпросмотр текста. Здесь ничего не отправляется.</p><div class="announcement-bubble"><span class="announcement-sender">Домовед · УК</span><h3 id="announcement-live-title">Заголовок объявления</h3><p id="announcement-live-text">Текст появится здесь, когда вы начнёте писать.</p><small>Управляющая компания</small></div><p id="announcement-recipient-count" class="form-help">Выберите дома для отправки</p></section>
+          <aside class="announcement-side"><section class="inbox announcement-live-preview" aria-labelledby="announcement-preview-label"><h2 id="announcement-preview-label">В домовом чате</h2><p class="form-help">Предпросмотр текста. Здесь ничего не отправляется.</p><div class="announcement-bubble"><span class="announcement-sender">🔔 Уведомление от УК</span><span class="announcement-topic" id="announcement-live-topic">⚠️ Отключение коммунальных услуг</span><h3 id="announcement-live-title">Заголовок объявления</h3><p id="announcement-live-text">Текст появится здесь, когда вы начнёте писать.</p></div><p id="announcement-recipient-count" class="form-help">Выберите дома для отправки</p></section>
           <section class="inbox announcement-history" aria-labelledby="announcement-history-label"><div class="recipient-heading"><h2 id="announcement-history-label">Ваши объявления</h2><button id="refresh-announcements" class="chat-text-button">Обновить</button></div><div id="announcement-history"></div><div class="announcement-pagination"><button id="announcement-prev" class="secondary">Назад</button><span id="announcement-page" class="form-help"></span><button id="announcement-next" class="secondary">Далее</button></div></section></aside>
         </div>
       </div>
@@ -175,7 +175,7 @@
   <dialog id="issue-dialog" class="issue-dialog" aria-labelledby="detail-title"><div class="detail-top"><span id="detail-number" class="eyebrow">ОБРАЩЕНИЕ</span><div><button id="refresh-detail" class="icon-button" aria-label="Обновить обращение"><span data-icon="refresh" aria-hidden="true"></span></button><button id="close-detail" class="icon-button" aria-label="Закрыть обращение"><span data-icon="close" aria-hidden="true"></span></button></div></div><div id="detail-content"></div></dialog>
   <dialog id="photo-dialog" class="photo-dialog" aria-label="Фотография обращения"><button id="close-photo" class="photo-close" aria-label="Закрыть фотографию"><span data-icon="close" aria-hidden="true"></span></button><img id="full-photo" alt="Прикреплённая к обращению фотография"></dialog>
   <dialog id="chat-code-dialog" class="chat-management-dialog" aria-labelledby="chat-code-title"><div class="recipient-heading"><h2 id="chat-code-title">Подключение домового чата</h2><button id="close-chat-code" class="icon-button" aria-label="Закрыть подключение">×</button></div><p id="chat-code-address" class="muted"></p><ol class="chat-instructions"><li>Добавьте бота Домоведа в группу MAX.</li><li>Выдайте ему права администратора: чтение, отправка сообщений и закрепление.</li><li>Администратор группы должен отправить в неё команду ниже.</li></ol><div class="connection-command"><code id="chat-connection-command"></code><button id="copy-chat-command" class="secondary">Скопировать</button></div><p id="chat-code-expires" class="form-help"></p><p class="notice">Код действует 15 минут и используется один раз. После подключения бот сам создаст закреплённое меню.</p><button id="check-chat-connection" class="primary">Проверить подключение</button></dialog>
-  <dialog id="announcement-dialog" class="chat-management-dialog" aria-labelledby="announcement-dialog-title"><div class="recipient-heading"><h2 id="announcement-dialog-title">Проверьте объявление</h2><button id="close-announcement" class="icon-button" aria-label="Закрыть предпросмотр">×</button></div><div class="announcement-bubble"><span class="announcement-sender">Домовед · УК</span><h3 id="announcement-final-title"></h3><p id="announcement-final-text"></p><small>Управляющая компания</small></div><h3 class="announcement-recipient-label">Получатели</h3><div id="announcement-deliveries"></div><p id="announcement-preview-error" class="error" role="alert" hidden></p><p id="announcement-preview-help" class="form-help"></p><div class="announcement-actions"><button id="edit-announcement" class="secondary">Вернуться к редактированию</button><button id="send-announcement" class="primary">Отправить в чаты</button><button id="retry-announcement" class="secondary" hidden>Повторить неотправленные</button></div></dialog>
+  <dialog id="announcement-dialog" class="chat-management-dialog" aria-labelledby="announcement-dialog-title"><div class="recipient-heading"><h2 id="announcement-dialog-title">Проверьте объявление</h2><button id="close-announcement" class="icon-button" aria-label="Закрыть предпросмотр">×</button></div><div class="announcement-bubble"><span class="announcement-sender">🔔 Уведомление от УК</span><span class="announcement-topic" id="announcement-final-topic"></span><h3 id="announcement-final-title"></h3><p id="announcement-final-text"></p></div><h3 class="announcement-recipient-label">Получатели</h3><div id="announcement-deliveries"></div><p id="announcement-preview-error" class="error" role="alert" hidden></p><p id="announcement-preview-help" class="form-help"></p><div class="announcement-actions"><button id="edit-announcement" class="secondary">Вернуться к редактированию</button><button id="send-announcement" class="primary">Отправить в чаты</button><button id="retry-announcement" class="secondary" hidden>Повторить неотправленные</button></div></dialog>
   <div id="camera-action-menu" class="camera-action-menu" popover="auto" role="group" aria-label="Действия с камерой"></div>
   <dialog id="staff-camera-form-dialog" class="staff-camera-dialog" aria-labelledby="staff-camera-form-title">
     <header class="camera-dialog-heading"><div><span class="eyebrow">КАМЕРА УПРАВЛЯЮЩЕЙ КОМПАНИИ</span><h2 id="staff-camera-form-title">Добавить камеру</h2></div><button id="close-staff-camera-form" class="icon-button" type="button" aria-label="Закрыть добавление камеры"><span data-icon="close" aria-hidden="true"></span></button></header>

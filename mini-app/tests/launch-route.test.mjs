@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { launchRoute } from '../src/shared/api/launch-route.ts';
+import { launchRoute, launchTarget } from '../src/shared/api/launch-route.ts';
 
 test('MAX menu launch parameters open the requested section', () => {
   for (const section of ['issues', 'utilities', 'cameras', 'messages']) {
@@ -25,4 +25,21 @@ test('issue notifications open the exact issue and its UK chat', () => {
     assert.equal(launchRoute('', key), undefined);
   }
   assert.equal(launchRoute('start_param=issue_1&start_param=issue_2'), undefined);
+});
+
+test('report opens issue creation and contacts remain available', () => {
+  assert.equal(launchRoute('start_param=report'), '/issues/new');
+  assert.equal(launchRoute('', 'contacts'), '/contacts');
+});
+
+test('chat menu carries a bounded house identity for every button', () => {
+  for (const [section, href] of [['report', '/issues/new'], ['issues', '/issues'], ['contacts', '/contacts']]) {
+    assert.deepEqual(launchTarget(`start_param=${section}_house_2`), { href, houseId: '2' });
+    assert.deepEqual(launchTarget('', `${section}_house_2147483647`), { href, houseId: '2147483647' });
+  }
+  for (const key of ['report_house_0', 'report_house_01', 'report_house_-1', 'report_house_2147483648', 'report_house_2?x=y', 'report_house_2/3', 'cameras_house_2']) {
+    assert.equal(launchTarget('', key), undefined);
+  }
+  assert.equal(launchTarget('start_param=report_house_2&start_param=report_house_3'), undefined);
+  assert.deepEqual(launchTarget('start_param=report_house_2', 'report_house_3'), { href: '/issues/new', houseId: '2' });
 });

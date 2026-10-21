@@ -1,3 +1,5 @@
+import { launchTarget } from "./launch-route";
+
 export class ApiError extends Error {
   constructor(message: string, public status: number) { super(message); }
 }
@@ -67,4 +69,9 @@ export function maxLaunchData(): string {
   const params = new URLSearchParams(window.location.hash.slice(1));
   const values = params.getAll("WebAppData");
   return values.length === 1 ? values[0] : "";
+}
+
+export function maxLaunchTarget() {
+  const bridge = (window as Window & { WebApp?: { initDataUnsafe?: { start_param?: unknown } } }).WebApp;
+  return launchTarget(maxLaunchData(), bridge?.initDataUnsafe?.start_param);
 }

@@ -1,6 +1,9 @@
 import secrets
 from datetime import UTC, datetime, timedelta
 
+from fastapi import HTTPException
+from sqlalchemy import delete, func, select, update
+
 from app.database.models import (
     Announcement,
     AnnouncementDelivery,
@@ -10,9 +13,6 @@ from app.database.models import (
 )
 from app.services.announcement_audience import residents, unavailable_reason
 from app.services.house_chats import code_hash
-from fastapi import HTTPException
-from sqlalchemy import delete, func, select, update
-
 from smart_city_api.schemas.house_chats import (
     AnnouncementDeliveryOutput,
     AnnouncementOutput,
@@ -21,6 +21,7 @@ from smart_city_api.schemas.house_chats import (
     ResidentChoice,
 )
 from smart_city_api.services.contacts import staff_house
+from smart_city_api.services.resident_search import matches_resident
 from smart_city_api.services.staff import house_scope
 
 
@@ -122,10 +123,10 @@ async def resident_choices(session, staff_id, query="", page=1):
     )
     targets = await residents(session, staff_id, list(houses))
     choices = []
-    query = query.casefold().strip()
     for uid, target in targets.items():
         user = target["user"]
-        if query and query not in user.name.casefold() and query not in str(user.max_user_id):
+        addresses = [(houses[h], n) for h, n in target["apartments"]]
+        if not matches_resident(query, user.name, user.max_user_id, addresses):
             continue
         reason = unavailable_reason(user)
         choices.append(

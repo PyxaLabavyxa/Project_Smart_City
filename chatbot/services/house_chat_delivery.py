@@ -3,6 +3,14 @@
 import asyncio
 import logging
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
+
+from maxapi.enums.parse_mode import ParseMode
+from maxapi.types import LinkButton
+from maxapi.types.errors import Error
+from maxapi.types.input_media import InputMedia
+from maxapi.utils.inline_keyboard import InlineKeyboardBuilder
+from sqlalchemy import select, update
 
 from app.database.models import (
     Announcement,
@@ -15,14 +23,11 @@ from app.database.models import (
     User,
 )
 from app.services.announcement_audience import residents, unavailable_reason
-from maxapi.types import LinkButton
-from maxapi.types.errors import Error
-from maxapi.utils.inline_keyboard import InlineKeyboardBuilder
-from sqlalchemy import select, update
-
+from app.services.announcement_format import announcement_message
 from chatbot.keyboards.inline import mini_app_username
 
 logger = logging.getLogger(__name__)
+WELCOME_IMAGE = Path(__file__).resolve().parents[1] / "assets" / "welcome-house.png"
 
 
 class MaxRejected(ValueError):
@@ -47,15 +52,19 @@ async def check_permissions(bot, chat_id):
         raise MaxRejected(403)
 
 
-def menu_keyboard():
+def menu_keyboard(house_id):
     builder = InlineKeyboardBuilder()
     username = mini_app_username()
     for label, section in [
-        ("Сообщить о проблеме", "report"),
-        ("Обращения дома", "issues"),
-        ("Контакты УК", "contacts"),
+        ("📝 Сообщить о проблеме", "report"),
+        ("🏠 Обращения дома", "issues"),
+        ("☎️ Контакты УК", "contacts"),
     ]:
-        builder.row(LinkButton(text=label, url=f"https://max.ru/{username}?startapp={section}"))
+        builder.row(
+            LinkButton(
+                text=label, url=f"https://max.ru/{username}?startapp={section}_house_{house_id}"
+            )
+        )
     return builder.as_markup()
 
 
@@ -126,15 +135,19 @@ async def process_menu(bot, sessions):
     try:
         await check_permissions(bot, chat_id)
         text = (
-            f"Привет! Я Домовед — помощник жителей дома: {address}.\n\n"
+            f"👋 Привет! Я Домовед — помощник жителей дома.\n📍 {address}\n\n"
             "Через кнопки ниже можно сообщить о проблеме, посмотреть обращения и контакты УК. "
             "В приложении проверьте выбранный адрес.\n\n"
-            "Здесь появляются только важные объявления управляющей компании. "
+            "🔔 Здесь появляются только важные объявления управляющей компании. "
             "Обращения и личная переписка остаются в мини-приложении."
         )
+        attachments = [
+            await asyncio.to_thread(InputMedia, str(WELCOME_IMAGE)),
+            menu_keyboard(house_id),
+        ]
         if mid:
             edited = await bot.edit_message(
-                message_id=mid, text=text, attachments=[menu_keyboard()], notify=False
+                message_id=mid, text=text, attachments=attachments, notify=False
             )
             if isinstance(edited, Error) and edited.code == 404:
                 mid = None
@@ -144,7 +157,7 @@ async def process_menu(bot, sessions):
             sending = True
             result = checked(
                 await bot.send_message(
-                    chat_id=chat_id, text=text, attachments=[menu_keyboard()], notify=False
+                    chat_id=chat_id, text=text, attachments=attachments, notify=False
                 )
             )
             mid = result.message.body.mid
@@ -218,13 +231,22 @@ async def process_announcement(bot, sessions):
             )
             return True
         delivery_id, chat_id = delivery.id, delivery.chat_id
-        text = f"{announcement.title}\n\n{announcement.text}\n\nУправляющая компания"
+        text, message_format = announcement_message(
+            announcement.topic, announcement.title, announcement.text
+        )
         delivery.status, delivery.attempted_at = "sending", datetime.now(UTC)
     sending, mid = False, None
     try:
         await check_permissions(bot, chat_id)
         sending = True
-        result = checked(await bot.send_message(chat_id=chat_id, text=text, notify=True))
+        result = checked(
+            await bot.send_message(
+                chat_id=chat_id,
+                text=text,
+                notify=True,
+                parse_mode=ParseMode(message_format) if message_format else None,
+            )
+        )
         mid = result.message.body.mid
         status, error = "sent", ""
     except Exception as exc:
@@ -274,11 +296,20 @@ async def process_private_announcement(bot, sessions):
             delivery.status, delivery.error = "cancelled", "Доступ или настройки жителя изменились"
             return True
         delivery_id, user_id, max_id = delivery.id, delivery.user_id, target["user"].max_user_id
-        text = f"{announcement.title}\n\n{announcement.text}\n\nУправляющая компания"
+        text, message_format = announcement_message(
+            announcement.topic, announcement.title, announcement.text
+        )
         delivery.status, delivery.attempted_at = "sending", datetime.now(UTC)
     mid, blocked = None, False
     try:
-        result = checked(await bot.send_message(user_id=max_id, text=text, notify=True))
+        result = checked(
+            await bot.send_message(
+                user_id=max_id,
+                text=text,
+                notify=True,
+                parse_mode=ParseMode(message_format) if message_format else None,
+            )
+        )
         mid = result.message.body.mid
         status, error = "sent", ""
     except Exception as exc:

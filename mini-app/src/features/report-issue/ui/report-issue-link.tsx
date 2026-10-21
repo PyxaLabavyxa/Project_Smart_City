@@ -43,6 +43,7 @@ export function ReportIssueLink() {
       <button className={styles.close} aria-label="Закрыть создание обращения" type="button" onClick={() => dialog.current?.close()}><Icon name="close" /></button>
       <h2 id="create-issue-title">Создать обращение</h2><p className={styles.subtitle}>Расскажите, что случилось.</p>
       <h3>Где возникла проблема?</h3>
+      <p className={styles.houseAddress}><Icon name="pin" size={20} /><span>{house.address}</span></p>
       <ReportLocationPicker value={place} onChange={setPlace} tourTarget="issue-location" />
       <button className={styles.primary} type="button" onClick={() => { startAt(place); dialog.current?.close(); router.push("/issues/new"); }}>Продолжить</button>
     </dialog>, portal)}

@@ -15,7 +15,8 @@
 .announcement-house span{min-width:0}.announcement-house small{display:block;color:var(--muted);font-weight:400;margin-top:3px}
 .announcement-side{display:grid;gap:24px;min-width:0}
 .announcement-bubble{padding:22px;background:#edf6fc;border:1px solid #d5e8f4;border-radius:14px 14px 14px 3px;overflow-wrap:anywhere}
-.announcement-sender{display:block;color:var(--teal);font-size:12px;font-weight:600;margin-bottom:12px}
+.announcement-sender{display:block;color:var(--ink);font-size:14px;font-weight:700;margin-bottom:6px}
+.announcement-topic{display:block;color:var(--teal);font-size:13px;line-height:1.5;margin-bottom:20px}
 .announcement-bubble h3{font-size:17px;line-height:1.45;white-space:pre-wrap;margin-bottom:9px}
 .announcement-bubble p{white-space:pre-wrap;line-height:1.7;font-size:14px}
 .announcement-bubble small{display:block;color:var(--muted);margin-top:18px;font-size:11px}
