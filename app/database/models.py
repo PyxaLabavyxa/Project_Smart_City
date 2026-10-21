@@ -203,7 +203,13 @@ class Issue(Base):
     __tablename__ = "issues"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    created_by_staff_id: Mapped[int | None] = mapped_column(ForeignKey("staff_users.id"))
+    staff_request_id: Mapped[str | None] = mapped_column(String(36))
+    staff_request_hash: Mapped[str | None] = mapped_column(String(64))
+    reporter_name: Mapped[str | None] = mapped_column(String(200))
+    reporter_phone: Mapped[str | None] = mapped_column(String(40))
+    reporter_apartment: Mapped[int | None] = mapped_column(Integer)
     house_id: Mapped[int] = mapped_column(ForeignKey("houses.id"))
     title: Mapped[str] = mapped_column(String(300))
     description: Mapped[str] = mapped_column(Text)
@@ -227,9 +233,13 @@ class Issue(Base):
     rejection_reason: Mapped[str | None] = mapped_column(String(1500))
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
-    __table_args__ = (UniqueConstraint("user_id", "request_id", name="uq_issue_request"),)
+    __table_args__ = (
+        UniqueConstraint("user_id", "request_id", name="uq_issue_request"),
+        UniqueConstraint("created_by_staff_id", "staff_request_id", name="uq_staff_issue_request"),
+        CheckConstraint("user_id IS NOT NULL OR (created_by_staff_id IS NOT NULL AND reporter_name IS NOT NULL AND reporter_phone IS NOT NULL)", name="ck_issue_reporter"),
+    )
 
-    user: Mapped["User"] = relationship(
+    user: Mapped["User | None"] = relationship(
         back_populates="issues"
     )
 
@@ -454,7 +464,7 @@ class StaffNotification(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     issue_id: Mapped[int] = mapped_column(ForeignKey("issues.id"), index=True)
     staff_id: Mapped[int] = mapped_column(ForeignKey("staff_users.id"))
-    max_user_id: Mapped[int] = mapped_column(BigInteger)
+    max_user_id: Mapped[int | None] = mapped_column(BigInteger)
     kind: Mapped[str] = mapped_column(String(20))
     status: Mapped[str | None] = mapped_column(String(30))
     message_id: Mapped[int | None] = mapped_column(ForeignKey("issue_messages.id"))

@@ -9,7 +9,9 @@ from smart_city_api.services.access import own_apartment_ids
 OUTDOOR_ZONES = {"house", "courtyard", "parking"}
 
 
-async def validate_location(session: AsyncSession, user_id: int, house: House, place: Location):
+async def validate_location(
+    session: AsyncSession, user_id: int | None, house: House, place: Location
+):
     if place.zone in OUTDOOR_ZONES:
         return
     if place.entrance > house.entrances_count or place.floor > house.floors_count:
@@ -23,7 +25,7 @@ async def validate_location(session: AsyncSession, user_id: int, house: House, p
                 Apartment.house_id == house.id,
                 Apartment.entrance == place.entrance,
                 Apartment.floor == place.floor,
-                Apartment.id.in_(own_apartment_ids(user_id)),
+                Apartment.id.in_(own_apartment_ids(user_id)) if user_id is not None else True,
             )
         )
         if apartment is None:

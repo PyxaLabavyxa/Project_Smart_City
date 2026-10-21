@@ -66,7 +66,7 @@ def row_query():
     return (
         select(Issue, House.address, User.name, Apartment.number, func.coalesce(photos.c.count, 0))
         .join(House, House.id == Issue.house_id)
-        .join(User, User.id == Issue.user_id)
+        .outerjoin(User, User.id == Issue.user_id)
         .outerjoin(Apartment, Apartment.id == Issue.apartment_id)
         .outerjoin(photos, photos.c.issue_id == Issue.id)
     )
@@ -85,7 +85,7 @@ def issue_row(row) -> IssueRow:
         created_at=issue.created_at,
         house_id=issue.house_id,
         address=address,
-        author=author,
+        author=author or issue.reporter_name or "Заявитель",
         entrance=None if outdoor else issue.entrance,
         floor=None if outdoor else issue.floor,
         zone=issue.zone,
@@ -197,6 +197,14 @@ async def detail(session: AsyncSession, staff_id: int, issue_id: int) -> IssueDe
     ).all()
     return IssueDetail(
         **issue_row(row).model_dump(),
+        resident_id=row[0].user_id,
+        reporter_phone=row[0].reporter_phone,
+        reporter_apartment=row[0].reporter_apartment,
+        created_by=await session.scalar(
+            select(StaffUser.name).where(StaffUser.id == row[0].created_by_staff_id)
+        )
+        if row[0].created_by_staff_id
+        else None,
         photos=[PhotoOutput(id=p.id, url=f"/api/v1/staff/photos/{p.id}") for p in photos],
         history=[EventOutput(status=e.status, created_at=e.created_at) for e in reversed(events)],
         messages=[
@@ -218,7 +226,9 @@ async def detail(session: AsyncSession, staff_id: int, issue_id: int) -> IssueDe
                 message_id=n.message_id,
                 author=name,
                 delivery=(
-                    "sent"
+                    "not_required"
+                    if n.max_user_id is None
+                    else "sent"
                     if n.sent_at
                     else "read"
                     if n.suppressed_at
@@ -287,7 +297,7 @@ async def perform_action(
     prior = await previous_action(session, staff.id, body.request_id, fingerprint)
     if prior:
         return prior
-    author = await session.get(User, issue.user_id)
+    author = await session.get(User, issue.user_id) if issue.user_id else None
     house = await session.get(House, issue.house_id)
     message = None
     if isinstance(body, StatusInput):
@@ -337,7 +347,8 @@ async def perform_action(
         notification = StaffNotification(
             issue_id=issue.id,
             staff_id=staff.id,
-            max_user_id=author.max_user_id,
+            max_user_id=author.max_user_id if author else None,
+            suppressed_at=None if author else datetime.now(UTC),
             kind=kind,
             status=body.status.value if isinstance(body, StatusInput) else None,
             message_id=message.id if message else None,
@@ -379,7 +390,7 @@ async def reject_issue(
         return prior
     if issue.rejected_at is not None or issue.status != body.expected_status:
         raise HTTPException(409, "Обращение уже изменено. Обновите список")
-    author = await session.get(User, issue.user_id)
+    author = await session.get(User, issue.user_id) if issue.user_id else None
     house = await session.get(House, issue.house_id)
     changed = await session.execute(
         update(Issue)
@@ -400,7 +411,8 @@ async def reject_issue(
     notice = StaffNotification(
         issue_id=issue_id,
         staff_id=staff_id,
-        max_user_id=author.max_user_id,
+        max_user_id=author.max_user_id if author else None,
+        suppressed_at=None if author else datetime.now(UTC),
         kind="rejection",
         status="rejected",
         text=(

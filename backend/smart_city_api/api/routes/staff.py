@@ -50,11 +50,14 @@ from smart_city_api.schemas.staff import (
     MessageInput,
     ProfileOutput,
     RejectInput,
+    ReportResidentPage,
+    StaffCreateIssue,
+    StaffIssueOptions,
     StaffIssuePage,
     StaffTokenOutput,
     StatusInput,
 )
-from smart_city_api.services import camera_media, chat_photos
+from smart_city_api.services import camera_media, chat_photos, staff_reports
 from smart_city_api.services import cameras as camera_service
 from smart_city_api.services import staff as service
 from smart_city_api.services.contacts import (
@@ -248,7 +251,7 @@ async def issues(
     priority: IssuePriority | None = None,
     q: Annotated[str, Query(max_length=200)] = "",
     page: Annotated[int, Query(ge=1, le=100000)] = 1,
-    page_size: Annotated[int, Query(ge=1, le=100)] = 25,
+    page_size: Annotated[int, Query(ge=1, le=100)] = 10,
 ):
     return await service.list_issues(
         session, employee.id, house_id, status, priority, q, page, page_size
@@ -258,6 +261,27 @@ async def issues(
 @router.get("/issues/{issue_id}", response_model=IssueDetail)
 async def issue_detail(issue_id: int, session: Session, employee: Staff):
     return await service.detail(session, employee.id, issue_id)
+
+
+@router.get("/houses/{house_id}/issue-options", response_model=StaffIssueOptions)
+async def issue_options(house_id: int, session: Session, employee: Staff):
+    return await staff_reports.issue_options(session, employee.id, house_id)
+
+
+@router.get("/houses/{house_id}/report-residents", response_model=ReportResidentPage)
+async def report_residents(
+    house_id: int,
+    session: Session,
+    employee: Staff,
+    q: Annotated[str, Query(max_length=100)] = "",
+    page: Annotated[int, Query(ge=1, le=100000)] = 1,
+):
+    return await staff_reports.report_residents(session, employee.id, house_id, q, page)
+
+
+@router.post("/issues", response_model=IssueDetail, status_code=201)
+async def create_staff_issue(data: StaffCreateIssue, session: Session, employee: Staff):
+    return await staff_reports.create_staff_issue(session, employee.id, data)
 
 
 @router.post("/issues/{issue_id}/status", response_model=ActionOutput)

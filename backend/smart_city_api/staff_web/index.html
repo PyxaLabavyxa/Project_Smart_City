@@ -12,7 +12,9 @@
   <link rel="stylesheet" href="/staff/camera-management.css?v=20261021-7">
   <link rel="stylesheet" href="/staff/contacts-management.css?v=20261022-contacts-2">
   <script src="/staff/confirmation.js?v=20261021-motion-4" defer></script>
-  <script src="/staff/app.js?v=20261022-contacts-2" defer></script>
+  <script src="/staff/app.js?v=20261022-reports-2" defer></script>
+  <link rel="stylesheet" href="/staff/staff-report.css?v=20261022-2">
+  <script src="/staff/staff-report.js?v=20261022-2" defer></script>
   <script src="/staff/contacts-management.js?v=20261022-contacts-2" defer></script>
   <script src="/staff/camera-management.js?v=20261021-7" defer></script>
   <link rel="stylesheet" href="/staff/chat-management.css?v=20261021-announcement-copy-2">
@@ -54,7 +56,7 @@
     <main class="main">
       <header class="topbar"><span><span class="topbar-home" data-icon="building" aria-hidden="true"></span> Кабинет УК <span class="slash">/</span> <strong id="section-name">Обращения</strong></span><span class="live-indicator"><span class="pulse-dot"></span><span id="sync-label">Обновляем данные</span></span></header>
       <div id="issues-section" class="content">
-        <div class="page-heading"><div><span class="eyebrow">ВАШ ДОМ ПОД ПРИСМОТРОМ</span><h1>Обращения жителей</h1><p class="muted">Помогайте с важным. Будьте рядом в деталях.</p></div><button id="refresh" class="secondary"><span data-icon="refresh" aria-hidden="true"></span> Обновить</button></div>
+        <div class="page-heading"><div><span class="eyebrow">ВАШ ДОМ ПОД ПРИСМОТРОМ</span><h1>Обращения жителей</h1><p class="muted">Помогайте с важным. Будьте рядом в деталях.</p></div><div class="issue-heading-actions"><button id="refresh" class="secondary"><span data-icon="refresh" aria-hidden="true"></span> Обновить</button><button id="new-staff-report" class="primary"><span data-icon="plus" aria-hidden="true"></span>Создать обращение</button></div></div>
         <div id="no-houses" class="notice" hidden>Пока вам не назначены дома. Попросите администратора добавить доступ.</div>
         <section class="stats" aria-label="Статистика обращений">
           <button class="stat selected" data-status="" aria-pressed="true"><span class="stat-label">Все обращения</span><span class="stat-icon" data-icon="inbox" aria-hidden="true"></span><strong id="count-all">—</strong><small>В ваших домах</small></button>
@@ -219,5 +221,25 @@
   <dialog id="staff-camera-view-dialog" class="staff-camera-dialog camera-view-dialog" aria-labelledby="staff-camera-view-title"><header class="camera-dialog-heading"><div><h2 id="staff-camera-view-title">Камера</h2><p id="staff-camera-view-place" class="muted"></p></div><button id="close-staff-camera-view" class="icon-button" type="button" aria-label="Закрыть просмотр камеры"><span data-icon="close" aria-hidden="true"></span></button></header><div class="camera-view-image"><img id="staff-camera-view-image" alt="Кадр с камеры"><div id="staff-camera-view-error" class="camera-unavailable" role="status" hidden><span data-icon="camera" aria-hidden="true"></span><strong>Камера недоступна</strong><span>Попробуйте обновить кадр</span></div></div><p id="staff-camera-view-note" class="camera-view-note" aria-label="Описание камеры" hidden></p><p id="staff-camera-view-reason" class="camera-view-reason" hidden></p><footer class="camera-view-footer"><span id="staff-camera-view-time" role="status">Получаем кадр…</span><button id="refresh-staff-camera-view" type="button" class="secondary"><span data-icon="refresh" aria-hidden="true"></span>Обновить кадр</button></footer></dialog>
   <div id="toast" class="toast" role="status" hidden></div>
   <div id="boot" class="boot" role="status"><img src="/staff/assets/domoved-symbol.png" alt="" width="72" height="72"><p>Открываем ваш Домовед…</p></div>
+  <dialog id="staff-report-dialog" class="staff-report-dialog" aria-labelledby="staff-report-title">
+    <header class="report-dialog-heading"><div><h2 id="staff-report-title">Новое обращение</h2><p>Запишите заявку, принятую по телефону или лично.</p></div><button id="close-staff-report" class="icon-button" type="button" aria-label="Закрыть создание обращения"><span data-icon="close" aria-hidden="true"></span></button></header>
+    <form id="staff-report-form">
+      <fieldset id="staff-report-fields">
+        <fieldset class="report-section camera-form-section"><legend><span data-icon="users" aria-hidden="true"></span>Заявитель</legend><div class="report-section-fields">
+          <label for="report-house">Дом<select id="report-house" required></select></label>
+          <div id="report-resident-fields"><div id="report-person-picker"><label for="report-person-search">Заявитель<input id="report-person-search" type="search" placeholder="Начните вводить имя или квартиру" maxlength="100" autocomplete="off"></label><p id="report-search-status" class="form-help" role="status"></p><div id="report-person-results" class="report-person-results" role="group" aria-label="Жители дома"></div><button id="report-more-people" class="report-text-button" type="button" hidden>Показать ещё</button><button id="report-add-person" type="button" class="report-add-person"><span data-icon="plus" aria-hidden="true"></span>Указать данные вручную</button></div><div id="report-person-selected" class="report-person-selected" hidden><div><strong id="report-selected-name"></strong><small id="report-selected-kind"></small></div><button id="report-change-person" type="button" class="report-text-button">Изменить</button></div></div>
+          <div id="report-manual-fields" hidden><label for="report-person-name">Имя заявителя<input id="report-person-name" maxlength="200" autocomplete="name" disabled></label></div>
+          <div id="report-caller-details" class="report-grid" hidden><label for="report-person-phone">Телефон <span id="report-phone-optional" class="muted">· необязательно</span><input id="report-person-phone" type="tel" maxlength="40" autocomplete="tel" placeholder="Номер для обратной связи"></label><label for="report-person-apartment">Квартира заявителя<select id="report-person-apartment"><option value="">Не указана</option></select></label></div>
+        </div></fieldset>
+        <fieldset class="report-section camera-form-section"><legend><span data-icon="building" aria-hidden="true"></span>Расположение</legend><div class="report-section-fields">
+          <fieldset id="report-scope" class="report-segments"><legend class="sr-only">Место обращения</legend><label><input type="radio" name="report-scope" value="apartment"><span>Квартира</span></label><label><input type="radio" name="report-scope" value="entrance" checked><span>Подъезд</span></label><label><input type="radio" name="report-scope" value="courtyard"><span>Двор</span></label></fieldset>
+          <div class="report-grid report-location-grid"><label id="report-zone-field" for="report-zone">Место<select id="report-zone"></select></label><label id="report-location-apartment-field" for="report-location-apartment" hidden>Квартира<select id="report-location-apartment" disabled></select></label><label for="report-entrance">Подъезд<select id="report-entrance"></select></label><label for="report-floor">Этаж<select id="report-floor"></select></label></div>
+        </div></fieldset>
+        <fieldset class="report-section camera-form-section"><legend><span data-icon="inbox" aria-hidden="true"></span>Обращение</legend><div class="report-section-fields"><label for="report-category">Категория<select id="report-category" required></select></label><label for="report-title">Заголовок<input id="report-title" maxlength="300" required placeholder="Кратко опишите проблему"></label><label for="report-description">Описание<textarea id="report-description" maxlength="2000" rows="4" required placeholder="Что произошло и что нужно проверить"></textarea><span id="report-description-count" class="form-help">0 / 2000</span></label></div></fieldset>
+      </fieldset>
+      <p id="report-form-status" class="report-form-status" role="status"></p><p id="report-form-error" class="error" role="alert" hidden></p>
+      <footer class="report-footer"><button id="cancel-staff-report" type="button" class="secondary">Отмена</button><button id="submit-staff-report" type="submit" class="primary">Создать обращение</button></footer>
+    </form>
+  </dialog>
 </body>
 </html>

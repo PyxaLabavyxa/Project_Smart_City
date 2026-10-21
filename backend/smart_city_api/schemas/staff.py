@@ -1,10 +1,12 @@
+import re
 from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
 from app.database.enums import IssueCategory, IssuePriority, IssueStatus
-from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator, model_validator
 
+from smart_city_api.schemas.app import CreateIssue
 from smart_city_api.schemas.chat_photo import ChatPhotoOutput
 
 
@@ -110,11 +112,15 @@ class DeliveryOutput(BaseModel):
     status: str | None
     message_id: int | None
     author: str
-    delivery: Literal["sent", "pending", "retrying", "read"]
+    delivery: Literal["sent", "pending", "retrying", "read", "not_required"]
     created_at: datetime
 
 
 class IssueDetail(IssueRow):
+    resident_id: int | None = None
+    reporter_phone: str | None = None
+    reporter_apartment: int | None = None
+    created_by: str | None = None
     photos: list[PhotoOutput]
     history: list[EventOutput]
     messages: list[MessageOutput]
@@ -124,3 +130,47 @@ class IssueDetail(IssueRow):
 class ActionOutput(BaseModel):
     notification_id: int | None
     changed: bool = True
+
+
+class StaffCreateIssue(CreateIssue):
+    house_id: int = Field(gt=0)
+    resident_id: int | None = Field(default=None, gt=0)
+    reporter_name: str | None = Field(default=None, min_length=1, max_length=200)
+    reporter_phone: str | None = Field(default=None, min_length=3, max_length=40)
+    reporter_apartment_id: int | None = Field(default=None, gt=0)
+
+    @model_validator(mode="after")
+    def check_reporter(self):
+        if self.resident_id is None and (not self.reporter_name or not self.reporter_phone):
+            raise ValueError("Укажите имя и телефон заявителя")
+        if self.resident_id is not None and self.reporter_name is not None:
+            raise ValueError("Имя зарегистрированного жителя определяется по аккаунту")
+        if self.reporter_phone and (
+            not re.fullmatch(r"\+?[0-9 ()-]+", self.reporter_phone)
+            or not 3 <= len(re.sub(r"\D", "", self.reporter_phone)) <= 15
+        ):
+            raise ValueError("Укажите корректный номер телефона")
+        return self
+
+
+class ReportApartment(BaseModel):
+    id: int
+    number: int
+    entrance: int
+    floor: int
+
+
+class StaffIssueOptions(BaseModel):
+    apartments: list[ReportApartment]
+    categories: dict[str, list[IssueCategory]]
+
+
+class ReportResident(BaseModel):
+    id: int
+    name: str
+    apartments: list[ReportApartment]
+
+
+class ReportResidentPage(BaseModel):
+    items: list[ReportResident]
+    total: int

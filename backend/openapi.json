@@ -2495,7 +2495,7 @@
               "type": "integer",
               "maximum": 100,
               "minimum": 1,
-              "default": 25,
+              "default": 10,
               "title": "Page Size"
             }
           }
@@ -2507,6 +2507,50 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/StaffIssuePage"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Staff"
+        ],
+        "summary": "Create Staff Issue",
+        "operationId": "create_staff_issue_api_v1_staff_issues_post",
+        "security": [
+          {
+            "StaffSession": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StaffCreateIssue"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssueDetail"
                 }
               }
             }
@@ -2554,6 +2598,123 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/IssueDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/staff/houses/{house_id}/issue-options": {
+      "get": {
+        "tags": [
+          "Staff"
+        ],
+        "summary": "Issue Options",
+        "operationId": "issue_options_api_v1_staff_houses__house_id__issue_options_get",
+        "security": [
+          {
+            "StaffSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "house_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "House Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffIssueOptions"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/staff/houses/{house_id}/report-residents": {
+      "get": {
+        "tags": [
+          "Staff"
+        ],
+        "summary": "Report Residents",
+        "operationId": "report_residents_api_v1_staff_houses__house_id__report_residents_get",
+        "security": [
+          {
+            "StaffSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "house_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "House Id"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 100,
+              "default": "",
+              "title": "Q"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100000,
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportResidentPage"
                 }
               }
             }
@@ -4883,7 +5044,8 @@
               "sent",
               "pending",
               "retrying",
-              "read"
+              "read",
+              "not_required"
             ],
             "title": "Delivery"
           },
@@ -5201,6 +5363,50 @@
           "photo_count": {
             "type": "integer",
             "title": "Photo Count"
+          },
+          "resident_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resident Id"
+          },
+          "reporter_phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reporter Phone"
+          },
+          "reporter_apartment": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reporter Apartment"
+          },
+          "created_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By"
           },
           "photos": {
             "items": {
@@ -6309,6 +6515,81 @@
         ],
         "title": "RejectInput"
       },
+      "ReportApartment": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "number": {
+            "type": "integer",
+            "title": "Number"
+          },
+          "entrance": {
+            "type": "integer",
+            "title": "Entrance"
+          },
+          "floor": {
+            "type": "integer",
+            "title": "Floor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "number",
+          "entrance",
+          "floor"
+        ],
+        "title": "ReportApartment"
+      },
+      "ReportResident": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "apartments": {
+            "items": {
+              "$ref": "#/components/schemas/ReportApartment"
+            },
+            "type": "array",
+            "title": "Apartments"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "apartments"
+        ],
+        "title": "ReportResident"
+      },
+      "ReportResidentPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ReportResident"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "ReportResidentPage"
+      },
       "ResidentChoice": {
         "properties": {
           "id": {
@@ -6655,6 +6936,126 @@
           "house_id"
         ],
         "title": "StaffCreateCamera"
+      },
+      "StaffCreateIssue": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Description"
+          },
+          "category": {
+            "$ref": "#/components/schemas/IssueCategory"
+          },
+          "place": {
+            "$ref": "#/components/schemas/Location"
+          },
+          "request_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Request Id"
+          },
+          "house_id": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "House Id"
+          },
+          "resident_id": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resident Id"
+          },
+          "reporter_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reporter Name"
+          },
+          "reporter_phone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40,
+                "minLength": 3
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reporter Phone"
+          },
+          "reporter_apartment_id": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reporter Apartment Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "title",
+          "description",
+          "category",
+          "place",
+          "request_id",
+          "house_id"
+        ],
+        "title": "StaffCreateIssue"
+      },
+      "StaffIssueOptions": {
+        "properties": {
+          "apartments": {
+            "items": {
+              "$ref": "#/components/schemas/ReportApartment"
+            },
+            "type": "array",
+            "title": "Apartments"
+          },
+          "categories": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/IssueCategory"
+              },
+              "type": "array"
+            },
+            "type": "object",
+            "title": "Categories"
+          }
+        },
+        "type": "object",
+        "required": [
+          "apartments",
+          "categories"
+        ],
+        "title": "StaffIssueOptions"
       },
       "StaffIssuePage": {
         "properties": {
