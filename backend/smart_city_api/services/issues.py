@@ -1,6 +1,6 @@
 import hashlib
 
-from app.database.enums import IssueCategory, IssuePriority, IssueStatus
+from app.database.enums import ISSUE_CATEGORIES_BY_SCOPE, IssuePriority, IssueStatus
 from app.database.models import Apartment, House, Issue, IssueEvent, IssuePhoto
 from fastapi import HTTPException
 from sqlalchemy import and_, or_, select
@@ -11,24 +11,7 @@ from smart_city_api.schemas.app import CreateIssue, IssueHistory, IssueResponse,
 from smart_city_api.services.access import own_apartment_ids, require_house
 from smart_city_api.services.locations import OUTDOOR_ZONES, validate_location
 
-CATEGORIES_BY_SCOPE = {
-    "courtyard": {
-        IssueCategory.YARD,
-        IssueCategory.GARBAGE,
-        IssueCategory.ELECTRICITY,
-        IssueCategory.WATER,
-        IssueCategory.SECURITY,
-        IssueCategory.OTHER,
-    },
-    "entrance": set(IssueCategory) - {IssueCategory.YARD},
-    "apartment": {
-        IssueCategory.WATER,
-        IssueCategory.HEATING,
-        IssueCategory.ELECTRICITY,
-        IssueCategory.SECURITY,
-        IssueCategory.OTHER,
-    },
-}
+CATEGORIES_BY_SCOPE = ISSUE_CATEGORIES_BY_SCOPE
 
 
 def visible_issues(user_id: int):
@@ -47,9 +30,7 @@ def visible_issues(user_id: int):
                 or_(
                     Issue.zone.in_(OUTDOOR_ZONES),
                     and_(
-                        Issue.zone.in_(
-                            ("entrance", "corridor", "stairs", "elevator", "technical")
-                        ),
+                        Issue.zone.in_(("entrance", "corridor", "stairs", "elevator", "technical")),
                         apartments.where(Apartment.entrance == Issue.entrance).exists(),
                     ),
                 ),

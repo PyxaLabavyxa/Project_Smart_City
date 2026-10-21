@@ -1,9 +1,16 @@
-from sqlalchemy import select, and_, func, case
+from sqlalchemy import and_, case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import load_only, selectinload
 
-from app.database.models import User, Issue, IssuePhoto, Apartment, UserApartment, IssueEvent
 from app.database.enums import IssueCategory, IssuePriority, IssueStatus
+from app.database.models import (
+    Apartment,
+    Issue,
+    IssueEvent,
+    IssuePhoto,
+    User,
+    UserApartment,
+)
 
 
 class UserRepository:
@@ -18,7 +25,7 @@ class UserRepository:
                 selectinload(User.apartment_links)
                 .selectinload(UserApartment.apartment)
                 .selectinload(Apartment.house),
-                selectinload(User.issues)
+                selectinload(User.issues),
             )
         )
 
@@ -47,14 +54,18 @@ class IssueRepository:
         self.session = session
 
     async def create_issue(
-            self,
-            user_id: int,
-            house_id: int,
-            title: str,
-            description: str,
-            category: IssueCategory,
-            priority: IssuePriority,
-            photo_paths: list[str] | None = None,
+        self,
+        user_id: int,
+        house_id: int,
+        title: str,
+        description: str,
+        category: IssueCategory,
+        priority: IssuePriority,
+        photo_paths: list[str] | None = None,
+        entrance: int | None = None,
+        floor: int | None = None,
+        zone: str | None = None,
+        apartment_id: int | None = None,
     ) -> Issue:
         issue = Issue(
             user_id=user_id,
@@ -63,13 +74,22 @@ class IssueRepository:
             description=description,
             category=category,
             priority=priority,
+            entrance=entrance,
+            floor=floor,
+            zone=zone,
+            apartment_id=apartment_id,
             photos=[IssuePhoto(file_path=path) for path in (photo_paths or [])],
         )
 
         self.session.add(issue)
         await self.session.flush()
-        self.session.add(IssueEvent(issue_id=issue.id, status=IssueStatus.NEW.value,
-                                   created_at=issue.created_at))
+        self.session.add(
+            IssueEvent(
+                issue_id=issue.id,
+                status=IssueStatus.NEW.value,
+                created_at=issue.created_at,
+            )
+        )
         return issue
 
     async def get_last_issue(self, max_user_id: int, house_id: int) -> Issue | None:
@@ -83,44 +103,32 @@ class IssueRepository:
                     Issue.rejected_at.is_(None),
                 )
             )
-            .order_by(
-                Issue.created_at.desc(),
-                Issue.id.desc()
-            )
+            .order_by(Issue.created_at.desc(), Issue.id.desc())
             .limit(1)
-            .options(
-                load_only(
-                    Issue.description,
-                    Issue.status,
-                    Issue.title
-                )
-            )
+            .options(load_only(Issue.description, Issue.status, Issue.title))
         )
 
         result = await self.session.execute(stmt)
 
         return result.scalar_one_or_none()
 
-    async def get_issue_statuses(self, max_user_id: int, house_id: int) -> dict[str, int | None]:
+    async def get_issue_statuses(
+        self, max_user_id: int, house_id: int
+    ) -> dict[str, int | None]:
         stmt = (
             select(
                 func.coalesce(
-                    func.sum(
-                        case((Issue.status == IssueStatus.NEW, 1), else_=0)
-                    ),
-                    0
+                    func.sum(case((Issue.status == IssueStatus.NEW, 1), else_=0)), 0
                 ).label("new"),
                 func.coalesce(
                     func.sum(
                         case((Issue.status == IssueStatus.IN_PROGRESS, 1), else_=0)
                     ),
-                    0
+                    0,
                 ).label("in_progress"),
                 func.coalesce(
-                    func.sum(
-                        case((Issue.status == IssueStatus.RESOLVED, 1), else_=0)
-                    ),
-                    0
+                    func.sum(case((Issue.status == IssueStatus.RESOLVED, 1), else_=0)),
+                    0,
                 ).label("resolved"),
             )
             .join(User, Issue.user_id == User.id)

@@ -1,12 +1,25 @@
-from maxapi.utils.inline_keyboard import InlineKeyboardBuilder, AttachmentType
-from maxapi.types import CallbackButton, OpenAppButton, LinkButton
+from maxapi.types import CallbackButton, LinkButton, OpenAppButton
+from maxapi.utils.inline_keyboard import AttachmentType, InlineKeyboardBuilder
 
-from chatbot.lexicon.lexicon import LEXICON_INLINE_MENU, LEXICON_APP_SECTIONS, LEXICON
 from app.config_data.config import read_environment
+from app.database.enums import ISSUE_CATEGORIES_BY_SCOPE, IssueScope
+from app.services.report_locations import ReportHome
+from chatbot.lexicon.lexicon import (
+    LEXICON,
+    LEXICON_APP_SECTIONS,
+    LEXICON_INLINE_MENU,
+    REPORT_CATEGORY_LABELS,
+    REPORT_SCOPE_LABELS,
+)
 
 
 def mini_app_username() -> str:
-    username = read_environment().str("MINI_APP_BOT_USERNAME", "t282_hakaton_max_bot").strip().lstrip("@")
+    username = (
+        read_environment()
+        .str("MINI_APP_BOT_USERNAME", "t282_hakaton_max_bot")
+        .strip()
+        .lstrip("@")
+    )
     if not username:
         raise ValueError("MINI_APP_BOT_USERNAME не должен быть пустым")
     return username
@@ -46,22 +59,120 @@ def inl_menu() -> AttachmentType.INLINE_KEYBOARD:
         for section, text in LEXICON_APP_SECTIONS.items()
     ]
     for index in range(0, len(sections), 2):
-        builder.row(*sections[index:index + 2])
+        builder.row(*sections[index : index + 2])
 
     builder.row(mini_app_button())
     return builder.as_markup()
 
 
-def inl_confirm() -> AttachmentType.INLINE_KEYBOARD:
-    builder = InlineKeyboardBuilder()
-
-    builder.row(
-        CallbackButton(text=LEXICON["yes"], payload="yes"),
-        CallbackButton(text=LEXICON["no"], payload="no")
+def inl_confirm(confirmation_token: str) -> AttachmentType.INLINE_KEYBOARD:
+    return _report_markup(
+        [
+            [
+                CallbackButton(
+                    text=LEXICON["yes"], payload=f"report_send_{confirmation_token}"
+                ),
+                CallbackButton(
+                    text=LEXICON["no"], payload=f"report_cancel_{confirmation_token}"
+                ),
+            ],
+            [
+                CallbackButton(
+                    text=LEXICON["report_change_place"], payload="report_edit_place"
+                ),
+                CallbackButton(
+                    text=LEXICON["report_change_category"],
+                    payload="report_edit_category",
+                ),
+            ],
+            [mini_app_button()],
+        ]
     )
 
-    builder.row(mini_app_button())
+
+def _report_markup(rows):
+    builder = InlineKeyboardBuilder()
+    for index, row in enumerate(rows):
+        if index == 0:
+            for button in row:
+                builder.add(button)
+        else:
+            builder.row(*row)
     return builder.as_markup()
+
+
+def inl_report_homes(homes: list[ReportHome]):
+    rows = []
+    for home in homes:
+        address = home.address if len(home.address) <= 90 else home.address[:87] + "…"
+        rows.append(
+            [
+                CallbackButton(
+                    text=f"{address}, кв. {home.number}",
+                    payload=f"report_home_{home.apartment_id}",
+                )
+            ]
+        )
+    rows.extend(
+        [
+            [CallbackButton(text=LEXICON["back_to_menu"], payload="back_to_menu")],
+            [mini_app_button()],
+        ]
+    )
+    return _report_markup(rows)
+
+
+def inl_report_scopes():
+    rows = [
+        [CallbackButton(text=label, payload=f"report_scope_{scope}")]
+        for scope, label in REPORT_SCOPE_LABELS.items()
+    ]
+    rows.append([CallbackButton(text=LEXICON["back_to_menu"], payload="back_to_menu")])
+    return _report_markup(rows)
+
+
+def inl_report_place_back(*, entrance: int | None = None):
+    rows = []
+    if entrance is not None:
+        rows.append(
+            [
+                CallbackButton(
+                    text=f"Мой подъезд · {entrance}",
+                    payload=f"report_entrance_{entrance}",
+                )
+            ]
+        )
+    rows.extend(
+        [
+            [
+                CallbackButton(
+                    text=LEXICON["report_change_place"], payload="report_edit_place"
+                )
+            ],
+            [CallbackButton(text=LEXICON["back_to_menu"], payload="back_to_menu")],
+        ]
+    )
+    return _report_markup(rows)
+
+
+def inl_report_categories(scope: IssueScope):
+    buttons = [
+        CallbackButton(text=label, payload=f"report_category_{code}")
+        for code, label in REPORT_CATEGORY_LABELS.items()
+        if code in ISSUE_CATEGORIES_BY_SCOPE[scope]
+    ]
+    rows = [buttons[index : index + 2] for index in range(0, len(buttons), 2)]
+    rows.extend(
+        [
+            [
+                CallbackButton(
+                    text=LEXICON["report_change_place"], payload="report_edit_place"
+                )
+            ],
+            [CallbackButton(text=LEXICON["back_to_menu"], payload="back_to_menu")],
+        ]
+    )
+    return _report_markup(rows)
 
 
 def inl_houses(houses: list[tuple[int, str, int]]) -> AttachmentType.INLINE_KEYBOARD:

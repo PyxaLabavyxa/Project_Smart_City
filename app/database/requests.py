@@ -1,14 +1,15 @@
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database.repositories.repositories import UserRepository, IssueRepository
 from app.database.enums import IssueCategory, IssuePriority
-from app.database.models import User, Issue, Apartment, UserApartment
+from app.database.models import Apartment, Issue, User, UserApartment
+from app.database.repositories.repositories import IssueRepository, UserRepository
 
 
-
-async def create_user_if_exist(session: AsyncSession, max_user_id: int, name: str) -> None:
+async def create_user_if_exist(
+    session: AsyncSession, max_user_id: int, name: str
+) -> None:
     users = UserRepository(session)
 
     if not await users.user_exist(max_user_id):
@@ -21,16 +22,19 @@ async def create_user_if_exist(session: AsyncSession, max_user_id: int, name: st
                 raise
 
 
-
 async def create_issue(
-        session: AsyncSession,
-        max_user_id: int,
-        house_id: int,
-        description: str,
-        title: str,
-        category: IssueCategory,
-        priority: IssuePriority,
-        photo_paths: list[str] | None = None,
+    session: AsyncSession,
+    max_user_id: int,
+    house_id: int,
+    description: str,
+    title: str,
+    category: IssueCategory,
+    priority: IssuePriority,
+    photo_paths: list[str] | None = None,
+    entrance: int | None = None,
+    floor: int | None = None,
+    zone: str | None = None,
+    apartment_id: int | None = None,
 ) -> Issue:
     issues = IssueRepository(session)
     user = await get_issue_author(session, max_user_id, house_id)
@@ -43,10 +47,16 @@ async def create_issue(
         category=category,
         priority=priority,
         photo_paths=photo_paths,
+        entrance=entrance,
+        floor=floor,
+        zone=zone,
+        apartment_id=apartment_id,
     )
 
 
-async def get_issue_author(session: AsyncSession, max_user_id: int, house_id: int) -> User:
+async def get_issue_author(
+    session: AsyncSession, max_user_id: int, house_id: int
+) -> User:
     stmt = (
         select(User)
         .join(UserApartment, UserApartment.user_id == User.id)
@@ -60,7 +70,9 @@ async def get_issue_author(session: AsyncSession, max_user_id: int, house_id: in
     return user
 
 
-async def get_user_houses(session: AsyncSession, max_user_id: int) -> list[tuple[int, str, int]]:
+async def get_user_houses(
+    session: AsyncSession, max_user_id: int
+) -> list[tuple[int, str, int]]:
     from app.database.models import House
 
     rows = await session.execute(
