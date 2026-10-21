@@ -151,12 +151,24 @@ export function OnboardingProvider({ userId, children, deferAutomatic = false }:
         if (next === null) finish(); else move(next);
         return;
       }
-      const viewport = { width: window.innerWidth, height: window.innerHeight };
+      const visible = window.visualViewport;
+      const viewport = {
+        width: Math.min(window.innerWidth, visible?.width ?? window.innerWidth),
+        height: Math.min(window.innerHeight, visible?.height ?? window.innerHeight),
+        left: visible?.offsetLeft ?? 0,
+        top: visible?.offsetTop ?? 0,
+      };
+      const panel = card.current.parentElement;
+      panel?.style.setProperty("--tour-width", `${Math.min(440, viewport.width - 24)}px`);
+      panel?.style.setProperty("--tour-height", `${viewport.height}px`);
       const guideHeight = card.current.previousElementSibling?.getBoundingClientRect().height ?? 0;
       const above = !!steps[step].guide;
-      const cardRect = card.current.getBoundingClientRect();
       const navigationHeight = document.querySelector('nav[aria-label="Основная навигация"]')?.getBoundingClientRect().height ?? 78;
-      const viewportKey = `${viewport.width}:${viewport.height}`;
+      const maxCardHeight = Math.max(80, viewport.height - navigationHeight - guideHeight - 28);
+      card.current.style.maxHeight = `${maxCardHeight}px`;
+      card.current.style.minHeight = `${Math.min(220, maxCardHeight)}px`;
+      const cardRect = card.current.getBoundingClientRect();
+      const viewportKey = `${viewport.width}:${viewport.height}:${viewport.left}:${viewport.top}`;
       if (found !== fitted || viewportKey !== fittedViewport) {
         restoreFit();
         fitted = found;
@@ -175,24 +187,34 @@ export function OnboardingProvider({ userId, children, deferAutomatic = false }:
           const room = Math.max(120, viewport.height - cardRect.height - 100);
           if (natural.height > room) {
             const scale = room / natural.height;
-            found.style.zoom = String(scale);
-            found.style.width = `${natural.width / scale}px`;
+            if (CSS.supports("zoom", "1")) {
+              found.style.zoom = String(scale);
+              found.style.width = `${natural.width / scale}px`;
+            } else {
+              found.style.maxHeight = `${room}px`;
+              found.style.overflowY = "auto";
+            }
           }
         }
         if (["issue-controls", "plan-map", "utility-bill"].includes(steps[step].target) && natural.height > available) {
           const scale = available / natural.height;
-          found.style.zoom = String(scale);
-          found.style.width = `${natural.width / scale}px`;
+          if (CSS.supports("zoom", "1")) {
+            found.style.zoom = String(scale);
+            found.style.width = `${natural.width / scale}px`;
+          } else {
+            found.style.maxHeight = `${available}px`;
+            found.style.overflowY = "auto";
+          }
         }
       }
       const rect = found.getBoundingClientRect();
-      const size = `${viewport.width}:${viewport.height}:${Math.round(cardRect.height)}:${Math.round(rect.height)}`;
+      const size = `${viewportKey}:${Math.round(cardRect.height)}:${Math.round(rect.height)}`;
       if (found !== target || size !== lastSize) {
         target = found;
         lastSize = size;
         if (above) {
-          const bottom = viewport.height - navigationHeight - 16;
-          const headroom = cardRect.height + (steps[step].guide === "hanging" ? guideHeight : 0) + 32;
+          const bottom = viewport.top + viewport.height - navigationHeight - 16;
+          const headroom = viewport.top + cardRect.height + (steps[step].guide === "hanging" ? guideHeight : 0) + 32;
           if (steps[step].target === "camera-report") {
             window.scrollTo({ top: 0, behavior: "instant" });
             const cameraButton = found.getBoundingClientRect();
@@ -201,7 +223,7 @@ export function OnboardingProvider({ userId, children, deferAutomatic = false }:
           else if (rect.top < headroom) window.scrollBy({ top: rect.top - headroom, behavior: "instant" });
         } else {
           const freeHeight = viewport.height - cardRect.height - navigationHeight - 48;
-          const desiredTop = Math.max(16, Math.min(80, (freeHeight - rect.height) / 2));
+          const desiredTop = viewport.top + Math.max(16, Math.min(80, (freeHeight - rect.height) / 2));
           const nextScroll = Math.max(0, window.scrollY + rect.top - desiredTop);
           window.scrollTo({ top: nextScroll, behavior: "instant" });
         }
@@ -213,8 +235,10 @@ export function OnboardingProvider({ userId, children, deferAutomatic = false }:
     const timer = window.setInterval(update, 150);
     window.addEventListener("scroll", schedule, true);
     window.addEventListener("resize", schedule);
+    window.visualViewport?.addEventListener("resize", schedule);
+    window.visualViewport?.addEventListener("scroll", schedule);
     update();
-    return () => { restoreFit(); clearInterval(timer); cancelAnimationFrame(frame); window.removeEventListener("scroll", schedule, true); window.removeEventListener("resize", schedule); };
+    return () => { restoreFit(); clearInterval(timer); cancelAnimationFrame(frame); window.removeEventListener("scroll", schedule, true); window.removeEventListener("resize", schedule); window.visualViewport?.removeEventListener("resize", schedule); window.visualViewport?.removeEventListener("scroll", schedule); };
   }, [step, pathname, destination, excluded, finish, move]);
   const current = step === null ? null : steps[step];
   const visibleSteps = steps.filter(item => !excluded.includes(item.target));

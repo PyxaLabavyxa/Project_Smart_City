@@ -11,7 +11,6 @@ from PIL import Image, ImageDraw, ImageFont
 from sqlalchemy import select
 
 from app.database.models import CompanyHouse, House
-from app.paths import project_path
 
 ASSETS = Path(__file__).resolve().parents[1] / "staff_web" / "assets"
 INK = "#073448"
@@ -69,7 +68,6 @@ def poster_image(url: str, address: str) -> Image.Image:
     # A4 at 300 dpi; QR modules remain whole pixels with an untouched quiet zone.
     page = Image.new("RGB", (2480, 3508), "white")
     draw = ImageDraw.Draw(page)
-    draw.rounded_rectangle((90, 90, 2390, 1450), radius=90, fill="#edf8fc")
     with Image.open(ASSETS / "domoved-wordmark.png") as logo:
         logo = logo.convert("RGBA")
         logo.thumbnail((730, 250), Image.Resampling.LANCZOS)
@@ -84,7 +82,7 @@ def poster_image(url: str, address: str) -> Image.Image:
         fill="#375b74",
         spacing=24,
     )
-    with Image.open(project_path("chatbot/assets/welcome-house.png")) as art:
+    with Image.open(ASSETS / "zhorik-invitation.png") as art:
         art = art.convert("RGBA")
         art.thumbnail((1090, 1090), Image.Resampling.LANCZOS)
         page.paste(art, (1260, 340), art)

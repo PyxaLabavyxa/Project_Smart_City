@@ -2,6 +2,15 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { tourLayout } from '../src/features/onboarding/tour-layout.ts';
 
+test('tour fits the visible viewport when iOS browser chrome offsets or shrinks it', () => {
+  const viewport = { left: 10, top: 58, width: 320, height: 430 };
+  const layout = tourLayout({ left: 24, top: 100, width: 288, height: 80 }, viewport, { width: 296, height: 240 }, 60);
+  assert.equal(layout.card.left, 22);
+  assert(layout.card.top >= viewport.top + 12);
+  assert.equal(layout.card.top + 240, viewport.top + viewport.height - 60 - 12);
+  assert(layout.spot.left >= viewport.left + 4);
+});
+
 test('tour controls stay in place when targets move between steps', () => {
   for (const viewport of [{ width: 320, height: 740 }, { width: 390, height: 844 }, { width: 1440, height: 1000 }]) {
     const card = { width: Math.min(328, viewport.width - 24), height: 260 };

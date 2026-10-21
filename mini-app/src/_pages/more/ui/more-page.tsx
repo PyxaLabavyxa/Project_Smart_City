@@ -20,6 +20,6 @@ export function MorePage() {
  return <SectionPage title="Ещё" description={`${house.address.replace(/^г\.\s*Казань,?\s*ул\.\s*/, "")} · Квартира ${house.residentApartment}`} backHref={null}>
   <div className={styles.content}><nav aria-label="Дополнительные разделы"><ul className={styles.menu}>{items.map(item => <li key={item.href}><Link href={item.href}><span className={styles.icon}><Icon name={item.icon} /></span><span><strong>{item.title}</strong><small>{item.description}</small></span><Icon name="arrow" size={17} /></Link></li>)}<li><button data-tour="replay-tour" type="button" className={styles.tutorial} onClick={start}><span className={styles.icon}><Icon name="play" /></span><span><strong>Как это работает</strong><small>Пройти обучение ещё раз</small></span><Icon name="arrow" size={17} /></button></li></ul></nav>
   <Link href="/contacts" className={styles.contactLink}><span className={styles.icon}><Icon name="phone" /></span><span>Контакты управляющей компании</span><Icon name="arrow" size={17} /></Link>
-  <div className={styles.footer}><Zhorik pose="wave" className={styles.mascot} /><div><BrandWordmark /><p>Ваш дом — рядом.</p></div></div></div>
+  <div className={styles.footer}><Zhorik pose="wave" className={styles.mascot} /><div><BrandWordmark /><p>Ваш дом — рядом</p></div></div></div>
  </SectionPage>;
 }

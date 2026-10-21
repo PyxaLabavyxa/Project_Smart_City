@@ -57,13 +57,16 @@ export function AppearanceSettingsPage() {
       <fieldset className={styles.themes}>
         <legend className={styles.srOnly}>Тема приложения</legend>
         {themes.map(item => <label key={item.value} className={styles.theme}>
-          <span className={styles.preview} data-theme-preview={item.value}><Icon name={item.icon} size={25} /></span>
-          <span className={styles.sectionText}><strong>{item.title}</strong><small>{item.text}</small></span>
+          <span className={styles.preview} data-theme-preview={item.value} aria-hidden="true">
+            <span className={styles.previewPage}><span className={styles.previewHeader} /><span className={styles.previewHouse}><Icon name="building" size={26} /></span><span className={styles.previewLine} /><span className={styles.previewRow} /><span className={styles.previewRow} /><span className={styles.previewNav}><i /><i /><i /></span></span>
+          </span>
+          <span className={styles.themeTitle}>{item.title}</span>
+          <span className={styles.srOnly}>{item.text}</span>
           <input type="radio" name="theme" value={item.value} checked={theme === item.value} onChange={() => chooseTheme(item.value)} />
           <span className={styles.selection} aria-hidden="true"><Icon name="check" size={17} /></span>
         </label>)}
       </fieldset>
-      <p className={styles.note}>Системная тема меняется вместе с настройками устройства. Ваш выбор сохранится на этом устройстве.</p>
+      <p className={styles.note}>Системная тема меняется вместе с настройками устройства. Светлая и тёмная остаются такими, как вы выбрали, независимо от темы MAX.</p>
       {themeError && <p role="alert" className={styles.error}>{themeError}</p>}
     </div>
   </SectionPage>;

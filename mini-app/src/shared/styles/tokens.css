@@ -1,5 +1,5 @@
 :root {
-  color-scheme: light;
+  color-scheme: only light;
   --u:min(1px,calc(100vw / 440));
   --color-bg:#f3fafc; --color-surface:#ffffff; --color-ink:#0a1036;
   --color-muted:#536b94; --color-line:#dae7f1; --color-primary:#0054e8;

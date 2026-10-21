@@ -20,7 +20,7 @@ export const viewport: Viewport = {
 export function RootLayout({ children, bridge }: Readonly<{ children: React.ReactNode; bridge: React.ReactNode }>) {
   return (
     <html lang="ru" suppressHydrationWarning>
-      <head>{bridge}</head>
+      <head><meta name="color-scheme" content="light dark" suppressHydrationWarning />{bridge}</head>
       <body><AppProviders><ApplicationShell>{children}</ApplicationShell></AppProviders></body>
     </html>
   );

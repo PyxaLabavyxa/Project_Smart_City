@@ -1,6 +1,6 @@
 @font-face { font-family: Onest; src: url('/fonts/onest-variable.ttf') format('truetype'); font-weight: 100 900; font-style: normal; font-display: swap; }
 * { box-sizing: border-box; }
-html { scroll-padding-bottom: 96px; scrollbar-width: none; }
+html { scroll-padding-bottom: 96px; scrollbar-width: none; -webkit-text-size-adjust:100%; text-size-adjust:100%; }
 html::-webkit-scrollbar { display: none; }
 body { margin: 0; background: var(--color-bg); color: var(--color-ink); font: var(--font-body)/1.4 Onest, 'Segoe UI', sans-serif; }
 h1, h2, h3 { overflow-wrap: anywhere; }
