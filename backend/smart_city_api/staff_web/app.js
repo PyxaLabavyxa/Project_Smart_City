@@ -49,6 +49,32 @@ const categoryIcons = { water: "water", heating: "bulb", electricity: "bulb", el
 const state = { profile: null, status: "", page: 1, total: 0, detail: null, listRequest: 0, detailRequest: 0, busy: false };
 const contactState = { request: 0, house: "", loaded: false, dirty: false, loading: false, saving: false };
 let searchTimer, toastTimer, messageAction, statusAction, rejectionAction;
+const replyDrafts = new Map();
+
+function rememberReply() {
+  if (!state.detail || !$("message-text")) return;
+  const text = $("message-text").value;
+  const photos = Array.from($("message-photos").files);
+  if (text || photos.length) replyDrafts.set(state.detail.id, { text, photos, action: messageAction });
+  else replyDrafts.delete(state.detail.id);
+}
+
+function restoreReply(id) {
+  const draft = replyDrafts.get(id);
+  if (!draft) return;
+  $("message-text").value = draft.text;
+  $("message-count").textContent = `${draft.text.length} / 1500`;
+  const transfer = new DataTransfer();
+  draft.photos.forEach(photo => transfer.items.add(photo));
+  $("message-photos").files = transfer.files;
+  if (draft.photos.length) $("chat-photo-hint").textContent = `Выбрано фото: ${draft.photos.length} / 10`;
+  messageAction = draft.action;
+}
+
+window.addEventListener("beforeunload", event => {
+  if (!replyDrafts.size) return;
+  event.preventDefault(); event.returnValue = "";
+});
 
 function escapeHtml(value) {
   return String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
@@ -73,6 +99,7 @@ function toast(text) {
   toastTimer = setTimeout(() => { $("toast").hidden = true; }, 5000);
 }
 function showLogin() {
+  replyDrafts.clear();
   confirmationDialog.close("cancel");
   $("camera-action-menu").hidePopover();
   window.resetCameraManagement?.();
@@ -193,6 +220,7 @@ async function openDetail(id) {
   try {
     const detail = await api(`/issues/${id}`);
     if (request !== state.detailRequest || !state.profile) return;
+    rememberReply();
     state.detail = detail; messageAction = statusAction = null;
     $("detail-number").textContent = `ОБРАЩЕНИЕ № ${detail.id}`;
     const place = [detail.address, detail.entrance && `подъезд ${detail.entrance}`, detail.floor != null && `этаж ${detail.floor}`, detail.apartment != null && `кв. ${detail.apartment}`, detail.zone && (zones[detail.zone] || detail.zone)].filter(Boolean).join(" · ");
@@ -223,8 +251,9 @@ async function openDetail(id) {
     $("status-form").addEventListener("submit", saveStatus);
     $("reject-form").addEventListener("submit", rejectIssue);
     $("message-form").addEventListener("submit", sendMessage);
-    $("message-photos").addEventListener("change", () => { messageAction = null; $("chat-photo-hint").textContent = `Выбрано фото: ${$("message-photos").files.length} / 10`; });
-    $("message-text").addEventListener("input", () => { $("message-count").textContent = `${$("message-text").value.length} / 1500`; });
+    restoreReply(id);
+    $("message-photos").addEventListener("change", () => { messageAction = null; $("chat-photo-hint").textContent = `Выбрано фото: ${$("message-photos").files.length} / 10`; rememberReply(); });
+    $("message-text").addEventListener("input", () => { $("message-count").textContent = `${$("message-text").value.length} / 1500`; rememberReply(); });
   } catch (error) { toast(error.message); }
 }
 function setBusy(value) {
@@ -279,6 +308,7 @@ async function sendMessage(event) {
     await api(`/issues/${detail.id}/messages${photos.length ? "/with-photos" : ""}`, { method: "POST", body });
     $("message-photos").value = ""; $("chat-photo-hint").textContent = "До 10 фото · JPG, PNG, WebP · до 10 МБ каждое";
     $("message-text").value = ""; $("message-count").textContent = "0 / 1500"; messageAction = null;
+    replyDrafts.delete(detail.id);
     toast(detail.resident_id ? "Сообщение добавлено в чат обращения." : "Заметка сохранена.");
     const updated = await api(`/issues/${detail.id}`); renderConversation(updated);
   } catch (error) { if ($("message-error")) showError("message-error", error.message); }
@@ -306,11 +336,9 @@ $("logout").addEventListener("click", async () => {
 $("refresh").addEventListener("click", loadList);
 $("refresh-detail").addEventListener("click", async () => {
   if (!state.detail) return;
-  const draft = $("message-text")?.value || "";
   const reason = $("reject-reason")?.value || "";
   await openDetail(state.detail.id);
   if ($("reject-reason")) $("reject-reason").value = reason;
-  if ($("message-text")) { $("message-text").value = draft; $("message-count").textContent = `${draft.length} / 1500`; }
 });
 document.querySelectorAll(".stat").forEach((button) => button.addEventListener("click", () => {
   state.status = button.dataset.status; state.page = 1; updateStatSelection(); loadList();
@@ -322,7 +350,7 @@ $("next-page").addEventListener("click", () => { if (state.page * issuePageSize 
 $("issues-body").addEventListener("click", (event) => { const button = event.target.closest("[data-open]"); if (button) openDetail(Number(button.dataset.open)); });
 $("close-detail").addEventListener("click", () => { if (!state.busy) $("issue-dialog").close(); });
 $("issue-dialog").addEventListener("cancel", (event) => { if (state.busy) event.preventDefault(); });
-$("issue-dialog").addEventListener("close", () => { state.detail = null; state.detailRequest++; $("detail-content").replaceChildren(); });
+$("issue-dialog").addEventListener("close", () => { rememberReply(); state.detail = null; state.detailRequest++; $("detail-content").replaceChildren(); });
 $("detail-content").addEventListener("click", (event) => {
   const chatPhoto = event.target.closest("[data-chat-photo]");
   if (chatPhoto) { $("full-photo").src = `${apiRoot}/chat-photos/${Number(chatPhoto.dataset.chatPhoto)}`; $("photo-dialog").showModal(); return; }

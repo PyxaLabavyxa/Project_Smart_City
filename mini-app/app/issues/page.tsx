@@ -1,5 +1,6 @@
 import { IssuesPage } from "@/_pages/issues";
-export default async function Page({ searchParams }: { searchParams: Promise<{ category?: string | string[] }> }) {
-  const { category } = await searchParams;
-  return <IssuesPage key={String(category ?? "")} initialCategory={typeof category === "string" ? category : ""} />;
+import { Suspense } from "react";
+import { SectionLoading } from "@/shared/ui/navigation/section-loading";
+export default function Page() {
+  return <Suspense fallback={<SectionLoading />}><IssuesPage /></Suspense>;
 }

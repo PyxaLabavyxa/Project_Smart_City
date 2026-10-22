@@ -23,6 +23,7 @@ from smart_city_api.schemas.cameras import (
     StaffCameraResponse,
     StaffCreateCamera,
     UpdateCamera,
+    UpdateCameraDetails,
 )
 from smart_city_api.services import camera_media
 from smart_city_api.services.access import require_house
@@ -304,11 +305,13 @@ async def camera_settings(session, user_id, camera_id, settings):
     )
 
 
-async def update_camera(session, user_id, camera_id, data: UpdateCamera, settings):
+async def update_camera(
+    session, user_id, camera_id, data: UpdateCamera | UpdateCameraDetails, settings
+):
     camera = await owned_camera(session, user_id, camera_id)
     original = stored_source(camera, settings)
-    source = data.connection()
-    if data.keep_password and original:
+    source = data.connection() if isinstance(data, UpdateCamera) else original
+    if isinstance(data, UpdateCamera) and data.keep_password and original:
         source.password = original.password
     visibility = "public" if data.is_public else "private"
 
@@ -318,15 +321,18 @@ async def update_camera(session, user_id, camera_id, data: UpdateCamera, setting
             row.name == data.name
             and row.note == data.note
             and row.visibility == visibility
-            and current is not None
-            and current.private_dict() == source.private_dict()
+            and (current.private_dict() if current else None)
+            == (source.private_dict() if source else None)
         )
 
     if unchanged(camera):
         return camera_response(camera, user_id)
     if camera_version(camera) != data.expected_version:
         raise HTTPException(409, "Камера уже изменена. Откройте настройки заново")
-    if original is None or original.private_dict() != source.private_dict():
+    connection_changed = isinstance(data, UpdateCamera) and (
+        original is None or original.private_dict() != source.private_dict()
+    )
+    if connection_changed:
         await camera_media.frame(source, settings)
     # Probe runs without a row lock; recheck under lock to avoid lost updates and
     # races with moderation/deletion while the camera was responding.
@@ -336,9 +342,10 @@ async def update_camera(session, user_id, camera_id, data: UpdateCamera, setting
     if camera_version(camera) != data.expected_version:
         raise HTTPException(409, "Камера уже изменена. Откройте настройки заново")
     camera.name, camera.note, camera.visibility = data.name, data.note, visibility
-    camera.source_type = source.source_type
-    camera.source_config = camera_media.encode(source, settings)
-    camera.preview_url = None
+    if connection_changed:
+        camera.source_type = source.source_type
+        camera.source_config = camera_media.encode(source, settings)
+        camera.preview_url = None
     camera.moderation_status = "pending" if data.is_public else "approved"
     camera.moderation_reason = camera.reviewed_at = camera.reviewed_by = None
     camera.captured_at = datetime.now(UTC)

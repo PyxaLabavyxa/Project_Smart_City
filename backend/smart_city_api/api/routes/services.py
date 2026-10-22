@@ -23,6 +23,7 @@ from smart_city_api.schemas.cameras import (
     CreateCamera,
     ProbeCamera,
     UpdateCamera,
+    UpdateCameraDetails,
 )
 from smart_city_api.services import camera_media, chat_photos
 from smart_city_api.services import cameras as camera_service
@@ -153,7 +154,11 @@ async def camera_settings(camera_id: int, request: Request, session: Session, us
 
 @router.post("/cameras/{camera_id}/settings", response_model=CameraResponse)
 async def update_camera(
-    camera_id: int, data: UpdateCamera, request: Request, session: Session, user: Resident
+    camera_id: int,
+    data: UpdateCamera | UpdateCameraDetails,
+    request: Request,
+    session: Session,
+    user: Resident,
 ):
     return await camera_service.update_camera(
         session, user.id, camera_id, data, request.app.state.settings

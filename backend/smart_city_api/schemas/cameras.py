@@ -7,8 +7,8 @@ from smart_city_api.core.camera_source import CameraConnectionType, CameraSource
 from smart_city_api.schemas.app import CameraResponse, Location
 
 
-class CameraInput(CameraSource):
-    source_type: CameraConnectionType = "snapshot"
+class CameraDetails(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     name: str = Field(min_length=1, max_length=200)
     note: str = Field(default="", max_length=1000)
     is_public: bool = Field(default=False, strict=True)
@@ -17,6 +17,10 @@ class CameraInput(CameraSource):
     @classmethod
     def trim_text(cls, value):
         return value.strip() if isinstance(value, str) else value
+
+
+class CameraInput(CameraSource, CameraDetails):
+    source_type: CameraConnectionType = "snapshot"
 
     def connection(self):
         return CameraSource.model_validate(
@@ -54,8 +58,11 @@ class CameraProbeResult(BaseModel):
     src: str
 
 
-class UpdateCamera(CameraInput):
+class UpdateCameraDetails(CameraDetails):
     expected_version: str = Field(pattern=r"^[a-f0-9]{64}$")
+
+
+class UpdateCamera(CameraInput, UpdateCameraDetails):
     keep_password: bool = Field(default=True, strict=True)
 
 

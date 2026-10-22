@@ -71,6 +71,19 @@ def test_materials_are_valid_and_match_documented_application_routes():
     # Preserve its operations and fields, allowing new routes and optional response fields.
     for path, operations in public_contract["paths"].items():
         for method, operation in operations.items():
+            if path == "/api/v1/cameras/{camera_id}/settings" and method == "post":
+                # Compatible extension: accept metadata alone as well as the deployed full edit.
+                current_operation = json.loads(json.dumps(contract["paths"][path][method]))
+                content = current_operation["requestBody"]["content"]["application/json"]
+                original = operation["requestBody"]["content"]["application/json"]["schema"]
+                assert original == {"$ref": "#/components/schemas/UpdateCamera"}
+                assert content["schema"]["anyOf"] == [
+                    original,
+                    {"$ref": "#/components/schemas/UpdateCameraDetails"},
+                ]
+                content["schema"] = original
+                assert current_operation == operation
+                continue
             assert contract["paths"][path][method] == operation
     for name, schema in public_contract["components"]["schemas"].items():
         current = dict(contract["components"]["schemas"][name])

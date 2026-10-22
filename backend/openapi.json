@@ -2028,7 +2028,15 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateCamera"
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/UpdateCamera"
+                  },
+                  {
+                    "$ref": "#/components/schemas/UpdateCameraDetails"
+                  }
+                ],
+                "title": "Data"
               }
             }
           }
@@ -5512,6 +5520,23 @@
       },
       "CreateCamera": {
         "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 1000,
+            "title": "Note",
+            "default": ""
+          },
+          "is_public": {
+            "type": "boolean",
+            "title": "Is Public",
+            "default": false
+          },
           "source_type": {
             "type": "string",
             "enum": [
@@ -5575,23 +5600,6 @@
             ],
             "title": "Rtsp Port"
           },
-          "name": {
-            "type": "string",
-            "maxLength": 200,
-            "minLength": 1,
-            "title": "Name"
-          },
-          "note": {
-            "type": "string",
-            "maxLength": 1000,
-            "title": "Note",
-            "default": ""
-          },
-          "is_public": {
-            "type": "boolean",
-            "title": "Is Public",
-            "default": false
-          },
           "place": {
             "$ref": "#/components/schemas/Location"
           },
@@ -5604,8 +5612,8 @@
         "additionalProperties": false,
         "type": "object",
         "required": [
-          "source_url",
           "name",
+          "source_url",
           "place",
           "request_id"
         ],
@@ -7736,6 +7744,24 @@
       },
       "StaffCreateCamera": {
         "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 1000,
+            "title": "Note",
+            "default": ""
+          },
+          "is_public": {
+            "type": "boolean",
+            "const": true,
+            "title": "Is Public",
+            "default": true
+          },
           "source_type": {
             "type": "string",
             "enum": [
@@ -7799,24 +7825,6 @@
             ],
             "title": "Rtsp Port"
           },
-          "name": {
-            "type": "string",
-            "maxLength": 200,
-            "minLength": 1,
-            "title": "Name"
-          },
-          "note": {
-            "type": "string",
-            "maxLength": 1000,
-            "title": "Note",
-            "default": ""
-          },
-          "is_public": {
-            "type": "boolean",
-            "const": true,
-            "title": "Is Public",
-            "default": true
-          },
           "place": {
             "$ref": "#/components/schemas/Location"
           },
@@ -7834,8 +7842,8 @@
         "additionalProperties": false,
         "type": "object",
         "required": [
-          "source_url",
           "name",
+          "source_url",
           "place",
           "request_id",
           "house_id"
@@ -8147,6 +8155,28 @@
       },
       "UpdateCamera": {
         "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 1000,
+            "title": "Note",
+            "default": ""
+          },
+          "is_public": {
+            "type": "boolean",
+            "title": "Is Public",
+            "default": false
+          },
+          "expected_version": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Expected Version"
+          },
           "source_type": {
             "type": "string",
             "enum": [
@@ -8210,6 +8240,23 @@
             ],
             "title": "Rtsp Port"
           },
+          "keep_password": {
+            "type": "boolean",
+            "title": "Keep Password",
+            "default": true
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "expected_version",
+          "source_url"
+        ],
+        "title": "UpdateCamera"
+      },
+      "UpdateCameraDetails": {
+        "properties": {
           "name": {
             "type": "string",
             "maxLength": 200,
@@ -8231,21 +8278,15 @@
             "type": "string",
             "pattern": "^[a-f0-9]{64}$",
             "title": "Expected Version"
-          },
-          "keep_password": {
-            "type": "boolean",
-            "title": "Keep Password",
-            "default": true
           }
         },
         "additionalProperties": false,
         "type": "object",
         "required": [
-          "source_url",
           "name",
           "expected_version"
         ],
-        "title": "UpdateCamera"
+        "title": "UpdateCameraDetails"
       },
       "ValidationError": {
         "properties": {

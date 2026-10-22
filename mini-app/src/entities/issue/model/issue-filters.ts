@@ -27,6 +27,27 @@ export const initialIssueFilters: IssueFilters = {
   status: "all", category: "", entrance: "", floor: "", zone: "", query: "",
 };
 
+export function issueFiltersFromSearch(params: Pick<URLSearchParams, "get">, houseId: string): IssueFilters {
+  if (params.get("house") && params.get("house") !== houseId) return { ...initialIssueFilters };
+  const status = params.get("status") ?? "all";
+  return {
+    status: status === "active" || Object.hasOwn(issueStatusLabels, status) ? status as IssueFilters["status"] : "all",
+    category: params.get("category") ?? "", entrance: params.get("entrance") ?? "",
+    floor: params.get("floor") ?? "", zone: params.get("zone") ?? "", query: params.get("query") ?? "",
+    onlyMine: params.get("mine") === "1",
+  };
+}
+
+export function issueFiltersSearch(filters: IssueFilters, houseId: string): string {
+  const params = new URLSearchParams({ house: houseId });
+  for (const key of ["category", "entrance", "floor", "zone", "query"] as const) {
+    if (filters[key]) params.set(key, filters[key]);
+  }
+  if (filters.status !== "all") params.set("status", filters.status);
+  if (filters.onlyMine) params.set("mine", "1");
+  return params.toString();
+}
+
 export function selectIssueTab(filters: IssueFilters, tab: IssueTab): IssueFilters {
   return { ...filters, onlyMine: tab === "mine" };
 }

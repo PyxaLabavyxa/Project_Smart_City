@@ -78,3 +78,14 @@
 .mascot { width:calc(125 * var(--u)); height:calc(135 * var(--u)); flex-shrink:0; opacity:.77; }
 
 .websiteLink { min-width:0; max-width:65%; text-align:right; font-size:calc(15 * var(--u)); color:var(--color-action); text-decoration:underline; text-underline-offset:3px; overflow-wrap:anywhere; }
+.issueContactDialog { width:min(460px,calc(100% - 28px)); max-height:calc(100dvh - 40px); margin:auto; padding:22px; border:1px solid var(--color-line); border-radius:var(--radius-card); background:var(--color-surface); color:var(--color-ink); overflow-y:auto; }
+.issueContactDialog::backdrop { background:rgb(8 20 36 / 44%); }
+.issueContactDialog header { display:flex; align-items:center; gap:12px; justify-content:space-between; }
+.issueContactDialog h2 { margin:0; font-size:22px; }
+.issueContactDialog p { color:var(--color-muted); font-size:16px; line-height:1.5; }
+.issueContactClose { flex-shrink:0; display:grid; place-items:center; width:40px; height:40px; border:0; border-radius:10px; background:var(--color-soft); color:var(--color-ink); }
+.issueContactDialog ul { list-style:none; margin:16px 0; padding:0; }
+.issueContactDialog li + li { border-top:1px solid var(--color-line); }
+.issueContactDialog li a { display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:56px; padding:12px 0; font-size:17px; }
+.issueContactDialog li span { min-width:0; overflow-wrap:anywhere; }
+.issueContactDialog li svg { flex-shrink:0; }

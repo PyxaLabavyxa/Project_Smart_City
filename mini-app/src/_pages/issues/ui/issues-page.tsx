@@ -1,6 +1,8 @@
 "use client";
-import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { IssueList, useIssues, filterIssues, initialIssueFilters, selectIssueTab } from "@/entities/issue";
+import { issueFiltersFromSearch, issueFiltersSearch, type IssueFilters as Filters } from "@/entities/issue/model/issue-filters";
+import { useHouseSelection } from "@/entities/house";
 import { ReportIssueLink } from "@/features/report-issue";
 import { IssueFilters } from "./issue-filters";
 import { HomeAddress } from "@/_pages/home/ui/home-address";
@@ -13,9 +15,15 @@ const tabs = [
   { value: "mine", label: "Мои" },
 ] as const;
 
-export function IssuesPage({ initialCategory = "" }: { initialCategory?: string }) {
+export function IssuesPage() {
   const { issues, loading, error, reload } = useIssues();
-  const [filters, setFilters] = useState({ ...initialIssueFilters, category: initialCategory });
+  const { house } = useHouseSelection();
+  const params = useSearchParams();
+  const filters = issueFiltersFromSearch(params, house.id);
+  function setFilters(update: Filters | ((current: Filters) => Filters)) {
+    const next = typeof update === "function" ? update(filters) : update;
+    window.history.replaceState(null, "", `/issues?${issueFiltersSearch(next, house.id)}`);
+  }
   const visible = filterIssues(issues, filters);
   const mineCount = issues.filter(issue => issue.mine).length;
   const noPersonalIssues = filters.onlyMine && mineCount === 0;
@@ -26,7 +34,7 @@ export function IssuesPage({ initialCategory = "" }: { initialCategory?: string 
   return <div className={styles.content}><HomeAddress compact /><header className={styles.heading}>
     <h1>Обращения</h1>
   </header>
-    <div data-tour="issue-controls"><div data-tour="issue-status" className={styles.statusRow}>
+    <div><div data-tour="issue-status" className={styles.statusRow}>
       <nav className={styles.tabs} aria-label="Список обращений">{tabs.map(tab => {
         const count = tab.value === "mine" ? mineCount : issues.length;
         const selected = tab.value === "mine" ? !!filters.onlyMine : !filters.onlyMine;

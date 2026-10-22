@@ -1,7 +1,9 @@
 from unittest.mock import AsyncMock
 
 import pytest
+from app.database.models import HouseCamera
 from fastapi import HTTPException
+from sqlalchemy.orm import Session
 
 from smart_city_api.services import camera_media
 from tests.test_api import headers
@@ -140,3 +142,46 @@ def test_public_edit_requires_moderation_again_but_unchanged_retry_does_not(staf
     assert response.status_code == 200 and response.json()["moderation_status"] == "pending"
     assert client.get(BASE + camera + "/preview", headers=headers(102)).status_code == 404
     assert client.get(path, headers=headers(102)).status_code == 404
+
+
+@pytest.mark.parametrize("demo", [False, True])
+def test_metadata_and_access_can_change_without_a_frame(api, monkeypatch, demo):
+    client, engine, _ = api
+    camera = create(client, is_public=True)
+    if demo:
+        with Session(engine) as session:
+            row = session.get(HouseCamera, int(camera))
+            row.source_config = None
+            row.preview_url = "/images/cameras/demo.jpg"
+            session.commit()
+    path = BASE + camera + "/settings"
+    settings = client.get(path, headers=headers()).json()
+    frame = AsyncMock(side_effect=HTTPException(503, "Offline"))
+    monkeypatch.setattr(camera_media, "frame", frame)
+    payload = {
+        "name": "New name",
+        "note": "New note",
+        "is_public": False,
+        "expected_version": settings["version"],
+    }
+    assert client.post(path, headers=headers(102), json=payload).status_code == 404
+    response = client.post(path, headers=headers(), json=payload)
+    assert response.status_code == 200, response.text
+    assert response.json()["visibility"] == "private"
+    assert response.json()["name"] == "New name"
+    frame.assert_not_awaited()
+    updated = client.get(path, headers=headers()).json()
+    assert updated["source_url"] == settings["source_url"]
+    assert updated["password_set"] == settings["password_set"]
+    assert client.post(path, headers=headers(), json=payload).status_code == 200
+    assert (
+        client.post(path, headers=headers(), json={**payload, "note": "Stale"}).status_code == 409
+    )
+    # Incomplete/unsafe connections cannot fall through to the metadata-only variant.
+    for connection in ({"source_url": "http://127.0.0.1/private"}, {"username": "changed"}):
+        result = client.post(path, headers=headers(), json={**payload, **connection})
+        assert result.status_code == 422
+    if demo:
+        with Session(engine) as session:
+            row = session.get(HouseCamera, int(camera))
+            assert row.source_config is None and row.preview_url == "/images/cameras/demo.jpg"

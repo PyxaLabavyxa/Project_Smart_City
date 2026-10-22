@@ -1,6 +1,24 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { tourLayout } from '../src/features/onboarding/tour-layout.ts';
+import { tourFocusRange, tourLayout, tourNeedsCompact, tourScrollTop } from '../src/features/onboarding/tour-layout.ts';
+
+test('normal hints are kept when the target fits, compact hints follow available space', () => {
+  assert.equal(tourNeedsCompact({ width: 393, height: 851 }, 400, 280, 74), false);
+  assert.equal(tourNeedsCompact({ width: 393, height: 700 }, 400, 280, 74), true);
+  assert.equal(tourNeedsCompact({ width: 1440, height: 600 }, 300, 280, 0), true);
+  assert.equal(tourNeedsCompact({ width: 320, height: 1000 }, 400, 280, 74), false);
+  assert.equal(tourNeedsCompact({ width: 393, height: 786 }, 400, 280, 74), false);
+});
+
+test('a normal bill hint uses the remaining space before collapsing its heading', () => {
+  const viewport = { width: 393, height: 851 };
+  const targetHeight = 498.453125, cardHeight = 244.875, navigationHeight = 74.125;
+  assert.equal(tourNeedsCompact(viewport, targetHeight, cardHeight, navigationHeight), false);
+  assert.equal(tourNeedsCompact({ ...viewport, height: 700 }, targetHeight, cardHeight, navigationHeight), true);
+  const { card } = tourLayout({ left: 16, top: 30, width: 361, height: targetHeight }, viewport, { width: 369, height: cardHeight }, navigationHeight);
+  const range = tourFocusRange(viewport, { ...card, height: cardHeight }, 0, navigationHeight, false, 10);
+  assert(range.bottom - range.top >= targetHeight);
+});
 
 test('tour fits the visible viewport when iOS browser chrome offsets or shrinks it', () => {
   const viewport = { left: 10, top: 58, width: 320, height: 430 };
@@ -23,7 +41,7 @@ test('tour controls stay in place when targets move between steps', () => {
   }
 });
 
-test('full card highlight includes padding and stays clear of the tour controls', () => {
+test('full card highlight includes padding and is independent of the hint position', () => {
   const viewport = { width: 390, height: 844 };
   const card = { width: 328, height: 260 };
   const target = { left: 16, top: 16, width: 358, height: 350 };
@@ -33,7 +51,7 @@ test('full card highlight includes padding and stays clear of the tour controls'
   assert.equal(spot.width, 374);
   assert.equal(spot.height, 366);
   const tall = tourLayout({ ...target, height: 900 }, viewport, card);
-  assert(tall.spot.top + tall.spot.height <= tall.card.top - 12);
+  assert.equal(tall.spot.top + tall.spot.height, viewport.height - 78 - 12);
 });
 
 test('offscreen targets never produce negative spotlight dimensions', () => {
@@ -49,7 +67,7 @@ test('tour respects navigation safe area and fits a short mobile viewport', () =
   const card = { width: 296, height: 420 };
   const layout = tourLayout({ left: 16, top: 10, width: 288, height: 300 }, viewport, card, 102);
   assert.equal(layout.card.top, 12);
-  assert(layout.spot.top + layout.spot.height <= layout.card.top);
+  assert(layout.spot.top + layout.spot.height <= viewport.height - 102 - 12);
 });
 
 import { nextTourIndex } from '../src/features/onboarding/tour-navigation.ts';
@@ -80,4 +98,40 @@ test('location hint reserves space for the peeking mascot on a short screen', ()
   const layout = tourLayout({ left: 16, top: 297, width: 288, height: 170 }, { width: 320, height: 600 }, { width: 296, height: 220 }, 60, { placement: 'above', guideHeight: 0, topInset: 60 });
   assert(layout.card.top >= 60);
   assert(layout.card.top + 220 < layout.spot.top);
+});
+
+test('a visible control does not cause an unnecessary page jump', () => {
+  const range = { top: 16, bottom: 380 };
+  assert.equal(tourScrollTop({ left: 16, top: 88, width: 360, height: 84 }, 0, range), 0);
+  assert.equal(tourScrollTop({ left: 16, top: 100, width: 360, height: 200 }, 179, range), 179);
+  assert.equal(tourScrollTop({ left: 16, top: 300, width: 360, height: 200 }, 179, range), 299);
+});
+
+test('highlight space reserves the whole mascot rather than covering the filters', () => {
+  const viewport = { width: 393, height: 851 };
+  const card = { width: 369, height: 280 };
+  const layout = tourLayout({ left: 16, top: 195, width: 361, height: 435 }, viewport, card, 74);
+  const range = tourFocusRange(viewport, { top: layout.card.top, height: card.height }, 126, 74, false);
+  assert.equal(range.bottom + 126 + 16, layout.card.top);
+  const fitted = { left: 16, top: 195, width: 361, height: range.bottom - range.top };
+  const top = tourScrollTop(fitted, 0, range);
+  assert.equal(fitted.top - top, range.top);
+  assert.equal(fitted.top + fitted.height - top, range.bottom);
+});
+
+test('upper hints remain still as their target scrolls into view', () => {
+  const viewport = { width: 393, height: 851 };
+  const card = { width: 369, height: 220 };
+  const options = { placement: 'above', guideHeight: 230 };
+  const first = tourLayout({ left: 16, top: 650, width: 300, height: 50 }, viewport, card, 74, options);
+  const next = tourLayout({ left: 16, top: 550, width: 300, height: 50 }, viewport, card, 74, options);
+  assert.deepEqual(first.card, next.card);
+});
+
+test('a camera card is highlighted in full even when the guide overlaps it', () => {
+  const target = { left: 16, top: 30, width: 358, height: 285 };
+  const { spot } = tourLayout(target, { width: 390, height: 700 }, { width: 366, height: 290 }, 78);
+  assert.equal(spot.top, target.top - 8);
+  assert.equal(spot.height, target.height + 16);
+  assert.equal(spot.width, target.width + 16);
 });

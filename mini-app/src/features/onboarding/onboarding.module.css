@@ -1,4 +1,4 @@
-.overlay { position:fixed; inset:0; width:100%; max-width:none; height:100%; max-height:none; margin:0; padding:0; border:0; background:transparent; color:var(--color-ink); overflow:hidden; }
+.overlay { position:fixed; inset:0; width:100%; max-width:none; height:100%; max-height:none; margin:0; padding:0; border:0; background:transparent; color:var(--color-ink); overflow:hidden; touch-action:none; }
 .overlay::backdrop { background:transparent; }
 .shade { position:fixed; inset:0; background:rgb(5 24 38 / 44%); }
 .spot { position:fixed; border:2px solid var(--color-action); border-radius:12px; background:transparent; box-shadow:0 0 0 4px rgb(45 121 150 / 14%),0 0 0 9999px rgb(5 24 38 / 44%); pointer-events:none; }
@@ -14,6 +14,16 @@
 .card h2 { margin:0 0 10px; font-size:22px; line-height:1.25; letter-spacing:-.5px; }
 .card h2:focus { outline:none; }
 .card p { margin:0; font-size:14px; line-height:1.55; color:var(--color-muted); }
+.card .scrollHint { margin-top:8px; font-size:12px; }
+.card { touch-action:pan-y; }
+.panel[data-compact] .card { padding:6px 14px; }
+.panel[data-compact] .top { font-size:14px; font-weight:600; color:var(--color-ink); }
+.compactLabel { display:none; }
+.panel[data-compact] .stepLabel { display:none; }
+.panel[data-compact] .compactLabel { display:inline; }
+.panel[data-compact] .segments { margin:0 0 6px; }
+.panel[data-compact] .card h2 { position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+.panel[data-compact] .card footer { padding-top:4px; }
 .card footer,.card footer > div { display:flex; align-items:center; justify-content:space-between; gap:10px; }
 .card footer { margin:auto 0 0; padding-top:16px; gap:12px; }
 .back { display:inline-flex; align-items:center; justify-content:center; min-width:44px; min-height:46px; padding:6px; border:0; background:transparent; color:var(--color-primary); font:inherit; font-size:14px; cursor:pointer; }

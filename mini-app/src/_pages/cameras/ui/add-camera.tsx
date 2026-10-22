@@ -11,7 +11,7 @@ import { useRemote } from "@/shared/api/use-remote";
 import { record, string, number } from "@/shared/api/parse";
 import { parseCamera } from "../model/api";
 import { useCameraProbe } from "../model/use-camera-probe";
-import { cameraLinkError } from "../model/camera-source";
+import { cameraConnectionChanged, cameraLinkError } from "../model/camera-source";
 import { Icon } from "@/shared/ui/icon";
 import { useConfirmation } from "@/shared/ui/confirmation";
 import styles from "./cameras.module.css";
@@ -60,8 +60,9 @@ function CameraForm({ initial }: { initial?: CameraSettings }) {
   const api = useApi();
   const router = useRouter();
   const connection = { source_url: source.trim(), source_type: sourceType, username, password, auth_type: authType, profile: sourceType === "onvif" || sourceType === "auto" ? profile : "", rtsp_port: (sourceType === "onvif" || sourceType === "auto") && rtspPort ? Number(rtspPort) : null };
-  const linkError = cameraLinkError(source, sourceType);
-  const probe = useCameraProbe(api, `${endpoints.cameras(house.id)}/probe`, JSON.stringify({ ...connection, camera_id: initial ? Number(initial.id) : null, keep_password: keepPassword }), !linkError);
+  const connectionChanged = cameraConnectionChanged(initial, connection, keepPassword);
+  const linkError = connectionChanged ? cameraLinkError(source, sourceType) : "";
+  const probe = useCameraProbe(api, `${endpoints.cameras(house.id)}/probe`, JSON.stringify({ ...connection, camera_id: initial ? Number(initial.id) : null, keep_password: keepPassword }), !!source.trim() && !linkError);
   const probeStatus = source.trim() && linkError ? "invalid" : probe.status;
   const detectedType = probe.status === "success" ? probe.sourceType ?? sourceType : sourceType;
   const typeLabels: Record<string, string> = { snapshot: "Снимки", mjpeg: "MJPEG", hls: "HLS", rtsp: "RTSP", rtmp: "RTMP", onvif: "ONVIF", http_video: "HTTP-видео" };
@@ -81,13 +82,13 @@ function CameraForm({ initial }: { initial?: CameraSettings }) {
       return;
     }
     const apartment = place.zone === "apartment" ? house.apartments?.find(a => a.number === place.apartment) : null;
-    if (probe.status !== "success") return;
-    const data = { ...connection, source_type: detectedType, name: name.trim(), note: note.trim(), is_public: isPublic };
+    if (connectionChanged && probe.status !== "success") return;
+    const data = { ...(connectionChanged ? { ...connection, source_type: detectedType } : {}), name: name.trim(), note: note.trim(), is_public: isPublic };
     const body = JSON.stringify({ ...data, ...(!initial ? { place } : {}) });
     if (request.current?.body !== body) request.current = { body, id: crypto.randomUUID() };
     submitted.current = true; setSaving(true); setError("");
     try {
-      const payload = initial ? { ...data, keep_password: keepPassword, expected_version: initial.version }
+      const payload = initial ? { ...data, ...(connectionChanged ? { keep_password: keepPassword } : {}), expected_version: initial.version }
         : { ...data, request_id: request.current.id, place: { entrance: place.entrance, floor: place.floor, zone: place.zone, apartment_id: apartment?.id ?? null } };
       const camera = parseCamera(await api(initial ? `/cameras/${initial.id}/settings` : endpoints.cameras(house.id), { body: payload }), house);
       router.push(`/cameras/${camera.id}`);
@@ -160,7 +161,7 @@ function CameraForm({ initial }: { initial?: CameraSettings }) {
       {error && <p role="alert" className={styles.error}>{error}</p>}
       {initial && isPublic && <p className={styles.hint}>После изменения общедоступная камера снова отправится на модерацию.</p>}
       <div className={styles.formActions}>
-      <button className={styles.addButton} type="submit" disabled={saving || probe.status !== "success"}>{saving ? "Сохраняем…" : initial ? "Сохранить" : isPublic ? "Отправить на модерацию" : "Добавить камеру"}</button>
+      <button className={styles.addButton} type="submit" disabled={saving || (connectionChanged && probe.status !== "success")}>{saving ? "Сохраняем…" : initial ? "Сохранить" : isPublic ? "Отправить на модерацию" : "Добавить камеру"}</button>
       {initial && <button type="button" className={styles.deleteCamera} onClick={remove} disabled={saving}>Удалить камеру</button>}
       <Link className={styles.cancel} href={initial ? `/cameras/${initial.id}` : "/cameras"} aria-disabled={saving} onClick={event => { if (saving) event.preventDefault(); }}>Отмена</Link>
       </div>
