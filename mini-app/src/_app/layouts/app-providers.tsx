@@ -28,6 +28,8 @@ import { ConfirmationProvider } from "@/shared/ui/confirmation";
 import { InteractionMode } from "@/shared/ui/interaction-mode";
 import { preloadImages } from "@/shared/ui/image-preload";
 import { startupImageSources } from "@/shared/ui/artwork-assets";
+import { HomeStartup } from "./home-startup";
+import { CameraListProvider } from "@/_pages/cameras/model/camera-list-provider";
 
 const RegistrationScreen = dynamic(() => import("@/features/registration/registration").then(module => module.RegistrationScreen));
 const ChatHouseAccess = dynamic(() => import("@/features/registration/chat-house-access").then(module => module.ChatHouseAccess));
@@ -118,7 +120,11 @@ function ConnectedHouse({ userId, onboardingStatus, house, choices, choose, chil
   const utilitiesGateway = useMemo(() => createUtilitiesGateway(api, house.residentApartmentId!), [api, house.residentApartmentId]);
   return <HouseSelectionProvider house={currentHouse} choices={choices} choose={choose} refreshHomes={refreshHomes} apartmentsState={{ loading: !state.data && state.loading, error: state.data ? "" : state.error, reload: state.reload }}>
     <IssueProvider gateway={issueGateway}><MessageProvider gateway={messageGateway}>
-      <UtilitiesProvider gateway={utilitiesGateway}><OnboardingProvider userId={userId} status={onboardingStatus} deferAutomatic={deferOnboarding}>{children}</OnboardingProvider></UtilitiesProvider>
+      <UtilitiesProvider gateway={utilitiesGateway}>
+        <CameraListProvider><HomeStartup>
+          <OnboardingProvider userId={userId} status={onboardingStatus} deferAutomatic={deferOnboarding}>{children}</OnboardingProvider>
+        </HomeStartup></CameraListProvider>
+      </UtilitiesProvider>
     </MessageProvider></IssueProvider>
   </HouseSelectionProvider>;
 }

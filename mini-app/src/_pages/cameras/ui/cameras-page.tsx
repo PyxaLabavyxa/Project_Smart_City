@@ -7,7 +7,7 @@ import { LocationFilters, changeLocationFilter, formatLocation, useHouseSelectio
 import { useIssues } from "@/entities/issue";
 import { initialReportStep } from "@/entities/issue/model/issue-draft";
 import { cameraIssueContext } from "../model/camera-issue-context";
-import { useCameras } from "../model/api";
+import { useCameras } from "../model/camera-list-provider";
 import styles from "./cameras.module.css";
 import { CameraPreview } from "./camera-preview";
 import { Icon } from "@/shared/ui/icon";
@@ -46,7 +46,10 @@ function LoadedCamerasPage() {
       </div>
       <button type="button" className={styles.resetFilters} onClick={() => setFilters(emptyFilters)}>Сбросить фильтры</button>
     </fieldset>
-    <RequestState {...state} loading={state.loading && !state.data} page />
+    <RequestState {...state} loading={false} />
+    {state.loading && !state.data && <div role="status" aria-label="Загружаем камеры" className={styles.list}>
+      {[0, 1].map(index => <div key={index} className={styles.camera} aria-hidden="true"><div className={styles.skeletonPreview} /><div className={styles.cardBody}><div className={styles.skeletonTitle} /><div className={styles.skeletonText} /></div></div>)}
+    </div>}
     <ul className={styles.list} aria-label="Камеры дома" aria-busy={state.loading}>{cameras.map(camera => <li key={camera.id}>
       <Link data-tour="camera-card" href={`/cameras/${camera.id}`} className={styles.camera}>
         <CameraPreview camera={camera} compact />

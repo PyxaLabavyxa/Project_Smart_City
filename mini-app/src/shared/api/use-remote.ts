@@ -1,8 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 
-export function useRemote<T>(load: (signal: AbortSignal) => Promise<T>) {
-  const [state, setState] = useState<{ data?: T; loading: boolean; error: string }>({ loading: true, error: "" });
+export function useRemote<T>(load: (signal: AbortSignal) => Promise<T>, initialData?: () => T | undefined) {
+  const [state, setState] = useState<{ data?: T; loading: boolean; error: string }>(() => ({ data: initialData?.(), loading: true, error: "" }));
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     const controller = new AbortController();
