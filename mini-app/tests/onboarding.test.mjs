@@ -1,6 +1,24 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { tourFocusRange, tourLayout, tourNeedsCompact, tourScrollTop } from '../src/features/onboarding/tour-layout.ts';
+import { tourFocusRange, tourLayout, tourNeedsCompact, tourScrollTop, tourSidePlacement } from '../src/features/onboarding/tour-layout.ts';
+
+test('short wide screens put the hint beside the full target when a column fits', () => {
+  const viewport = { width: 1024, height: 600 };
+  const target = { left: 116, top: 16, width: 514, height: 498 };
+  const side = tourSidePlacement(target, viewport, 245, 0);
+  assert.deepEqual(side, { side: 'right', width: 366 });
+  const layout = tourLayout(target, viewport, { width: side.width, height: 270 }, 0, { placement: 'beside', side: side.side, guideHeight: 100 });
+  assert(layout.card.left > layout.spot.left + layout.spot.width);
+  assert(layout.card.left + side.width <= viewport.width - 12);
+  assert(layout.card.top >= 112);
+  assert(layout.card.top + 270 <= viewport.height - 12);
+  assert.equal(layout.spot.height, target.height + 16);
+  assert.equal(tourSidePlacement(target, { width: 393, height: 851 }, 245, 74), null);
+  assert.equal(tourSidePlacement(target, { width: 1024, height: 1000 }, 245, 0), null);
+  assert.equal(tourSidePlacement({ ...target, width: 820 }, viewport, 245, 0), null);
+  const opposite = tourSidePlacement({ ...target, left: 500, width: 400 }, viewport, 245, 0);
+  assert.equal(opposite.side, 'left');
+});
 
 test('normal hints are kept when the target fits, compact hints follow available space', () => {
   assert.equal(tourNeedsCompact({ width: 393, height: 851 }, 400, 280, 74), false);

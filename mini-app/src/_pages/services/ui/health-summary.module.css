@@ -68,3 +68,10 @@
 .allIssues > span { flex:1; }
 .allIssues > svg { flex-shrink:0; }
 @media(hover:hover) { .allIssues:hover { background:var(--color-soft); } }
+@media(min-width:768px) {
+  .layout { max-width:none; grid-template-columns:repeat(2,minmax(0,1fr)); gap:24px; align-items:start; }
+  .summary { grid-column:1 / -1; }
+  .history,.categories { padding:24px; }
+  .chart { height:auto; min-height:220px; max-height:320px; }
+  .allIssues { grid-column:1 / -1; width:100%; max-width:none; margin:0; }
+}

@@ -59,3 +59,9 @@
 .range { display:none; }
 .otherZones { margin-top:calc(16 * var(--u)); font-size:calc(14 * var(--u)); }
 .sheet { width:min(440px,100%); margin:auto auto 0; border-radius:22px 22px 0 0; }
+@media(min-width:768px) {
+  .searchRow { display:flex; align-items:center; justify-content:space-between; gap:24px; margin:0 0 24px; padding:20px; }
+  .search { flex:1; max-width:480px; }
+  .range { display:block; }
+  .sheet { width:520px; max-width:calc(100% - 48px); height:fit-content; max-height:calc(100dvh - 48px); margin:auto; border-radius:24px; }
+}

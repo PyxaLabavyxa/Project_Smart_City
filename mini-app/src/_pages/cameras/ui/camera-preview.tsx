@@ -103,7 +103,7 @@ export function CameraPreview({ camera, gateway: providedGateway, compact = fals
       {playbackControl}</div>
       <figcaption>{!overlayBadge && badge}<span>{!compact && "Обновлено "}{new Date(state.frame.capturedAt).toLocaleString("ru-RU", { day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit", timeZone:"Europe/Moscow" }).replace(",", "")}</span></figcaption>
     </figure> : <div className={styles.playerSurface}><div className={styles.previewPlaceholder} aria-busy={state.kind === "loading"} data-maintenance={camera.status === "maintenance" || undefined} role={state.kind === "error" ? "alert" : "status"}>
-      <div><Icon name={state.kind === "loading" ? "refresh" : "warning"} size={28} /><h2>{state.kind === "loading" ? "Загружаем кадр" : camera.status === "maintenance" ? "Техническое обслуживание" : "Нет изображения"}</h2><p>{state.kind === "loading" ? "Подключаемся к камере…" : state.message}</p></div>
+      <div><Icon name={state.kind === "loading" ? "refresh" : "warning"} size={28} /><h2>{state.kind === "loading" ? "Загружаем кадр" : camera.status === "maintenance" ? "Техническое обслуживание" : compact ? "Камера недоступна" : "Нет изображения"}</h2>{!compact && <p>{state.kind === "loading" ? "Подключаемся к камере…" : state.message}</p>}</div>
     </div>{state.kind === "error" && playbackControl}</div>}
     {overlayBadge && <span className={styles.overlayStatus}>{badge}</span>}
     {!overlayBadge && state.kind !== "ready" && !live && <div className={styles.previewAvailability}>{badge}</div>}

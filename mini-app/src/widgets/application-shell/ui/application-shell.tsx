@@ -5,6 +5,7 @@ import Link from "next/link";
 import { BottomNavigation } from "./bottom-navigation";
 import styles from "./shell.module.css";
 import { BrandWordmark } from "@/shared/ui/brand-mark";
+import { appIcon } from "@/shared/ui/artwork-assets";
 import { Icon } from "@/shared/ui/icon";
 import { ApartmentsReady } from "@/entities/house/ui/apartments-ready";
 import { NotificationBell } from "@/features/notifications/provider";
@@ -23,17 +24,18 @@ export function ApplicationShell({ children }: { children: ReactNode }) {
   const parent = parentPage(pathname);
   const inlineBack = pathname === "/contacts" || pathname.startsWith("/cameras/");
   const needsDirectory = ["/plan", "/house", "/info"].includes(pathname) || pathname.startsWith("/messages") || pathname.startsWith("/cameras");
-  return <div className={`${styles.app}${neighborChat ? ` ${styles.chatApp}` : ""}`}>
+  const immersive = neighborChat || pathname === "/issues/new";
+  return <div data-immersive={immersive || undefined} className={`${styles.app}${neighborChat ? ` ${styles.chatApp}` : ""}`}>
     <a className={styles.skip} href="#main">Перейти к содержимому</a>
-    {!neighborChat && pathname !== "/issues/new" && <header className={styles.header}>
-      <Link href="/" prefetch={false} className={styles.brand} aria-label="Домовед — главная"><BrandWordmark /></Link>
+    <header className={styles.header}>
+      <Link href="/" prefetch={false} className={styles.brand} aria-label="Домовед — главная"><span className={styles.railIcon} style={{ backgroundImage: `url(${appIcon.src})` }} aria-hidden="true" /><BrandWordmark /></Link>
       <NotificationBell />
       {inlineBack && <Link href={parent.href} className={styles.headerBack} aria-label={`Назад: ${parent.label}`}><Icon name="back" /></Link>}
-    </header>}
+    </header>
     <main id="main" data-page-path={pathname} className={`${styles.main}${neighborChat ? ` ${styles.chatMain}` : ""}`} tabIndex={-1}>
 {!neighborChat && !inlineBack && !["/", "/issues", "/utilities", "/cameras", "/more", "/issues/new", "/contacts", "/plan"].includes(pathname) && <Link href={parent.href} className={styles.back} aria-label={`Назад: ${parent.label}`}><Icon name="back" /><span>{parent.label}</span></Link>}
       <div key={pathname} className={`${styles.pageTransition}${neighborChat ? ` ${styles.chatTransition}` : ""}`}>{needsDirectory ? <ApartmentsReady>{children}</ApartmentsReady> : children}</div>
     </main>
-    {!neighborChat && pathname !== "/issues/new" && <BottomNavigation />}
+    <BottomNavigation />
   </div>;
 }

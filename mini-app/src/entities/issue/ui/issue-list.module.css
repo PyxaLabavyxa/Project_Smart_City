@@ -20,3 +20,14 @@
 .list[data-wide] .issue h2 { font-size:calc(18 * var(--u)); }
 .list[data-wide] .location { font-size:calc(14 * var(--u)); }
 .list[data-wide] .state { grid-row:1 / span 3; }
+@media(min-width:768px) {
+  .list { padding:4px 20px; }
+  .issue { min-height:100px; padding-block:18px; grid-template-columns:52px minmax(0,1fr) 16px; gap:18px; }
+  .categoryIcon { width:52px; height:52px; }
+  .list[data-wide] { padding-inline:22px; }
+  .list[data-wide] .issue { grid-template-columns:60px minmax(0,1fr) 16px; gap:20px; min-height:112px; }
+  .list[data-wide] .categoryIcon { width:60px; height:60px; }
+  .body { column-gap:24px; }
+  .list[data-wide] .state { min-width:150px; align-items:flex-end; }
+  .list[data-wide] .issue h2 { font-size:19px; }
+}

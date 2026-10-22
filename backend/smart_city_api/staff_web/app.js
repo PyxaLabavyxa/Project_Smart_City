@@ -531,6 +531,33 @@ cameraMenu.addEventListener("click", async event => {
   } catch (error) { showError("cameras-error", error.message); }
   finally { state.busy = false; control.disabled = false; }
 });
+const navigationToggle = $("workspace-nav-toggle");
+const workspaceNavigation = $("workspace-nav");
+const mobileNavigation = matchMedia("(max-width:900px)");
+function closeNavigation(restoreFocus = false) {
+  if (navigationToggle.getAttribute("aria-expanded") !== "true") return;
+  navigationToggle.setAttribute("aria-expanded", "false");
+  navigationToggle.closest(".sidebar").removeAttribute("data-nav-open");
+  if (restoreFocus) navigationToggle.focus();
+}
+navigationToggle.addEventListener("click", () => {
+  const open = navigationToggle.getAttribute("aria-expanded") !== "true";
+  navigationToggle.setAttribute("aria-expanded", String(open));
+  navigationToggle.closest(".sidebar").toggleAttribute("data-nav-open", open);
+});
+workspaceNavigation.addEventListener("click", event => {
+  if (mobileNavigation.matches && event.target.closest("a")) closeNavigation(event.detail === 0);
+});
+document.addEventListener("click", event => {
+  if (!workspaceNavigation.contains(event.target) && !navigationToggle.contains(event.target)) closeNavigation();
+});
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape" && navigationToggle.getAttribute("aria-expanded") === "true") {
+    event.preventDefault(); closeNavigation(true);
+  }
+});
+mobileNavigation.addEventListener("change", () => closeNavigation());
+
 function switchSection() {
   const registrations = window.location.hash === "#registrations";
   const contacts = window.location.hash === "#contacts";
@@ -548,6 +575,10 @@ function switchSection() {
     $(id).classList.toggle("active", active);
     if (active) $(id).setAttribute("aria-current", "page"); else $(id).removeAttribute("aria-current");
   }
+  const activeSection = workspaceNavigation.querySelector(".nav-item.active .nav-label").textContent;
+  $("mobile-section-name").textContent = activeSection;
+  navigationToggle.setAttribute("aria-label", `Разделы кабинета: ${activeSection}`);
+  closeNavigation();
   if (registrations && state.profile) void loadRegistrations();
   if (cameras && state.profile) void loadCameras();
   if (contacts && state.profile && !contactState.loaded && !contactState.loading) void window.loadStaffContacts?.();

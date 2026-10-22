@@ -82,3 +82,10 @@
 .chatAction { display:flex; width:100%; justify-content:center; min-height:calc(49 * var(--u)); margin:0; padding:calc(9 * var(--u)); background:var(--color-surface); border:1px solid var(--color-action); border-radius:calc(14 * var(--u)); color:var(--color-ink); font-size:calc(18 * var(--u)); font-weight:400; }
 .actionSpace { min-height:calc(70 * var(--u)); }
 .actionSpace:has(button) { min-height:calc(125 * var(--u)); }
+@media(min-width:768px) {
+  .layout { grid-template-columns:minmax(0,1.5fr) minmax(240px,1fr); gap:24px; align-items:start; }
+  .info,.history { padding:24px; }
+  .issueActions { position:static; transform:none; max-width:420px; width:100%; margin-top:24px; padding:0; }
+  .actionSpace,.actionSpace:has(button) { min-height:0; }
+  .chatAction { font-size:16px; }
+}

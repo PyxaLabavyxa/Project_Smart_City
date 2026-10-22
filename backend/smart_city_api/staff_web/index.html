@@ -8,11 +8,11 @@
   <title>Кабинет сотрудника · Домовед</title>
   <link rel="icon" href="/staff/assets/domoved-symbol.png" type="image/png">
   <link rel="preload" href="/staff/assets/onest-regular.ttf" as="font" type="font/ttf" crossorigin>
-  <link rel="stylesheet" href="/staff/style.css?v=20261022-motion-2">
+  <link rel="stylesheet" href="/staff/style.css?v=20261023-mobile-header-2">
   <link rel="stylesheet" href="/staff/camera-management.css?v=20261022-camera-contacts-3">
   <link rel="stylesheet" href="/staff/contacts-management.css?v=20261022-contact-patch-1">
   <script src="/staff/confirmation.js?v=20261021-motion-4" defer></script>
-  <script src="/staff/app.js?v=20261022-reply-drafts-1" defer></script>
+  <script src="/staff/app.js?v=20261023-mobile-header-2" defer></script>
   <link rel="stylesheet" href="/staff/notification-inbox.css?v=20261022-4">
   <script src="/staff/notification-inbox.js?v=20261022-2" defer></script>
   <link rel="stylesheet" href="/staff/staff-report.css?v=20261022-motion-1">
@@ -46,12 +46,15 @@
 
   <div id="workspace" class="workspace" hidden>
     <aside class="sidebar" aria-label="Разделы кабинета"><a class="brand" href="/staff/" aria-label="Домовед, главная"><img src="/staff/assets/domoved-wordmark.png" alt="Домовед" width="2172" height="724"></a><span class="sidebar-label">КАБИНЕТ УК</span>
-      <a id="nav-issues" class="nav-item active" href="#issues" aria-current="page"><span data-icon="inbox" aria-hidden="true"></span> Обращения <span id="nav-count" class="nav-count">0</span></a>
-      <a id="nav-registrations" class="nav-item" href="#registrations"><span data-icon="users" aria-hidden="true"></span> Заявки</a>
-      <a id="nav-cameras" class="nav-item" href="#cameras"><span data-icon="camera" aria-hidden="true"></span> Камеры</a>
-      <a id="nav-contacts" class="nav-item" href="#contacts"><span data-icon="phone" aria-hidden="true"></span> Контакты УК</a>
-      <a id="nav-max-chats" class="nav-item" href="#max-chats"><span data-icon="message" aria-hidden="true"></span> MAX-чаты</a>
-      <a id="nav-announcements" class="nav-item" href="#announcements"><span data-icon="send" aria-hidden="true"></span> Рассылки</a>
+      <button id="workspace-nav-toggle" class="workspace-nav-toggle" type="button" aria-controls="workspace-nav" aria-expanded="false" aria-label="Разделы кабинета: Обращения"><span data-icon="grid" aria-hidden="true"></span><strong id="mobile-section-name">Обращения</strong><span class="nav-toggle-caption">Разделы</span><span data-icon="chevron" aria-hidden="true"></span></button>
+      <nav id="workspace-nav" class="workspace-nav" aria-label="Разделы кабинета УК">
+      <a id="nav-issues" class="nav-item active" href="#issues" aria-current="page"><span data-icon="inbox" aria-hidden="true"></span><span class="nav-label">Обращения</span><span id="nav-count" class="nav-count">0</span></a>
+      <a id="nav-registrations" class="nav-item" href="#registrations"><span data-icon="users" aria-hidden="true"></span><span class="nav-label">Заявки</span></a>
+      <a id="nav-cameras" class="nav-item" href="#cameras"><span data-icon="camera" aria-hidden="true"></span><span class="nav-label">Камеры</span></a>
+      <a id="nav-contacts" class="nav-item" href="#contacts"><span data-icon="phone" aria-hidden="true"></span><span class="nav-label">Контакты УК</span></a>
+      <a id="nav-max-chats" class="nav-item" href="#max-chats"><span data-icon="message" aria-hidden="true"></span><span class="nav-label">MAX-чаты</span></a>
+      <a id="nav-announcements" class="nav-item" href="#announcements"><span data-icon="send" aria-hidden="true"></span><span class="nav-label">Рассылки</span></a>
+      </nav>
       <div class="sidebar-note"><span class="note-icon" data-icon="message" aria-hidden="true"></span><strong>Давайте будем ближе</strong><p>Жители пишут в Домоведе.<br>Вы помогаете дому здесь.</p><span class="note-caption"><span class="pulse-dot"></span> Вместе заботимся о доме</span></div>
       <div class="employee"><span id="avatar" class="avatar">УК</span><div><strong id="staff-name"></strong><small>Сотрудник УК</small></div><button id="logout" class="logout" title="Выйти" aria-label="Выйти из кабинета"><span data-icon="logout" aria-hidden="true"></span></button></div>
     </aside>
@@ -122,13 +125,13 @@
         </section>
       </div>
       <div id="max-chats-section" class="content" hidden>
-        <div class="page-heading"><div><h1>MAX-чаты</h1><p class="muted">Подключите домовые группы к Домоведу, чтобы жители видели меню, а УК могла отправлять объявления.</p></div><button id="refresh-max-chats" class="secondary">Обновить</button></div>
+        <div class="page-heading"><div><h1>MAX-чаты</h1><p class="muted">Подключите домовые группы к Домоведу, чтобы жители видели меню, а УК могла отправлять объявления.</p></div><button id="refresh-max-chats" class="secondary section-refresh" type="button" aria-label="Обновить MAX-чаты"><span data-icon="refresh" aria-hidden="true"></span>Обновить</button></div>
         <p class="notice">В группе — одно закреплённое меню и объявления от УК. Обращения, смена статусов и личная переписка в чат не публикуются.</p>
         <p id="max-chats-error" class="error" role="alert" hidden></p>
         <section class="inbox" aria-label="Подключения домовых чатов"><div class="table-scroll"><table><thead><tr><th>Дом</th><th>Группа MAX</th><th>Подключение</th><th>Управление</th></tr></thead><tbody id="max-chats-body"></tbody></table></div><p id="max-chats-empty" class="empty" hidden>Нет доступных домов. Обратитесь к администратору УК.</p></section>
       </div>
       <div id="announcements-section" class="content" hidden>
-        <div class="page-heading"><div><h1>Рассылки</h1><p class="muted">Важные объявления жителям: подготовьте текст, выберите дома и проверьте сообщение перед отправкой.</p></div><button id="new-announcement" class="secondary">Новое объявление</button></div>
+        <div class="page-heading"><div><h1>Рассылки</h1><p class="muted">Важные объявления жителям: подготовьте текст, выберите дома и проверьте сообщение перед отправкой.</p></div><div class="section-heading-actions"><button id="refresh-announcements" class="secondary" type="button" aria-label="Обновить рассылки"><span data-icon="refresh" aria-hidden="true"></span>Обновить</button><button id="new-announcement" class="secondary" type="button" aria-label="Новое объявление"><span data-icon="plus" aria-hidden="true"></span>Новое объявление</button></div></div>
         <p id="announcements-error" class="error" role="alert" hidden></p>
         <div class="announcement-layout">
           <section class="inbox announcement-editor" aria-labelledby="announcement-editor-title">
@@ -180,7 +183,7 @@
             </fieldset></form>
           </section>
           <aside class="announcement-side"><section class="inbox announcement-live-preview" aria-labelledby="announcement-preview-label"><h2 id="announcement-preview-label">В домовом чате</h2><p class="form-help">Предпросмотр текста. Здесь ничего не отправляется.</p><div class="announcement-bubble"><span class="announcement-sender">🔔 Уведомление от УК</span><span class="announcement-topic" id="announcement-live-topic">⚠️ Отключение коммунальных услуг</span><h3 id="announcement-live-title">Заголовок объявления</h3><p id="announcement-live-text">Текст появится здесь, когда вы начнёте писать.</p></div><p id="announcement-recipient-count" class="form-help">Выберите дома для отправки</p></section>
-          <section class="inbox announcement-history" aria-labelledby="announcement-history-label"><div class="recipient-heading"><h2 id="announcement-history-label">Ваши объявления</h2><button id="refresh-announcements" class="chat-text-button">Обновить</button></div><div id="announcement-history"></div><div class="announcement-pagination"><button id="announcement-prev" class="secondary">Назад</button><span id="announcement-page" class="form-help"></span><button id="announcement-next" class="secondary">Далее</button></div></section></aside>
+          <section class="inbox announcement-history" aria-labelledby="announcement-history-label"><div class="recipient-heading"><h2 id="announcement-history-label">Ваши объявления</h2></div><div id="announcement-history"></div><div class="announcement-pagination"><button id="announcement-prev" class="secondary">Назад</button><span id="announcement-page" class="form-help"></span><button id="announcement-next" class="secondary">Далее</button></div></section></aside>
         </div>
       </div>
     </main>

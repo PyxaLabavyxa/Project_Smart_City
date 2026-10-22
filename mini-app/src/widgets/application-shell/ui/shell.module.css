@@ -23,8 +23,37 @@
 .chatApp { position:fixed; inset:0; min-height:0; height:100dvh; overflow:hidden; }
 .chatMain { height:100%; margin:0; padding:0; overflow:hidden; }
 .chatTransition { height:100%; }
+.app[data-immersive] > .header,.app[data-immersive] > .nav { display:none; }
 .pageTransition { min-width:0; }
+.railIcon { display:none; }
 @media(prefers-reduced-motion:no-preference) {
   :global(:root:not([data-motion-input="keyboard"]):not([data-tour-active])) .pageTransition { opacity:1; transition:opacity var(--motion-panel) var(--ease-out); }
   @starting-style { :global(:root:not([data-motion-input="keyboard"]):not([data-tour-active])) .pageTransition { opacity:0; } }
+}
+@media(min-width:768px) {
+  .app { --rail-width:88px; width:100%; display:grid; grid-template-columns:var(--rail-width) minmax(0,1fr); grid-template-rows:84px minmax(0,1fr); }
+  .header,.app[data-immersive] > .header { grid-column:2; display:flex; justify-content:flex-end; min-height:84px; margin:0 28px; padding:0; }
+  .brand { position:fixed; top:24px; left:20px; width:48px; height:48px; z-index:35; }
+  .brand > span { display:none; }
+  .brand .railIcon { display:block; width:48px; height:48px; background-position:center; background-size:contain; background-repeat:no-repeat; }
+  .main { grid-column:2; margin:0 28px; padding:12px 0 40px; }
+  .nav,.app[data-immersive] > .nav { position:fixed; top:0; bottom:0; left:0; transform:none; display:flex; flex-direction:column; gap:8px; width:var(--rail-width); min-height:0; padding:100px 10px 24px; border:0; border-right:1px solid var(--color-line); border-radius:0; box-shadow:none; overflow-y:auto; }
+  .nav a { flex-shrink:0; min-height:68px; padding:12px 4px; gap:6px; border-radius:12px; font-size:11px; }
+  .nav a[aria-current] { background:var(--color-soft); color:var(--color-action); }
+  .nav svg { flex-shrink:0; width:24px; height:24px; }
+  .headerBack { position:static; margin-right:auto; min-height:44px; order:-1; }
+  .chatApp { position:relative; inset:auto; height:100dvh; min-height:0; }
+  .chatMain { height:calc(100dvh - 84px); padding:0 0 24px; overflow:hidden; }
+  .chatTransition { border:1px solid var(--color-line); border-radius:var(--radius-card); overflow:hidden; }
+  .main[data-page-path="/issues/new"] { padding-bottom:40px; }
+}
+@media(min-width:1100px) {
+  .app { --rail-width:216px; }
+  .brand { left:24px; width:168px; height:auto; overflow:visible; }
+  .brand > span { display:block; width:100%; }
+  .brand .railIcon { display:none; }
+  .header { margin-inline:40px; }
+  .main { margin-inline:40px; }
+  .nav { padding-inline:16px; gap:6px; }
+  .nav a { flex-direction:row; justify-content:flex-start; gap:14px; min-height:54px; padding:14px 16px; font-size:16px; }
 }

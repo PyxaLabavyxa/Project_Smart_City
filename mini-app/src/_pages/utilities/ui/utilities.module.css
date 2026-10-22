@@ -84,3 +84,17 @@
 .paymentFootnote { display:flex; align-items:center; justify-content:center; gap:8px; margin:16px 0 0; color:var(--color-muted); font-size:12px; }
 
 .sbpIcon { width:30px; height:35px; flex-shrink:0; object-fit:contain; }
+@media(min-width:768px) {
+  .tabs { max-width:420px; margin-block:20px 24px; }
+  .layout { grid-template-columns:minmax(0,1.5fr) minmax(220px,1fr); gap:24px; align-items:start; }
+  .panel { padding:28px; }
+  .account { padding:20px; }
+  .accountHeading { align-items:flex-start; }
+  .meterGrid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px; padding-bottom:0; }
+  .meter { padding:20px; }
+  .meterField { flex-wrap:wrap; }
+  .meterInput { width:100%; max-width:none; }
+  .meterActions { position:static; transform:none; width:auto; max-width:420px; margin:24px 0 0 auto; }
+  .dialog { inset:0; width:520px; max-width:calc(100% - 48px); max-height:calc(100dvh - 48px); height:fit-content; margin:auto; padding:24px; border-radius:24px; }
+  .handle { display:none; }
+}

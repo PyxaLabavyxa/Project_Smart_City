@@ -33,6 +33,7 @@ export function IssuesPage() {
   if ((loading || error) && !issues.length) return <RequestState loading={loading} error={error} reload={reload} page />;
   return <div className={styles.content}><HomeAddress compact /><header className={styles.heading}>
     <h1>Обращения</h1>
+    <div className={styles.create}><ReportIssueLink /></div>
   </header>
     <div><div data-tour="issue-status" className={styles.statusRow}>
       <nav className={styles.tabs} aria-label="Список обращений">{tabs.map(tab => {
@@ -53,6 +54,5 @@ export function IssuesPage() {
       <p>{noPersonalIssues ? "Здесь появятся обращения, которые вы создадите в этом доме." : issues.length ? "Измените условия поиска или сбросьте фильтры." : "Расскажите о проблеме — нажмите «Создать обращение»."}</p>
       {issues.length > 0 && !noPersonalIssues && <button type="button" className={styles.emptyButton} onClick={resetFilters}>Сбросить фильтры</button>}
     </div>}
-    <div className={styles.create}><ReportIssueLink /></div>
   </div>;
 }

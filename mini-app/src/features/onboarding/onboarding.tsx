@@ -6,7 +6,7 @@ import { nextTourIndex } from "./tour-navigation";
 import { StartupScreen } from "@/shared/ui/startup-screen";
 import { Icon } from "@/shared/ui/icon";
 import { tourSteps as steps } from "./steps";
-import { tourFocusRange, tourLayout, tourNeedsCompact, tourScrollTop, type TourRect } from "./tour-layout";
+import { tourFocusRange, tourLayout, tourNeedsCompact, tourScrollTop, tourSidePlacement, type TourRect } from "./tour-layout";
 import styles from "./onboarding.module.css";
 import { prepareTourImages } from "./prepare";
 
@@ -114,28 +114,34 @@ export function OnboardingTour({ onStateChange, onFinish }: { onStateChange: (ta
       const panel = card.current.parentElement;
       panel?.style.setProperty("--tour-width", `${Math.min(440, viewport.width - 24)}px`);
       panel?.style.setProperty("--tour-height", `${viewport.height}px`);
-      const navigationHeight = document.querySelector('#main + nav')?.getBoundingClientRect().height ?? 0;
+      const navigationRect = document.querySelector('#main + nav')?.getBoundingClientRect();
+      const navigationHeight = navigationRect && navigationRect.top > viewport.height / 2 ? navigationRect.height : 0;
       const viewportKey = `${viewport.width}:${viewport.height}:${viewport.left}:${viewport.top}`;
-      if (canCompactHint(steps[step].target) && measuredViewport !== viewportKey) {
+      const adaptiveHint = canCompactHint(steps[step].target);
+      const besideEligible = viewport.width >= 768 && !steps[step].guide;
+      if ((adaptiveHint || besideEligible) && measuredViewport !== viewportKey) {
         panel?.removeAttribute("data-compact");
         card.current.style.maxHeight = "none";
         card.current.style.minHeight = "220px";
         normalCardHeight = card.current.getBoundingClientRect().height;
         measuredViewport = viewportKey;
       }
-      const compact = canCompactHint(steps[step].target) && tourNeedsCompact(viewport, found.getBoundingClientRect().height, normalCardHeight, navigationHeight);
+      const beside = besideEligible ? tourSidePlacement(found.getBoundingClientRect(), viewport, normalCardHeight, navigationHeight) : null;
+      if (beside) panel?.style.setProperty("--tour-width", `${beside.width}px`);
+      const compact = !beside && adaptiveHint && tourNeedsCompact(viewport, found.getBoundingClientRect().height, normalCardHeight, navigationHeight);
       panel?.toggleAttribute("data-compact", compact);
       const artworkHeight = card.current.previousElementSibling?.getBoundingClientRect().height ?? 0;
-      const guideHeight = canCompactHint(steps[step].target) ? 0 : artworkHeight;
-      const above = !!steps[step].guide;
+      const sideGuide = steps[step].target === "issue-location" && matchMedia("(min-width:900px) and (max-height:850px)").matches;
+      const guideHeight = (adaptiveHint && !beside) || sideGuide ? 0 : artworkHeight;
+      const above = !!steps[step].guide && !matchMedia("(min-width:768px)").matches;
       const maxCardHeight = Math.max(80, viewport.height - navigationHeight - guideHeight - 28);
       card.current.style.maxHeight = `${maxCardHeight}px`;
       card.current.style.minHeight = compact ? "0px" : `${Math.min(220, maxCardHeight)}px`;
       const cardRect = card.current.getBoundingClientRect();
-      const options = above ? { placement: "above" as const, guideHeight: steps[step].guide === "hanging" ? guideHeight : 0, topInset: steps[step].guide === "inset" ? guideHeight + 4 : undefined } : undefined;
+      const options = beside ? { placement: "beside" as const, side: beside.side, guideHeight } : above ? { placement: "above" as const, guideHeight: steps[step].guide === "hanging" ? guideHeight : 0, topInset: steps[step].guide === "inset" ? guideHeight + 4 : undefined } : undefined;
       const layout = tourLayout(found.getBoundingClientRect(), viewport, cardRect, navigationHeight, options);
-      let range = tourFocusRange(viewport, { top: layout.card.top, height: cardRect.height }, above ? options!.guideHeight : guideHeight, navigationHeight, above, canCompactHint(steps[step].target) ? 10 : 16);
-      if (canCompactHint(steps[step].target)) {
+      let range = beside ? { top: viewport.top + 16, bottom: viewport.top + viewport.height - navigationHeight - 16 } : tourFocusRange(viewport, { top: layout.card.top, height: cardRect.height }, above ? options!.guideHeight : guideHeight, navigationHeight, above, adaptiveHint ? 10 : 16);
+      if (adaptiveHint && !beside) {
         const clearOfGuide = tourFocusRange(viewport, { top: layout.card.top, height: cardRect.height }, artworkHeight, navigationHeight, false);
         if (found.getBoundingClientRect().height <= clearOfGuide.bottom - clearOfGuide.top) range = clearOfGuide;
       }
@@ -152,6 +158,8 @@ export function OnboardingTour({ onStateChange, onFinish }: { onStateChange: (ta
         lastGeometry = geometry;
         // Fixed controls and the report sheet do not move with document scrolling.
         let fixed = !!found.closest("dialog");
+        const sheet = found.closest("dialog");
+        if (sideGuide && sheet) sheet.scrollTop = tourScrollTop(rect, sheet.scrollTop, range);
         for (let node: HTMLElement | null = found; node && !fixed; node = node.parentElement) fixed = getComputedStyle(node).position === "fixed";
         const top = fixed ? window.scrollY : tourScrollTop(rect, window.scrollY, range);
         if (Math.abs(top - window.scrollY) > 1) {

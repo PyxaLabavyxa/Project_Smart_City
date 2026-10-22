@@ -139,3 +139,17 @@
 .houseAddress { display:flex; align-items:flex-start; gap:8px; margin:4px 0 8px; color:var(--color-muted); font-size:13px; line-height:1.5; overflow-wrap:anywhere; }
 .houseAddress svg { flex-shrink:0; margin-top:1px; color:var(--color-action); }
 .sheet .houseAddress { margin-bottom:12px; }
+@media(min-width:768px) {
+  .page { max-width:760px; }
+  .pageHeader { height:48px; margin-top:0; }
+  .pageHeader > span { visibility:hidden; }
+  .form { padding-bottom:0; }
+  .actions { position:static; transform:none; width:100%; max-width:none; justify-content:flex-end; margin-top:12px; padding-top:20px; border-top:1px solid var(--color-line); }
+  .actions::before { display:none; }
+  .actions .primary,.actions .previous { flex:0 1 220px; min-height:52px; font-size:17px; }
+  .sheet { inset:0; margin:auto; height:fit-content; max-height:calc(100dvh - 48px); border-radius:24px; }
+  .handle { display:none; }
+}
+@media(min-width:900px) and (max-height:850px) {
+  .sheet[data-tour-preview] { inset:12px 0 auto; margin:0 auto; max-height:calc(100dvh - 260px); overflow-y:auto; }
+}

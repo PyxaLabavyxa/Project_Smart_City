@@ -9,3 +9,9 @@
 .link small { display:block; color:var(--color-muted); font-size:13px; }
 
 .hero[data-long-title] h1 { font-size:calc(32 * var(--u)); }
+@media(min-width:768px) {
+  .hero { margin-bottom:28px; }
+  .hero h1 { font-size:34px; }
+  .hero[data-long-title] h1 { font-size:32px; }
+  .description { font-size:18px; }
+}

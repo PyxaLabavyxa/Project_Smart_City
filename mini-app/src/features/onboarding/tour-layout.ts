@@ -7,15 +7,28 @@ export function tourNeedsCompact(viewport: TourViewport, targetHeight: number, n
   return targetHeight + normalCardHeight + bottomInset + 32 > viewport.height;
 }
 
-export function tourLayout(target: TourRect, viewport: TourViewport, card: { width: number; height: number }, bottomInset = viewport.width <= 760 ? 78 : 0, options?: { placement: "above"; guideHeight: number; topInset?: number }) {
+/** Use a separate column only when stacking would hide the unscaled target. */
+export function tourSidePlacement(target: TourRect, viewport: TourViewport, cardHeight: number, bottomInset: number) {
+  if (viewport.width < 768 || !tourNeedsCompact(viewport, target.height, cardHeight, bottomInset)) return null;
+  const left = target.left - (viewport.left ?? 0) - 28;
+  const right = (viewport.left ?? 0) + viewport.width - target.left - target.width - 28;
+  if (Math.max(left, right) < 320) return null;
+  return { side: right >= left ? "right" as const : "left" as const, width: Math.min(440, Math.max(left, right)) };
+}
+
+export function tourLayout(target: TourRect, viewport: TourViewport, card: { width: number; height: number }, bottomInset = viewport.width <= 760 ? 78 : 0, options?: { placement: "above"; guideHeight: number; topInset?: number } | { placement: "beside"; guideHeight: number; side: "left" | "right" }) {
   const margin = 12;
   const originX = viewport.left ?? 0;
   const originY = viewport.top ?? 0;
   const width = Math.min(card.width, viewport.width - margin * 2);
   const height = Math.min(card.height, Math.max(0, viewport.height - bottomInset - margin * 2));
-  const left = originX + (viewport.width - width) / 2;
+  const left = options?.placement === "beside"
+    ? clamp(options.side === "right" ? target.left + target.width + 16 : target.left - width - 16, originX + margin, originX + viewport.width - width - margin)
+    : originX + (viewport.width - width) / 2;
   const lowestTop = originY + viewport.height - bottomInset - height - margin;
-  const top = options ? Math.min(originY + (options.topInset ?? margin), lowestTop) : lowestTop;
+  const top = options?.placement === "beside"
+    ? clamp(originY + (viewport.height - height) / 2, originY + options.guideHeight + margin, lowestTop)
+    : options ? Math.min(originY + (options.topInset ?? margin), lowestTop) : lowestTop;
   const x = clamp(target.left - 8, originX + 4, originX + viewport.width - 4);
   const y = clamp(target.top - 8, originY + 4, originY + viewport.height - 4);
   const right = clamp(target.left + target.width + 8, x, originX + viewport.width - 4);

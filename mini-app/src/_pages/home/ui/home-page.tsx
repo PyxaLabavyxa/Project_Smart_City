@@ -21,7 +21,7 @@ export function HomePage() {
  const score = houseHealthScore(issues);
  const active = issues.filter(issue => issue.status !== "completed").sort((a,b) => Date.parse(b.createdAt)-Date.parse(a.createdAt));
  const threads = messageThreads(messages).filter(item => item.apartment !== house.residentApartment && findApartment(house,item.apartment));
- return <>
+ return <div className={styles.dashboard}>
   <header className={styles.heading}><HouseArt className={styles.houseIllustration} /><HomeAddress /></header>
   <div className={styles.healthCard}>
    <Link data-tour="house-health" href="/health" className={styles.healthLink}><strong>{issuesLoading || issuesError ? "—" : score}<small>/100</small><Icon name="arrow" size={18} /></strong><span>Здоровье дома</span></Link>
@@ -34,5 +34,5 @@ export function HomePage() {
   <section className={styles.issues} aria-labelledby="active-issues"><div className={styles.sectionHead}><h2 id="active-issues">Обращения в доме</h2><Link href="/issues">Все {active.length} <Icon name="arrow" size={16} /></Link></div>{issuesLoading || issuesError ? <RequestState loading={issuesLoading} error={issuesError} reload={reload} /> : active.length ? <IssueList issues={active.slice(0,3)} /> : <p className={styles.empty}>Активных обращений нет. В доме всё спокойно.</p>}</section>
   <div className={styles.homeHouse}><HousePreview showHeading /></div>
   <HouseWorks />
- </>;
+ </div>;
 }
