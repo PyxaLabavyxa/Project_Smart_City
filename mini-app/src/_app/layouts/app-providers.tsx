@@ -67,7 +67,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
 function AuthenticatedApp({ children, mode }: { children: ReactNode; mode: "local" | "max" }) {
   const load = useCallback(async (signal: AbortSignal) => {
     const initData = maxLaunchData();
-    const api = createApiClient();
+    const api = createApiClient({ maxInitData: mode === "max" ? initData : undefined });
     const launch = (mode === "max" ? maxLaunchTarget() : undefined) ?? browserLaunchTarget(window.location.search);
     const path = new URL(launchNavigationHref(launch) ?? window.location.href, window.location.origin).pathname;
     const authenticate = mode === "local" ? api(endpoints.localLogin, { body: {}, signal }) : initData ? api(endpoints.login, { body: { init_data: initData }, signal }) : Promise.resolve();

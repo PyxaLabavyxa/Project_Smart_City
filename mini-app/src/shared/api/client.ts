@@ -1,7 +1,8 @@
-import { launchTarget } from "./launch-route";
+import { launchTarget } from "./launch-route.ts";
 
 export class ApiError extends Error {
-  constructor(message: string, public status: number) { super(message); }
+  status: number;
+  constructor(message: string, status: number) { super(message); this.status = status; }
 }
 
 export function apiUrl(path: string) {
@@ -9,33 +10,51 @@ export function apiUrl(path: string) {
 }
 
 export type ApiClient = ReturnType<typeof createApiClient>;
-export function createApiClient() {
+export function createApiClient({ maxInitData = "" }: { maxInitData?: string } = {}) {
   const cache = new Map<string, { data: unknown; expires: number }>();
   const base = (process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api/v1").replace(/\/$/, "");
-  return async (path: string, options: { body?: unknown; method?: "DELETE"; signal?: AbortSignal; keepalive?: boolean; cacheFor?: number } = {}): Promise<unknown> => {
-    const cached = cache.get(path);
+  // Safari may reject third-party cookies when MAX Web runs as a home-screen app.
+  // Keep the normal cookie flow, then use the API's existing signed-launch-data
+  // authentication only if that session is unavailable. Never persist the data.
+  let useLaunchData = false;
+  return async (path: string, options: { body?: unknown; method?: "DELETE"; signal?: AbortSignal; keepalive?: boolean; cacheFor?: number; responseType?: "blob" } = {}): Promise<unknown> => {
+    const cacheKey = `${options.responseType ?? "json"}:${path}`;
+    const cached = cache.get(cacheKey);
     options.signal?.throwIfAborted();
     if (!options.method && options.body === undefined && options.cacheFor && cached && cached.expires > Date.now()) return cached.data;
     const multipart = options.body instanceof FormData;
     const timeout = AbortSignal.timeout(multipart ? 120000 : /\/cameras(?:\/|$)/.test(path) ? 30000 : 15000);
     const signal = options.signal ? AbortSignal.any([options.signal, timeout]) : timeout;
     try {
-      const response = await fetch(`${base}${path}`, {
+      const request: RequestInit = {
         method: options.method ?? (options.body === undefined ? "GET" : "POST"),
-        headers: options.body === undefined || multipart ? {} : { "Content-Type": "application/json" },
         credentials: "include",
         body: multipart ? options.body as FormData : options.body === undefined ? undefined : JSON.stringify(options.body),
         cache: "no-store", signal, keepalive: options.keepalive,
-      });
-      const text = await response.text();
+      };
+      const headers = new Headers(options.body === undefined || multipart ? {} : { "Content-Type": "application/json" });
+      const canUseLaunchData = !!maxInitData && path !== endpoints.login && path !== endpoints.localLogin && path !== endpoints.logout;
+      if (useLaunchData && canUseLaunchData) headers.set("Authorization", `Bearer ${maxInitData}`);
+      let response = await fetch(`${base}${path}`, { ...request, headers });
+      if (response.status === 401 && canUseLaunchData && !headers.has("Authorization")) {
+        signal.throwIfAborted();
+        useLaunchData = true;
+        headers.set("Authorization", `Bearer ${maxInitData}`);
+        response = await fetch(`${base}${path}`, { ...request, headers });
+      }
       let data: unknown;
-      try { data = text ? JSON.parse(text) : null; } catch { throw new ApiError("Сервер вернул некорректный ответ. Повторите попытку.", response.status); }
+      if (response.ok && options.responseType === "blob") data = await response.blob();
+      else {
+        const text = await response.text();
+        try { data = text ? JSON.parse(text) : null; } catch { throw new ApiError("Сервер вернул некорректный ответ. Повторите попытку.", response.status); }
+      }
       if (!response.ok) {
         const detail = data && typeof data === "object" && "detail" in data ? data.detail : undefined;
         throw new ApiError(typeof detail === "string" ? detail : response.status === 422 ? "Проверьте заполненные поля." : "Не удалось выполнить запрос. Повторите попытку.", response.status);
       }
+      if (path === endpoints.logout) { maxInitData = ""; useLaunchData = false; }
       if ((options.method || options.body !== undefined) && path !== endpoints.presence && !/^\/issues\/[1-9]\d*\/presence$/.test(path)) cache.clear();
-      else if (options.cacheFor) cache.set(path, { data, expires: Date.now() + options.cacheFor });
+      else if (options.cacheFor) cache.set(cacheKey, { data, expires: Date.now() + options.cacheFor });
       return data;
     } catch (error) {
       if (error instanceof ApiError) throw error;
@@ -74,7 +93,14 @@ export function maxLaunchData(): string {
   if (webApp?.initData) return webApp.initData;
   const params = new URLSearchParams(window.location.hash.slice(1));
   const values = params.getAll("WebAppData");
-  return values.length === 1 ? values[0] : "";
+  if (values.length) return values.length === 1 ? values[0] : "";
+  // The router may already have removed the hash. This is the same recovery
+  // source used by MAX Bridge, without depending on third-party sessionStorage.
+  try {
+    const initialUrl = window.performance.getEntriesByType("navigation")[0]?.name;
+    const initialValues = initialUrl ? new URLSearchParams(new URL(initialUrl).hash.slice(1)).getAll("WebAppData") : [];
+    return initialValues.length === 1 ? initialValues[0] : "";
+  } catch { return ""; }
 }
 
 export function maxLaunchTarget() {
