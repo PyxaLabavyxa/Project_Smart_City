@@ -78,6 +78,7 @@ function showLogin() {
   window.resetCameraManagement?.();
   window.resetStaffReport?.();
   window.resetChatManagement?.();
+  window.resetStaffInbox?.();
   state.profile = null; state.detail = null; state.listRequest++; state.detailRequest++;
   $("issue-dialog").close(); $("photo-dialog").close();
   $("full-photo").removeAttribute("src"); $("detail-content").replaceChildren();
@@ -119,6 +120,12 @@ async function enterWorkspace() {
   $("priority-filter").value = ""; $("search").value = "";
   $("no-houses").hidden = state.profile.houses.length > 0;
   $("login-screen").hidden = true; $("workspace").hidden = false; $("boot").hidden = true;
+  window.initStaffInbox?.({ api, esc, icon, date, open: href => {
+    const issue = /^#issue-([1-9]\d*)$/.exec(href);
+    location.hash = issue ? "#issues" : href;
+    switchSection();
+    if (issue) void openDetail(Number(issue[1]));
+  } });
   window.scrollTo(0, 0);
   updateStatSelection();
   await loadList();
@@ -169,12 +176,12 @@ function renderConversation(detail) {
   const atEnd = conversation.scrollHeight - conversation.scrollTop - conversation.clientHeight < 35;
   conversation.innerHTML = detail.messages.length ? detail.messages.map((message) => {
     const delivery = detail.notifications.find((notice) => notice.message_id === message.id);
-    const deliveryText = delivery ? { read: "Прочитано в мини-приложении", sent: "Уведомление отправлено в MAX", pending: "Ожидает отправки в MAX", retrying: "Бот повторит отправку в MAX", not_required: "Заметка УК" }[delivery.delivery] : "";
+    const deliveryText = delivery ? { read: "Прочитано в мини-приложении", in_app: "Сохранено в уведомлениях · житель в мини-приложении", muted: "Уведомления в MAX отключены жителем", sent: "Уведомление отправлено в MAX", pending: "Ожидает отправки в MAX", retrying: "Бот повторит отправку в MAX", not_required: "Заметка УК" }[delivery.delivery] : "";
     return `<div class="bubble ${message.direction}"><div class="message-top"><strong>${esc(message.author)}${message.direction === "staff" ? " · УК" : " · житель"}</strong><time>${esc(date(message.created_at, true))}</time></div><p>${esc(message.text)}</p>${message.photos?.length ? `<div class="photos">${message.photos.map((photo, index) => `<button type="button" class="photo-thumb" data-chat-photo="${Number(photo.id)}" aria-label="Открыть фото сообщения ${index + 1}"><img src="${esc(apiRoot + "/chat-photos/" + Number(photo.id))}" alt="Фото в сообщении ${index + 1}" loading="lazy"></button>`).join("")}</div>` : ""}${deliveryText ? `<div class="delivery-label">${esc(deliveryText)}</div>` : ""}</div>`;
   }).join("") : '<p class="conversation-empty">Здесь можно уточнить детали у жителя. Он ответит в чате обращения мини-приложения. Если чат закрыт, бот пришлёт уведомление.</p>';
   if (!detail.resident_id) conversation.querySelector(".conversation-empty")?.replaceChildren(document.createTextNode("Заметки по звонкам и уточнениям. Видны только УК."));
   conversation.scrollTop = atEnd ? conversation.scrollHeight : oldTop;
-  const pending = detail.notifications.filter((notice) => !["sent", "read", "not_required"].includes(notice.delivery)).length;
+  const pending = detail.notifications.filter((notice) => !["sent", "read", "not_required", "in_app", "muted"].includes(notice.delivery)).length;
   $("delivery-summary").textContent = pending ? `Уведомлений в очереди: ${pending}. Бот доставит их автоматически. Прочитанные в чате сообщения не дублируются.` : "Ответы и уточнения сохраняются в чате обращения.";
   $("history").innerHTML = detail.history.length ? detail.history.map((event) => `<li>${badge(event.status)}<time>${esc(date(event.created_at))}</time></li>`).join("") : `<li>${badge(detail.status)}<span class="muted">История изменений пока пуста</span></li>`;
   $("live-status").innerHTML = badge(detail.status);

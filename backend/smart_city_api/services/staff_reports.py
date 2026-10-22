@@ -4,6 +4,7 @@ import hashlib
 
 from app.database.enums import ISSUE_CATEGORIES_BY_SCOPE, IssuePriority, IssueStatus
 from app.database.models import Apartment, House, Issue, IssueEvent, User, UserApartment
+from app.services.inbox import issue_created
 from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -157,6 +158,7 @@ async def create_staff_issue(session, staff_id, data: StaffCreateIssue):
         session.add(issue)
         await session.flush()
         session.add(IssueEvent(issue_id=issue.id, status="new", created_at=issue.created_at))
+        await issue_created(session, issue, staff_id=staff_id)
         await session.commit()
     except IntegrityError:
         await session.rollback()

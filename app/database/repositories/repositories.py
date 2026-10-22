@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import load_only, selectinload
 
 from app.database.enums import IssueCategory, IssuePriority, IssueStatus
+from app.services.inbox import issue_created
 from app.database.models import (
     Apartment,
     Issue,
@@ -90,6 +91,7 @@ class IssueRepository:
                 created_at=issue.created_at,
             )
         )
+        await issue_created(self.session, issue)
         return issue
 
     async def get_last_issue(self, max_user_id: int, house_id: int) -> Issue | None:

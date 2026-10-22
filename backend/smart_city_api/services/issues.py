@@ -3,6 +3,7 @@ from datetime import UTC, datetime
 
 from app.database.enums import ISSUE_CATEGORIES_BY_SCOPE, IssuePriority, IssueStatus
 from app.database.models import Apartment, House, Issue, IssueEvent, IssuePhoto, StaffNotification
+from app.services.inbox import issue_created
 from fastapi import HTTPException
 from sqlalchemy import and_, or_, select, update
 from sqlalchemy.exc import IntegrityError
@@ -130,7 +131,9 @@ async def create_issue(
 
     def check_retry(existing: Issue):
         if existing.deleted_at is not None:
-            raise HTTPException(409, "Обращение удалено. Для нового обращения отправьте новую заявку")
+            raise HTTPException(
+                409, "Обращение удалено. Для нового обращения отправьте новую заявку"
+            )
         if existing.rejected_at is not None:
             raise HTTPException(
                 409, "Обращение отклонено. Для нового обращения отправьте новую заявку"
@@ -167,6 +170,7 @@ async def create_issue(
         session.add(
             IssueEvent(issue_id=issue.id, status=IssueStatus.NEW.value, created_at=issue.created_at)
         )
+        await issue_created(session, issue)
         await session.commit()
     except IntegrityError:
         await session.rollback()

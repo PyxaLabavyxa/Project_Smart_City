@@ -15,6 +15,7 @@ from app.database.models import (
     StaffUser,
     User,
 )
+from app.services.inbox import notify_residents
 from fastapi import HTTPException
 from sqlalchemy import func, or_, select, update
 from sqlalchemy.exc import IntegrityError
@@ -230,7 +231,9 @@ async def detail(session: AsyncSession, staff_id: int, issue_id: int) -> IssueDe
                     if n.max_user_id is None
                     else "sent"
                     if n.sent_at
-                    else "read"
+                    else {"online": "in_app", "preferences": "muted"}.get(
+                        n.suppression_reason, "read"
+                    )
                     if n.suppressed_at
                     else "retrying"
                     if n.attempts
@@ -358,6 +361,23 @@ async def perform_action(
         )
         session.add(notification)
         await session.flush()
+        await notify_residents(
+            session,
+            [issue.user_id],
+            key=f"staff-action:{notification.id}",
+            kind="issue_message" if kind == "message" else "issue_status",
+            title=f"УК ответила по обращению №{issue.id}"
+            if kind == "message"
+            else f"Изменён статус вашего обращения №{issue.id}: "
+            + {
+                IssueStatus.NEW: "ожидает рассмотрения",
+                IssueStatus.IN_PROGRESS: "в работе",
+                IssueStatus.RESOLVED: "решено",
+            }[body.status],
+            body=f"{issue.title}\n{body.text}" if kind == "message" else issue.title,
+            house_id=issue.house_id,
+            href=f"/issues/{issue.id}/chat" if kind == "message" else f"/issues/{issue.id}",
+        )
         result = ActionOutput(notification_id=notification.id)
         await session.commit()
         return result
@@ -426,6 +446,16 @@ async def reject_issue(
     try:
         await session.flush()
         notice_id = notice.id
+        await notify_residents(
+            session,
+            [issue.user_id],
+            key=f"staff-action:{notice_id}",
+            kind="issue_rejection",
+            title=f"Обращение №{issue.id} отклонено",
+            body=f"{issue.title}\nПричина: {body.reason}",
+            house_id=issue.house_id,
+            href="/issues",
+        )
         await session.commit()
     except IntegrityError:
         await session.rollback()

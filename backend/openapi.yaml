@@ -3,6 +3,240 @@ info:
   title: Домовед API
   version: 0.1.0
 paths:
+  /api/v1/me/inbox:
+    get:
+      tags:
+      - resident notifications
+      summary: Resident Inbox
+      operationId: resident_inbox_api_v1_me_inbox_get
+      security:
+      - MAXLaunchData: []
+      parameters:
+      - name: before
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: integer
+            minimum: 1
+          - type: 'null'
+          title: Before
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 100
+          minimum: 1
+          default: 30
+          title: Limit
+      - name: unread_only
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+          title: Unread Only
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InboxPage'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/me/inbox/count:
+    get:
+      tags:
+      - resident notifications
+      summary: Resident Count
+      operationId: resident_count_api_v1_me_inbox_count_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InboxCount'
+      security:
+      - MAXLaunchData: []
+  /api/v1/me/inbox/read-all:
+    post:
+      tags:
+      - resident notifications
+      summary: Resident Read All
+      operationId: resident_read_all_api_v1_me_inbox_read_all_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InboxReadAll'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InboxCount'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - MAXLaunchData: []
+  /api/v1/me/inbox/{notification_id}/read:
+    post:
+      tags:
+      - resident notifications
+      summary: Resident Read
+      operationId: resident_read_api_v1_me_inbox__notification_id__read_post
+      security:
+      - MAXLaunchData: []
+      parameters:
+      - name: notification_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Notification Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InboxCount'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/staff/inbox:
+    get:
+      tags:
+      - staff notifications
+      summary: Staff Inbox
+      operationId: staff_inbox_api_v1_staff_inbox_get
+      security:
+      - StaffSession: []
+      parameters:
+      - name: before
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: integer
+            minimum: 1
+          - type: 'null'
+          title: Before
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 100
+          minimum: 1
+          default: 30
+          title: Limit
+      - name: unread_only
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+          title: Unread Only
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InboxPage'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/staff/inbox/count:
+    get:
+      tags:
+      - staff notifications
+      summary: Staff Count
+      operationId: staff_count_api_v1_staff_inbox_count_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InboxCount'
+      security:
+      - StaffSession: []
+  /api/v1/staff/inbox/read-all:
+    post:
+      tags:
+      - staff notifications
+      summary: Staff Read All
+      operationId: staff_read_all_api_v1_staff_inbox_read_all_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InboxReadAll'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InboxCount'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - StaffSession: []
+  /api/v1/staff/inbox/{notification_id}/read:
+    post:
+      tags:
+      - staff notifications
+      summary: Staff Read
+      operationId: staff_read_api_v1_staff_inbox__notification_id__read_post
+      security:
+      - StaffSession: []
+      parameters:
+      - name: notification_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Notification Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InboxCount'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /health/live:
     get:
       tags:
@@ -3298,6 +3532,8 @@ components:
           - retrying
           - read
           - not_required
+          - in_app
+          - muted
           title: Delivery
         created_at:
           type: string
@@ -3420,6 +3656,107 @@ components:
       - floors_count
       - apartments_per_floor
       title: HouseResponse
+    InboxCount:
+      properties:
+        unread_count:
+          type: integer
+          title: Unread Count
+      type: object
+      required:
+      - unread_count
+      title: InboxCount
+    InboxItem:
+      properties:
+        id:
+          type: integer
+          title: Id
+        kind:
+          type: string
+          title: Kind
+        title:
+          type: string
+          title: Title
+        body:
+          type: string
+          title: Body
+        href:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Href
+        house_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: House Id
+        apartment_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Apartment Id
+        address:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Address
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        read_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Read At
+      type: object
+      required:
+      - id
+      - kind
+      - title
+      - body
+      - href
+      - house_id
+      - apartment_id
+      - address
+      - created_at
+      - read_at
+      title: InboxItem
+    InboxPage:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/InboxItem'
+          type: array
+          title: Items
+        next_cursor:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Next Cursor
+        unread_count:
+          type: integer
+          title: Unread Count
+        snapshot_id:
+          type: integer
+          title: Snapshot Id
+      type: object
+      required:
+      - items
+      - next_cursor
+      - unread_count
+      - snapshot_id
+      title: InboxPage
+    InboxReadAll:
+      properties:
+        through_id:
+          type: integer
+          minimum: 1.0
+          title: Through Id
+      type: object
+      required:
+      - through_id
+      title: InboxReadAll
     InvitationOutput:
       properties:
         house_id:

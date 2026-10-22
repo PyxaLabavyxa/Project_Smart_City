@@ -20,7 +20,8 @@ pytest_plugins = ["tests.test_staff"]
 
 def presence(client, tab, *, issue=1, active=True, sequence=1, seen=None, user=101):
     return client.post(
-        f"/api/v1/issues/{issue}/presence", headers=headers(user),
+        f"/api/v1/issues/{issue}/presence",
+        headers=headers(user),
         json={"client_id": tab, "active": active, "sequence": sequence, "last_message_id": seen},
     )
 
@@ -28,7 +29,8 @@ def presence(client, tab, *, issue=1, active=True, sequence=1, seen=None, user=1
 def staff_message(client, csrf, issue=1):
     response = client.post(
         f"{ROOT}/issues/{issue}/messages",
-        headers=csrf, json={"text": "Ответ УК", "request_id": str(uuid4())},
+        headers=csrf,
+        json={"text": "Ответ УК", "request_id": str(uuid4())},
     )
     assert response.status_code == 200, response.text
     return client.get(f"{ROOT}/issues/{issue}").json()["messages"][-1]["id"]
@@ -45,6 +47,7 @@ def deliver(client):
             return bot.send_message.await_count
         finally:
             await database.close()
+
     return asyncio.run(run(), loop_factory=loop_factory)
 
 
@@ -59,6 +62,7 @@ def test_read_messages_never_become_notifications_after_chat_closes(staff_api):
     assert presence(client, tab, active=False, seen=mid, sequence=3).status_code == 204
     assert deliver(client) == 0
     assert client.get(ROOT + "/issues/1").json()["notifications"][0]["delivery"] == "read"
+    assert client.get("/api/v1/me/inbox", headers=headers()).json()["unread_count"] == 0
     with Session(engine) as session:
         notice = session.scalar(select(StaffNotification))
         assert notice.suppressed_at is not None and notice.sent_at is None and notice.attempts == 0
@@ -86,18 +90,28 @@ def test_unread_message_is_delivered_after_leaving_or_connection_loss(staff_api,
 
 
 @pytest.mark.parametrize("scope", ["app", "other-issue", "other-user"])
-def test_only_current_authors_exact_chat_mutes_notifications(staff_api, scope):
+def test_any_current_author_presence_uses_inbox_other_user_does_not_mute(staff_api, scope):
     client, engine, _ = staff_api
     csrf = login(client)
     if scope == "app":
-        client.post("/api/v1/auth/presence", headers=headers(), json={
-            "client_id": str(uuid4()), "sequence": 1, "active": True,
-        })
+        client.post(
+            "/api/v1/auth/presence",
+            headers=headers(),
+            json={
+                "client_id": str(uuid4()),
+                "sequence": 1,
+                "active": True,
+            },
+        )
     elif scope == "other-issue":
         with Session(engine) as session:
             issue = Issue(
-                user_id=1, house_id=1, title="Другое обращение", description="Проверка",
-                category=IssueCategory.OTHER, priority=IssuePriority.MEDIUM,
+                user_id=1,
+                house_id=1,
+                title="Другое обращение",
+                description="Проверка",
+                category=IssueCategory.OTHER,
+                priority=IssuePriority.MEDIUM,
             )
             session.add(issue)
             session.commit()
@@ -106,7 +120,7 @@ def test_only_current_authors_exact_chat_mutes_notifications(staff_api, scope):
     else:
         assert presence(client, str(uuid4()), issue=2, user=102).status_code == 204
     staff_message(client, csrf)
-    assert deliver(client) == 1
+    assert deliver(client) == (1 if scope == "other-user" else 0)
 
 
 def test_second_tab_keeps_chat_open_and_stale_heartbeat_cannot_reopen_it(staff_api):
@@ -131,7 +145,7 @@ def test_status_notification_is_not_blocked_by_unread_chat_message(staff_api):
     mid = staff_message(client, csrf)
     response = client.post(ROOT + "/issues/1/status", headers=csrf, json=status_body())
     assert response.status_code == 200
-    assert deliver(client) == 1  # Status goes through while the chat message waits for reading.
+    assert deliver(client) == 0  # The online resident gets the status in the inbox.
     presence(client, tab, seen=mid, sequence=2)
     presence(client, tab, active=False, sequence=3)
     assert deliver(client) == 0

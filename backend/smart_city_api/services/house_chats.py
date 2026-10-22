@@ -1,18 +1,21 @@
 import secrets
 from datetime import UTC, datetime, timedelta
 
-from fastapi import HTTPException
-from sqlalchemy import delete, func, select, update
-
 from app.database.models import (
     Announcement,
     AnnouncementDelivery,
     AnnouncementPrivateDelivery,
+    Apartment,
     House,
     HouseChat,
+    UserApartment,
 )
 from app.services.announcement_audience import residents, unavailable_reason
 from app.services.house_chats import code_hash
+from app.services.inbox import notify_residents
+from fastapi import HTTPException
+from sqlalchemy import delete, func, select, update
+
 from smart_city_api.schemas.house_chats import (
     AnnouncementDeliveryOutput,
     AnnouncementOutput,
@@ -344,6 +347,21 @@ async def publish(session, staff_id, announcement_id, version):
             "" if delivery.user_id in eligible else "Доступ или настройки жителя изменились"
         )
     row.status, row.sent_at = "queued", datetime.now(UTC)
+    recipients = (
+        select(UserApartment.user_id)
+        .join(Apartment, Apartment.id == UserApartment.apartment_id)
+        .where(Apartment.house_id.in_(row.house_ids))
+    )
+    if row.audience == "residents":
+        recipients = recipients.where(UserApartment.user_id.in_(row.resident_ids))
+    await notify_residents(
+        session,
+        await session.scalars(recipients.distinct()),
+        key=f"announcement:{row.id}",
+        kind="announcement",
+        title="Объявление УК: " + row.title,
+        body=row.text,
+    )
     await session.commit()
     return await read_announcement(session, staff_id, row.id)
 

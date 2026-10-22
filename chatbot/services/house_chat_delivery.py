@@ -18,6 +18,8 @@ from app.database.models import (
     AnnouncementPrivateDelivery,
     House,
     HouseChat,
+    InboxNotification,
+    MiniAppPresence,
     StaffHouse,
     StaffUser,
     User,
@@ -47,7 +49,8 @@ async def check_permissions(bot, chat_id):
     me = checked(await bot.get_me_from_chat(chat_id=chat_id))
     permissions = {getattr(p, "value", p) for p in (me.permissions or [])}
     if not me.is_owner and (
-        not me.is_admin or not {"write", "pin_message", "read_all_messages"}.issubset(permissions)
+        not me.is_admin
+        or not {"write", "pin_message", "read_all_messages"}.issubset(permissions)
     ):
         raise MaxRejected(403)
 
@@ -62,7 +65,8 @@ def menu_keyboard(house_id):
     ]:
         builder.row(
             LinkButton(
-                text=label, url=f"https://max.ru/{username}?startapp={section}_house_{house_id}"
+                text=label,
+                url=f"https://max.ru/{username}?startapp={section}_house_{house_id}",
             )
         )
     return builder.as_markup()
@@ -96,13 +100,16 @@ async def recover_interrupted(sessions):
         await session.execute(
             update(AnnouncementDelivery)
             .where(
-                AnnouncementDelivery.status == "sending", AnnouncementDelivery.attempted_at < cutoff
+                AnnouncementDelivery.status == "sending",
+                AnnouncementDelivery.attempted_at < cutoff,
             )
             .values(status="uncertain", error=delivery_error(None, uncertain=True))
         )
         await session.execute(
             update(HouseChat)
-            .where(HouseChat.menu_status == "sending", HouseChat.menu_attempted_at < cutoff)
+            .where(
+                HouseChat.menu_status == "sending", HouseChat.menu_attempted_at < cutoff
+            )
             .values(
                 menu_status="uncertain",
                 status="attention",
@@ -190,7 +197,12 @@ async def process_menu(bot, sessions):
                 HouseChat.revision == revision,
                 HouseChat.menu_status == "sending",
             )
-            .values(menu_status=status, status=state, error=error, checked_at=datetime.now(UTC))
+            .values(
+                menu_status=status,
+                status=state,
+                error=error,
+                checked_at=datetime.now(UTC),
+            )
         )
     return True
 
@@ -259,7 +271,10 @@ async def process_announcement(bot, sessions):
     async with sessions.begin() as session:
         await session.execute(
             update(AnnouncementDelivery)
-            .where(AnnouncementDelivery.id == delivery_id, AnnouncementDelivery.status == "sending")
+            .where(
+                AnnouncementDelivery.id == delivery_id,
+                AnnouncementDelivery.status == "sending",
+            )
             .values(
                 status=status,
                 message_id=mid,
@@ -293,9 +308,36 @@ async def process_private_announcement(bot, sessions):
         )
         target = targets.get(delivery.user_id)
         if not target or unavailable_reason(target["user"]):
-            delivery.status, delivery.error = "cancelled", "Доступ или настройки жителя изменились"
+            delivery.status, delivery.error = (
+                "cancelled",
+                "Доступ или настройки жителя изменились",
+            )
             return True
-        delivery_id, user_id, max_id = delivery.id, delivery.user_id, target["user"].max_user_id
+        online = await session.scalar(
+            select(MiniAppPresence.user_id)
+            .where(
+                MiniAppPresence.user_id == delivery.user_id,
+                MiniAppPresence.expires_at > datetime.now(UTC),
+            )
+            .limit(1)
+        )
+        saved = await session.scalar(
+            select(InboxNotification.id).where(
+                InboxNotification.user_id == delivery.user_id,
+                InboxNotification.event_key == f"announcement:{announcement.id}",
+            )
+        )
+        if online is not None and saved is not None:
+            delivery.status, delivery.error = (
+                "cancelled",
+                "Сохранено в уведомлениях: житель в мини-приложении",
+            )
+            return True
+        delivery_id, user_id, max_id = (
+            delivery.id,
+            delivery.user_id,
+            target["user"].max_user_id,
+        )
         text, message_format = announcement_message(
             announcement.topic, announcement.title, announcement.text
         )
@@ -313,7 +355,9 @@ async def process_private_announcement(bot, sessions):
         mid = result.message.body.mid
         status, error = "sent", ""
     except Exception as exc:
-        uncertain = not isinstance(exc, MaxRejected) or exc.code >= 500 or exc.code == 408
+        uncertain = (
+            not isinstance(exc, MaxRejected) or exc.code >= 500 or exc.code == 408
+        )
         blocked = isinstance(exc, MaxRejected) and exc.code in (403, 404)
         status = "uncertain" if uncertain else "failed"
         error = (

@@ -7,13 +7,14 @@ import styles from "./shell.module.css";
 import { BrandWordmark } from "@/shared/ui/brand-mark";
 import { Icon } from "@/shared/ui/icon";
 import { ApartmentsReady } from "@/entities/house/ui/apartments-ready";
+import { NotificationBell } from "@/features/notifications/provider";
 
 function parentPage(path: string) {
   if (path.startsWith("/settings/")) return { href:"/settings", label:"Настройки" };
   if (path === "/plan") return { href:"/house", label:"Ваш дом" };
   if (path.startsWith("/issues/")) return { href:"/issues", label:"Обращения" };
   if (path.startsWith("/cameras/")) return { href:"/cameras", label:"Камеры" };
-  if (["/invite", "/settings", "/health", "/messages", "/info", "/plan", "/house", "/contacts"].includes(path)) return { href:"/more", label:"Ещё" };
+  if (["/notifications", "/invite", "/settings", "/health", "/messages", "/info", "/plan", "/house", "/contacts"].includes(path)) return { href:"/more", label:"Ещё" };
   return { href:"/", label:"На главную" };
 }
 export function ApplicationShell({ children }: { children: ReactNode }) {
@@ -26,6 +27,7 @@ export function ApplicationShell({ children }: { children: ReactNode }) {
     <a className={styles.skip} href="#main">Перейти к содержимому</a>
     {!neighborChat && pathname !== "/issues/new" && <header className={styles.header}>
       <Link href="/" prefetch={false} className={styles.brand} aria-label="Домовед — главная"><BrandWordmark /></Link>
+      <NotificationBell />
       {inlineBack && <Link href={parent.href} className={styles.headerBack} aria-label={`Назад: ${parent.label}`}><Icon name="back" /></Link>}
     </header>}
     <main id="main" data-page-path={pathname} className={`${styles.main}${neighborChat ? ` ${styles.chatMain}` : ""}`} tabIndex={-1}>

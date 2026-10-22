@@ -7,6 +7,7 @@ from urllib.parse import urlsplit
 
 from app.database.models import House, HouseCamera, User
 from app.paths import project_path
+from app.services.inbox import notify_residents, notify_staff
 from fastapi import HTTPException
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.exc import IntegrityError
@@ -28,6 +29,19 @@ from smart_city_api.services.access import require_house
 from smart_city_api.services.contacts import staff_house
 from smart_city_api.services.locations import OUTDOOR_ZONES, validate_location
 from smart_city_api.services.staff import house_scope
+
+
+async def _notify_camera_submission(session, camera):
+    if camera.moderation_status == "pending":
+        await notify_staff(
+            session,
+            camera.house_id,
+            key=f"camera:{camera.id}:pending:{camera_version(camera)}",
+            kind="camera_request",
+            title="Камера ожидает одобрения",
+            body=camera.name,
+            href="#cameras",
+        )
 
 
 def visible_cameras(user_id: int):
@@ -124,6 +138,8 @@ async def create_camera(
     )
     session.add(camera)
     try:
+        await session.flush()
+        await _notify_camera_submission(session, camera)
         await session.commit()
     except IntegrityError:
         await session.rollback()
@@ -326,6 +342,7 @@ async def update_camera(session, user_id, camera_id, data: UpdateCamera, setting
     camera.moderation_status = "pending" if data.is_public else "approved"
     camera.moderation_reason = camera.reviewed_at = camera.reviewed_by = None
     camera.captured_at = datetime.now(UTC)
+    await _notify_camera_submission(session, camera)
     await session.commit()
     return camera_response(camera, user_id)
 
@@ -451,6 +468,17 @@ async def moderate_camera(
     camera.moderation_reason = reason
     camera.reviewed_by = staff_id
     camera.reviewed_at = datetime.now(UTC)
+    await notify_residents(
+        session,
+        [camera.owner_id],
+        key=f"camera:{camera.id}:review:{camera.reviewed_at.isoformat()}",
+        kind="camera_review",
+        title="Камера одобрена" if data.decision == "approved" else "Камера отклонена",
+        body=camera.name
+        + (f"\nПричина: {reason}" if reason else " — теперь доступна жителям дома"),
+        house_id=camera.house_id,
+        href="/cameras",
+    )
     await session.commit()
     return camera_response(camera, None)
 

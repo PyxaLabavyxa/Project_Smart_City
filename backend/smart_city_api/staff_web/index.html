@@ -12,7 +12,9 @@
   <link rel="stylesheet" href="/staff/camera-management.css?v=20261022-camera-contacts-3">
   <link rel="stylesheet" href="/staff/contacts-management.css?v=20261022-contact-patch-1">
   <script src="/staff/confirmation.js?v=20261021-motion-4" defer></script>
-  <script src="/staff/app.js?v=20261022-motion-1" defer></script>
+  <script src="/staff/app.js?v=20261022-motion-inbox-1" defer></script>
+  <link rel="stylesheet" href="/staff/notification-inbox.css?v=20261022-4">
+  <script src="/staff/notification-inbox.js?v=20261022-2" defer></script>
   <link rel="stylesheet" href="/staff/staff-report.css?v=20261022-motion-1">
   <script src="/staff/staff-report.js?v=20261022-2" defer></script>
   <script src="/staff/contacts-management.js?v=20261022-motion-1" defer></script>
@@ -54,7 +56,7 @@
       <div class="employee"><span id="avatar" class="avatar">УК</span><div><strong id="staff-name"></strong><small>Сотрудник УК</small></div><button id="logout" class="logout" title="Выйти" aria-label="Выйти из кабинета"><span data-icon="logout" aria-hidden="true"></span></button></div>
     </aside>
     <main class="main">
-      <header class="topbar"><span><span class="topbar-home" data-icon="building" aria-hidden="true"></span> Кабинет УК <span class="slash">/</span> <strong id="section-name">Обращения</strong></span><span class="live-indicator"><span class="pulse-dot"></span><span id="sync-label">Обновляем данные</span></span></header>
+      <header class="topbar"><span><span class="topbar-home" data-icon="building" aria-hidden="true"></span> Кабинет УК <span class="slash">/</span> <strong id="section-name">Обращения</strong></span><div class="topbar-actions"><span class="live-indicator"><span class="pulse-dot"></span><span id="sync-label">Обновляем данные</span></span><button id="notification-bell" class="notification-bell" type="button" aria-label="Уведомления" aria-haspopup="dialog" aria-expanded="false" aria-controls="notification-dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9ZM10 21h4"/></svg><span id="notification-count" class="notification-count" hidden></span></button></div></header>
       <div id="issues-section" class="content">
         <div class="page-heading"><div><span class="eyebrow">ВАШ ДОМ ПОД ПРИСМОТРОМ</span><h1>Обращения жителей</h1><p class="muted">Помогайте с важным. Будьте рядом в деталях.</p></div><div class="issue-heading-actions"><button id="refresh" class="secondary"><span data-icon="refresh" aria-hidden="true"></span> Обновить</button><button id="new-staff-report" class="primary"><span data-icon="plus" aria-hidden="true"></span>Создать обращение</button></div></div>
         <div id="no-houses" class="notice" hidden>Пока вам не назначены дома. Попросите администратора добавить доступ.</div>
@@ -235,6 +237,13 @@
       <p id="report-form-status" class="report-form-status" role="status"></p><p id="report-form-error" class="error" role="alert" hidden></p>
       <footer class="report-footer"><button id="cancel-staff-report" type="button" class="secondary">Отмена</button><button id="submit-staff-report" type="submit" class="primary">Создать обращение</button></footer>
     </form>
+  </dialog>
+  <dialog id="notification-dialog" class="notification-dialog" aria-labelledby="notification-title">
+    <div class="notification-heading"><div><h2 id="notification-title">Уведомления</h2><p>Важные события в ваших домах</p></div><button id="notification-close" class="notification-close" type="button" aria-label="Закрыть уведомления">×</button></div>
+    <div class="notification-tools"><label class="sr-only" for="notification-filter">Показать уведомления</label><select id="notification-filter"><option value="unread" selected>Непрочитанные</option><option value="all">Все уведомления</option></select><button id="notification-refresh" class="secondary" type="button" aria-label="Обновить уведомления">↻</button></div>
+    <button id="notification-read-all" class="notification-read-all" type="button" disabled>Отметить все прочитанными</button>
+    <p id="notification-error" class="error" role="alert" hidden></p><p id="notification-loading" role="status" hidden>Загружаем уведомления…</p>
+    <ul id="notification-list" class="notification-list"></ul><p id="notification-empty" class="notification-empty" hidden></p><button id="notification-more" class="secondary notification-more" type="button" hidden>Показать ещё</button>
   </dialog>
 </body>
 </html>

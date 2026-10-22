@@ -18,6 +18,7 @@ import { readPages } from "@/shared/api/pagination";
 import { useRemote } from "@/shared/api/use-remote";
 import { RefreshButton } from "@/shared/ui/refresh-button";
 import { MiniAppPresence } from "@/features/mini-app-presence";
+import { NotificationsProvider } from "@/features/notifications/provider";
 import { LaunchNavigation } from "@/features/launch-navigation";
 import { OnboardingProvider } from "@/features/onboarding/onboarding-provider";
 import type { OnboardingStatus } from "@/features/onboarding/onboarding-context";
@@ -77,7 +78,7 @@ function AuthenticatedApp({ children, mode }: { children: ReactNode; mode: "loca
   }, [mode]);
   const state = useRemote(load);
   if (!state.data) return <StartupScreen error={state.error} actions={state.error ? <RefreshButton onRefresh={state.reload} loading={state.loading}>Повторить</RefreshButton> : undefined} />;
-  return <ApiContext value={state.data.api}><LaunchNavigation target={launchNavigationHref(state.data.launch)} /><MiniAppPresence /><ResidentProfileView launchHouseId={state.data.launch?.houseId}>{children}</ResidentProfileView></ApiContext>;
+  return <ApiContext value={state.data.api}><NotificationsProvider><LaunchNavigation target={launchNavigationHref(state.data.launch)} /><MiniAppPresence /><ResidentProfileView launchHouseId={state.data.launch?.houseId}>{children}</ResidentProfileView></NotificationsProvider></ApiContext>;
 }
 
 function ResidentProfileView({ children, launchHouseId }: { children: ReactNode; launchHouseId?: string }) {
