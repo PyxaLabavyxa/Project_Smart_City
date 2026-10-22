@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { conversationHref } from "@/shared/api/conversation-route";
 import { useRef, useState } from "react";
 import { useHouseSelection, isOutdoorZone, floorApartments, findApartment, totalApartments, zoneLabel, formatLocation, sameLocation, FloorControls, FloorPlan, type HouseLocation } from "@/entities/house";
 import { IssueList, useIssues } from "@/entities/issue";
@@ -28,7 +29,7 @@ export function HouseExplorer({ initialPlace }: { initialPlace?: HouseLocation }
         <p>{selectedIssues.length ? `Обращений по этому помещению: ${selectedIssues.length}. Подробности — ниже.` : "Обращений по этому помещению нет."}</p>
         <div data-tour="plan-actions" className={styles.actions}>
           <Link className={styles.action} href="/issues/new?from=plan" onClick={() => { closeSheet(); select(selected); startAt(selected); }}>＋ Сообщить о проблеме</Link>
-          {selected.zone === "apartment" && selected.apartment !== house.residentApartment && <Link className={styles.action} href={`/messages/${selected.apartment}`} onClick={() => { closeSheet(); select(selected); }}>Написать в квартиру {selected.apartment}</Link>}
+          {selected.zone === "apartment" && selected.apartment !== house.residentApartment && <Link className={styles.action} href={conversationHref(selected.apartment, house.residentApartmentId)} onClick={() => { closeSheet(); select(selected); }}>Написать в квартиру {selected.apartment}</Link>}
           {selected.zone !== "apartment" && <Link className={styles.action} onClick={closeSheet} href="/cameras">Камеры дома</Link>}
         </div>
         {sheetOpen && selectedIssues.length > 0 && <div onClick={event => { if ((event.target as Element).closest("a")) closeSheet(); }}><IssueList issues={selectedIssues} /></div>}

@@ -10,6 +10,7 @@ import { notificationDate, notificationHref, parseInbox, type Notification } fro
 import { useNotifications } from "./provider";
 import styles from "./notifications.module.css";
 import { notificationApartment } from "./target";
+import { conversationHref } from "@/shared/api/conversation-route";
 
 export function NotificationsPage() {
   const [unread, setUnread] = useState(true);
@@ -30,7 +31,7 @@ function NotificationFeed({ unread, setUnread }: { unread: boolean; setUnread: (
   const [readIds, setReadIds] = useState<Set<number>>(new Set());
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const { house, choices, choose } = useHouseSelection();
+  const { house, choices, choose, refreshHomes } = useHouseSelection();
   const next = cursor === undefined ? state.data?.nextCursor : cursor;
   const items = [...(state.data?.items ?? []), ...extra].filter((item, index, list) => list.findIndex(row => row.id === item.id) === index);
   function reload() { setExtra([]); setCursor(undefined); setReadIds(new Set()); state.reload(); }
@@ -59,11 +60,18 @@ function NotificationFeed({ unread, setUnread }: { unread: boolean; setUnread: (
   async function open(item: Notification) {
     const href = notificationHref(item.href);
     if (!href) return;
-    const target = notificationApartment(choices, item.houseId, item.apartmentId, house.residentApartmentId);
+    let target = notificationApartment(choices, item.houseId, item.apartmentId, house.residentApartmentId);
+    if (item.houseId && !target) {
+      setBusy(true); setError("");
+      try { target = notificationApartment(await refreshHomes(), item.houseId, item.apartmentId, house.residentApartmentId); }
+      catch { setError("Не удалось проверить доступ к квартире. Повторите попытку."); return; }
+      finally { setBusy(false); }
+    }
     if (item.houseId && !target) { setError("Квартира этого дома больше не привязана. Добавьте её в профиле, чтобы открыть раздел."); return; }
     if (!item.readAt && !readIds.has(item.id) && !await mark(item)) return;
     if (target && (house.id !== target.houseId || house.residentApartmentId !== target.id)) choose(target.id);
-    navigate(href);
+    const neighbour = /^\/messages\/([1-9]\d*)$/.exec(href);
+    navigate(neighbour && target ? conversationHref(Number(neighbour[1]), target.id) : href);
   }
   const hasUnread = count > 0 && !!state.data?.snapshotId;
   const visible = unread ? items.filter(item => !item.readAt && !readIds.has(item.id)) : items;

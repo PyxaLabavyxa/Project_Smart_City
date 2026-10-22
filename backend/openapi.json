@@ -201,6 +201,52 @@
         }
       }
     },
+    "/api/v1/me/inbox/read-conversation": {
+      "post": {
+        "tags": [
+          "resident notifications"
+        ],
+        "summary": "Resident Conversation Read",
+        "operationId": "resident_conversation_read_api_v1_me_inbox_read_conversation_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InboxConversationRead"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InboxCount"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "MAXLaunchData": []
+          }
+        ]
+      }
+    },
     "/api/v1/staff/inbox": {
       "get": {
         "tags": [
@@ -5878,6 +5924,32 @@
           "apartments_per_floor"
         ],
         "title": "HouseResponse"
+      },
+      "InboxConversationRead": {
+        "properties": {
+          "apartment_id": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Apartment Id"
+          },
+          "sender_number": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Sender Number"
+          },
+          "through_message_id": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Through Message Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "apartment_id",
+          "sender_number",
+          "through_message_id"
+        ],
+        "title": "InboxConversationRead"
       },
       "InboxCount": {
         "properties": {

@@ -14,7 +14,7 @@ import styles from "./home-page.module.css";
 
 export function HomePage() {
  const { issues, loading: issuesLoading, error: issuesError, reload } = useIssues();
- const { messages } = useMessages();
+ const { messages, loading: messagesLoading, error: messagesError } = useMessages();
  const { house, apartmentsState } = useHouseSelection();
  const { account, loading, error } = useUtilityAccount();
  const resident = findApartment(house, house.residentApartment);
@@ -29,7 +29,7 @@ export function HomePage() {
   </div>
   <nav className={styles.overview} aria-label="Сервисы квартиры">
    <Link href="/utilities" className={styles.service}><span className={styles.serviceLabel}><span className={styles.serviceIcon}><Icon name="receipt" /></span>ЖКХ<Icon name="arrow" size={15} /></span><b>{account && resident ? money(totalCharges(account.charges)) : loading ? "Загружаем…" : "Лицевой счёт"}</b><small>{account && resident ? `До ${invoiceDue(account.due)}` : error ? "Повторить загрузку" : "Квитанции и показания"}</small></Link>
-   <Link href="/messages" className={styles.service}><span className={styles.serviceLabel}><span className={styles.serviceIcon}><Icon name="messages" /></span>Сообщения<Icon name="arrow" size={15} /></span><b className={styles.messageTitle}>{apartmentsState.loading ? "Загружаем…" : apartmentsState.error ? "Сообщения" : threads.length ? `Диалогов: ${threads.length}` : "Нет новых сообщений"}</b></Link>
+   <Link href="/messages" className={styles.service}><span className={styles.serviceLabel}><span className={styles.serviceIcon}><Icon name="messages" /></span>Сообщения<Icon name="arrow" size={15} /></span><b className={styles.messageTitle}>{apartmentsState.loading || messagesLoading ? "Загружаем…" : apartmentsState.error || messagesError ? "Повторить загрузку" : threads.length ? `Диалогов: ${threads.length}` : "Нет новых сообщений"}</b></Link>
   </nav>
   <section className={styles.issues} aria-labelledby="active-issues"><div className={styles.sectionHead}><h2 id="active-issues">Обращения в доме</h2><Link href="/issues">Все {active.length} <Icon name="arrow" size={16} /></Link></div>{issuesLoading || issuesError ? <RequestState loading={issuesLoading} error={issuesError} reload={reload} /> : active.length ? <IssueList issues={active.slice(0,3)} /> : <p className={styles.empty}>Активных обращений нет. В доме всё спокойно.</p>}</section>
   <div className={styles.homeHouse}><HousePreview showHeading /></div>

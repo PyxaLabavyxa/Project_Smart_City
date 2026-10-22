@@ -2,6 +2,8 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { ChatPhotoPicker, ChatPhotos } from "@/shared/ui/chat-photos";
 import type { HouseLocation } from "@/entities/house";
+import { useHouseSelection } from "@/entities/house";
+import { useConversationRead } from "./use-conversation-read";
 import { useMessages } from "@/entities/message";
 import styles from "@/shared/ui/chat-screen.module.css";
 import { Icon } from "@/shared/ui/icon";
@@ -19,6 +21,8 @@ export function Conversation({ place, readOnly }: { place: HouseLocation & { zon
   const photos = photoDrafts[place.apartment] ?? [];
   const history = messages.filter(message => message.apartment === place.apartment);
   const lastMessage = history.at(-1);
+  const { house } = useHouseSelection();
+  useConversationRead(house.residentApartmentId, place.apartment, historyList, history.map(message => message.id).join(","));
   useEffect(() => {
     const list = historyList.current;
     if (list && (!previousMessage.current || nearBottom.current || lastMessage?.direction === "outgoing")) {
@@ -47,7 +51,7 @@ export function Conversation({ place, readOnly }: { place: HouseLocation & { zon
   return <section className={styles.conversation} aria-label={"Переписка с квартирой " + place.apartment}>
     <div ref={historyList} className={styles.scrollArea} role="region" tabIndex={0} aria-label="Переписка" onScroll={event => { const list = event.currentTarget; nearBottom.current = list.scrollHeight - list.scrollTop - list.clientHeight < 80; }}>
     <p className={styles.privacy}><Icon name="lock" size={14} />В чате виден только номер квартиры. Телефоны и личные контакты скрыты.</p>
-    <ol className={styles.history} aria-live="polite" aria-relevant="additions" aria-label="История сообщений">{history.map(message => <li key={message.id} className={message.direction === "outgoing" ? styles.outgoing : styles.incoming}><small>{message.direction === "outgoing" ? "Вы" : "Квартира " + place.apartment}</small><ChatPhotos photos={message.photos} onLoad={() => { if (nearBottom.current && historyList.current) historyList.current.scrollTop = historyList.current.scrollHeight; }} /><p>{message.text}</p><time dateTime={message.createdAt}>{new Date(message.createdAt).toLocaleString("ru-RU", { timeZone: "Europe/Moscow", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</time></li>)}</ol>
+    <ol className={styles.history} aria-live="polite" aria-relevant="additions" aria-label="История сообщений">{history.map(message => <li key={message.id} data-message-id={message.id} data-direction={message.direction} className={message.direction === "outgoing" ? styles.outgoing : styles.incoming}><small>{message.direction === "outgoing" ? "Вы" : "Квартира " + place.apartment}</small><ChatPhotos photos={message.photos} onLoad={() => { if (nearBottom.current && historyList.current) historyList.current.scrollTop = historyList.current.scrollHeight; }} /><p>{message.text}</p><time dateTime={message.createdAt}>{new Date(message.createdAt).toLocaleString("ru-RU", { timeZone: "Europe/Moscow", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</time></li>)}</ol>
     {!history.length && <div className={styles.empty}><Icon name="messages" size={32} /><h3>Начните разговор</h3><p>Напишите соседу по домашнему вопросу.<br />Будьте внимательны и вежливы друг к другу.</p></div>}
     </div>
     {readOnly ? <p className={styles.readOnly}>{readOnly}</p> : <form className={styles.composer} onSubmit={submit}>

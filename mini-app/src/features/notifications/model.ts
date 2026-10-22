@@ -22,10 +22,7 @@ export function parseInbox(value: unknown): InboxPage {
   };
 }
 
-// Only application destinations are accepted, even if stored data was edited outside the app.
-export function notificationHref(href: string | null) {
-  return href && /^\/(?:issues(?:\/[1-9]\d*(?:\/chat)?)?|messages(?:\/[1-9]\d*)?|cameras|more)$/.test(href) ? href : null;
-}
+export { notificationHref } from "./notification-route";
 export function notificationDate(value: string) {
   const date = new Date(/(?:Z|[+-]\d{2}:\d{2})$/.test(value) ? value : `${value}Z`);
   return Number.isNaN(date.getTime()) ? "" : date.toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });

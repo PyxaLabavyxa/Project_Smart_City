@@ -17,7 +17,8 @@ export function HomeStartup({ children }: { children: ReactNode }) {
   const utilities = useUtilityAccount();
   const [opened, setOpened] = useState(false);
   const pending = apartmentsState.loading || issues.loading || messages.loading || utilities.loading;
-  const error = apartmentsState.error || issues.error || messages.error || utilities.error;
+  // A failed optional service must not hide navigation to working sections.
+  const error = apartmentsState.error;
   const ready = !pending && !error;
   if (!opened && pathname === "/" && ready) setOpened(true);
   if (pathname !== "/" || opened || ready) return children;

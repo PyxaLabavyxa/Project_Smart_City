@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { conversationHref } from "@/shared/api/conversation-route";
 
 import { useHouseSelection, floorApartments, findApartment, FloorControls } from "@/entities/house";
 import { messageThreads, useMessages } from "@/entities/message";
@@ -16,8 +17,8 @@ export function RecipientSelector({ openSelected = false }: { openSelected?: boo
   const dialog = useRef<HTMLDialogElement>(null);
   const router = useRouter();
   useEffect(() => {
-    if (openSelected && selected.zone === "apartment" && selected.apartment !== house.residentApartment) router.replace(`/messages/${selected.apartment}`);
-  }, [openSelected, selected, house.residentApartment, router]);
+    if (openSelected && selected.zone === "apartment" && selected.apartment !== house.residentApartment) router.replace(conversationHref(selected.apartment, house.residentApartmentId));
+  }, [openSelected, selected, house.residentApartment, house.residentApartmentId, router]);
   const [query, setQuery] = useState("");
   const [picker, setPicker] = useState({ entrance: selected.entrance, floor: selected.floor, apartment: 0 });
   const threads = messageThreads(messages).filter(message => message.apartment !== house.residentApartment);
@@ -28,7 +29,7 @@ export function RecipientSelector({ openSelected = false }: { openSelected?: boo
     const place = findApartment(house, apartment);
     if (apartment === house.residentApartment) return;
     if (place) select(place);
-    router.push(`/messages/${apartment}`);
+    router.push(conversationHref(apartment, house.residentApartmentId));
   }
 
   function changeFloor(entrance: number, floor: number) {

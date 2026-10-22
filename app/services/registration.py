@@ -231,5 +231,6 @@ async def decide_registration(session, application, *, approve, staff_id):
             else "Уточните данные у управляющей компании."
         ),
         house_id=apartment.house_id,
+        apartment_id=apartment.id,
         href="/more",
     )

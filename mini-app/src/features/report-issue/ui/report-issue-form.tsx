@@ -115,8 +115,9 @@ export function ReportIssueForm({ cancelHref = "/issues", cancelLabel = "Все 
       <button type="submit" className={styles.primary} disabled={saving}>{saving ? "Сохраняем…" : draft.step === 3 ? "Отправить обращение" : draft.step === 2 ? "Проверить" : "Продолжить"}</button>
     </div>
     {draft.step === 2 && <div className={styles.draftActions}>
-      <Link href={cancelHref} aria-disabled={saving} onClick={event => { if (saving) event.preventDefault(); }}>Сохранить черновик</Link>
+      <Link href={cancelHref} aria-disabled={saving} onClick={event => { if (saving) event.preventDefault(); }}>Продолжить позже</Link>
       <button type="button" disabled={saving} onClick={async () => { if (await confirm({ title: "Удалить черновик?", description: "Описание и прикреплённые фотографии будут удалены. Восстановить черновик не получится.", confirmLabel: "Удалить", destructive: true })) { resetDraft(); setErrors({}); } }}>Сбросить черновик</button>
+      <p className={styles.draftHint}>Черновик останется в этом сеансе. Закрытие приложения, перезагрузка или смена квартиры удалят текст и фотографии.</p>
     </div>}
   </form></>;
 }

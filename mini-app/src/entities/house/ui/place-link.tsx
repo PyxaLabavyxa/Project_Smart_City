@@ -8,6 +8,6 @@ export function PlaceLink({ place, children, className, returnTo }: { place: Hou
   const { house, select } = useHouseSelection();
   const currentPlace = resolveLocation(house, place);
   if (isOutdoorZone(place.zone)) return <span className={className}>{children}</span>;
-  const back = returnTo ? `&returnTo=${encodeURIComponent(returnTo)}` : "";
+  const back = returnTo ? `&returnTo=${encodeURIComponent(returnTo)}&from=${house.residentApartmentId}` : "";
   return currentPlace ? <Link href={"/plan?" + locationQuery(currentPlace) + back} className={className} onClick={() => select(currentPlace)}>{children}</Link> : <p>Место отсутствует в текущей структуре дома.</p>;
 }

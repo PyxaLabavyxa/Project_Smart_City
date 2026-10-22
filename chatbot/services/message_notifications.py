@@ -2,6 +2,9 @@ import asyncio
 import logging
 from datetime import UTC, datetime, timedelta
 
+from maxapi.types.errors import Error
+from sqlalchemy import select
+
 from app.database.models import (
     Apartment,
     ApartmentMessage,
@@ -9,12 +12,10 @@ from app.database.models import (
     MessageNotification,
     MiniAppPresence,
     User,
+    UserApartment,
 )
 from app.database.notification_preferences import notification_enabled
 from app.database.session import session_factory
-from maxapi.types.errors import Error
-from sqlalchemy import select
-
 from chatbot.keyboards.inline import inl_mini_app
 
 logger = logging.getLogger(__name__)
@@ -36,6 +37,24 @@ async def deliver_pending(bot, sessions=session_factory):
             )
             if notification is None:
                 return
+            message = await session.get(ApartmentMessage, notification.message_id)
+            member = (
+                await session.scalar(
+                    select(UserApartment.id)
+                    .join(User, User.id == UserApartment.user_id)
+                    .where(
+                        User.max_user_id == notification.max_user_id,
+                        UserApartment.apartment_id == message.recipient_id,
+                    )
+                    .limit(1)
+                )
+                if message is not None
+                else None
+            )
+            if member is None:
+                notification.suppressed_at = datetime.now(UTC)
+                await session.commit()
+                continue
             active = await session.scalar(
                 select(MiniAppPresence.user_id)
                 .join(User, User.id == MiniAppPresence.user_id)
@@ -51,7 +70,6 @@ async def deliver_pending(bot, sessions=session_factory):
                 notification.suppressed_at = datetime.now(UTC)
                 await session.commit()
                 continue
-            message = await session.get(ApartmentMessage, notification.message_id)
             sender = await session.get(Apartment, message.sender_id)
             recipient = await session.get(Apartment, message.recipient_id)
             house = await session.get(House, sender.house_id)

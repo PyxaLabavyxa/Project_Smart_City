@@ -2,7 +2,7 @@ from fastapi import APIRouter, Query
 
 from smart_city_api.api.dependencies import Resident, Session
 from smart_city_api.core.staff_auth import Staff
-from smart_city_api.schemas.inbox import InboxCount, InboxPage, InboxReadAll
+from smart_city_api.schemas.inbox import InboxConversationRead, InboxCount, InboxPage, InboxReadAll
 from smart_city_api.services import inbox
 
 resident_router = APIRouter(prefix="/api/v1/me/inbox", tags=["resident notifications"])
@@ -35,6 +35,11 @@ async def resident_read_all(data: InboxReadAll, session: Session, user: Resident
 @resident_router.post("/{notification_id}/read", response_model=InboxCount)
 async def resident_read(notification_id: int, session: Session, user: Resident):
     return await inbox.mark_read(session, "user_id", user.id, notification_id)
+
+
+@resident_router.post("/read-conversation", response_model=InboxCount)
+async def resident_conversation_read(data: InboxConversationRead, session: Session, user: Resident):
+    return await inbox.mark_conversation_read(session, user, data)
 
 
 @staff_router.get("", response_model=InboxPage)

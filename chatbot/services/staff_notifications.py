@@ -3,18 +3,21 @@ import logging
 from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
-from app.database.models import (
-    InboxNotification,
-    MiniAppPresence,
-    StaffNotification,
-    User,
-)
-from app.database.notification_preferences import notification_enabled
-from app.database.session import session_factory
 from maxapi.types.errors import Error
 from maxapi.utils.inline_keyboard import InlineKeyboardBuilder
 from sqlalchemy import exists, or_, select, update
 
+from app.database.models import (
+    Apartment,
+    InboxNotification,
+    Issue,
+    MiniAppPresence,
+    StaffNotification,
+    User,
+    UserApartment,
+)
+from app.database.notification_preferences import notification_enabled
+from app.database.session import session_factory
 from chatbot.keyboards.inline import issue_app_button, mini_app_button
 
 logger = logging.getLogger(__name__)
@@ -106,6 +109,33 @@ async def deliver_pending(bot, sessions=session_factory, limit: int = 20) -> int
         row, lease = claim
         # The resident may have opened/read the chat after this lease was claimed.
         async with sessions.begin() as session:
+            permitted = await session.scalar(
+                select(UserApartment.id)
+                .join(User, User.id == UserApartment.user_id)
+                .join(Apartment, Apartment.id == UserApartment.apartment_id)
+                .join(Issue, Issue.house_id == Apartment.house_id)
+                .where(
+                    Issue.id == row.issue_id,
+                    Issue.user_id == User.id,
+                    Issue.deleted_at.is_(None),
+                    User.max_user_id == row.max_user_id,
+                )
+                .limit(1)
+            )
+            if permitted is None:
+                await session.execute(
+                    update(StaffNotification)
+                    .where(
+                        StaffNotification.id == row.id,
+                        StaffNotification.lease_token == lease,
+                    )
+                    .values(
+                        suppressed_at=datetime.now(UTC),
+                        suppression_reason="access",
+                        lease_token=None,
+                    )
+                )
+                continue
             category = "issue_messages" if row.kind == "message" else "issue_statuses"
             if not await notification_enabled(session, row.max_user_id, category):
                 await session.execute(
@@ -184,17 +214,13 @@ async def deliver_pending(bot, sessions=session_factory, limit: int = 20) -> int
                     user_id=row.max_user_id,
                     text=row.text,
                     notify=True,
-                    attachments=[
-                        reply_keyboard(row.issue_id, rejected=row.kind == "rejection")
-                    ],
+                    attachments=[reply_keyboard(row.issue_id, rejected=row.kind == "rejection")],
                 )
             if result is None or isinstance(result, Error):
                 raise RuntimeError("MAX did not confirm sending")
             success = True
         except Exception as exc:
-            logger.warning(
-                "Staff notification %s failed: %s", row.id, type(exc).__name__
-            )
+            logger.warning("Staff notification %s failed: %s", row.id, type(exc).__name__)
         now = datetime.now(UTC)
         values = {"lease_token": None, "attempts": row.attempts + 1}
         if success:

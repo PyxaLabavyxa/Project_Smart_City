@@ -10,6 +10,10 @@ const routes: Record<string, string> = {
 
 export type LaunchTarget = { href: string; houseId?: string };
 
+export function deferLaunchOnboarding(target?: LaunchTarget): boolean {
+  return !!target && target.href !== "/";
+}
+
 export function launchTarget(initData: string, unsafeStartParam?: unknown): LaunchTarget | undefined {
   const values = new URLSearchParams(initData).getAll("start_param");
   if (values.length > 1) return undefined;

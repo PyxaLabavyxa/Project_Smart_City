@@ -1,9 +1,18 @@
 import re
 from datetime import UTC, datetime
 
-from app.database.models import House, InboxNotification, StaffHouse
 from fastapi import HTTPException
-from sqlalchemy import func, select, update
+from sqlalchemy import String, cast, func, select, update
+
+from app.database.models import (
+    Apartment,
+    ApartmentMessage,
+    House,
+    InboxNotification,
+    MessageNotification,
+    StaffHouse,
+)
+from smart_city_api.services.access import require_apartment
 
 
 def scope(owner, recipient_id):
@@ -104,3 +113,52 @@ async def mark_all_read(session, owner, recipient_id, through_id):
     )
     await session.commit()
     return {"unread_count": await count_unread(session, owner, recipient_id)}
+
+
+async def mark_conversation_read(session, user, data):
+    apartment = await require_apartment(session, user.id, data.apartment_id)
+    sender_id = await session.scalar(
+        select(Apartment.id).where(
+            Apartment.house_id == apartment.house_id,
+            Apartment.number == data.sender_number,
+        )
+    )
+    incoming = (
+        ApartmentMessage.recipient_id == apartment.id,
+        ApartmentMessage.sender_id == sender_id,
+        ApartmentMessage.id <= data.through_message_id,
+    )
+    # The cursor must be an incoming message that was actually shown in this conversation.
+    shown = await session.scalar(
+        select(ApartmentMessage.id).where(
+            *incoming,
+            ApartmentMessage.id == data.through_message_id,
+        )
+    )
+    if shown is None:
+        raise HTTPException(404, "Сообщение не найдено")
+    await session.execute(
+        update(InboxNotification)
+        .where(
+            InboxNotification.user_id == user.id,
+            InboxNotification.kind == "personal_message",
+            InboxNotification.apartment_id == apartment.id,
+            InboxNotification.event_key.in_(
+                select("apartment-message:" + cast(ApartmentMessage.id, String)).where(*incoming)
+            ),
+            InboxNotification.read_at.is_(None),
+        )
+        .values(read_at=datetime.now(UTC))
+    )
+    await session.execute(
+        update(MessageNotification)
+        .where(
+            MessageNotification.max_user_id == user.max_user_id,
+            MessageNotification.message_id.in_(select(ApartmentMessage.id).where(*incoming)),
+            MessageNotification.sent_at.is_(None),
+            MessageNotification.suppressed_at.is_(None),
+        )
+        .values(suppressed_at=datetime.now(UTC))
+    )
+    await session.commit()
+    return {"unread_count": await count_unread(session, "user_id", user.id)}

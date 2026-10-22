@@ -29,3 +29,9 @@ class InboxCount(BaseModel):
 
 class InboxReadAll(BaseModel):
     through_id: int = Field(ge=1)
+
+
+class InboxConversationRead(BaseModel):
+    apartment_id: int = Field(ge=1)
+    sender_number: int = Field(ge=1)
+    through_message_id: int = Field(ge=1)

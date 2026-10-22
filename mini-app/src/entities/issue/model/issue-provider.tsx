@@ -40,18 +40,41 @@ export function IssueProvider({ children, gateway }: { children: ReactNode; gate
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [attempt, setAttempt] = useState(0);
+  const revision = useRef(0);
   function reload() { setLoading(true); setError(""); setAttempt(value => value + 1); }
   useEffect(() => {
-    const controller = new AbortController();
-    gateway.list(controller.signal).then(items => {
-      if (!controller.signal.aborted) setIssues(items);
-    }).catch((error: unknown) => {
-      if (!controller.signal.aborted) setError(error instanceof Error ? error.message : "Не удалось загрузить обращения");
-    }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
-    return () => controller.abort();
+    let controller: AbortController | undefined;
+    let stopped = false;
+    async function poll() {
+      if (document.hidden || controller || stopped) return;
+      controller = new AbortController();
+      const signal = controller.signal;
+      const version = revision.current;
+      try {
+        const items = await gateway.list(signal);
+        if (!signal.aborted && version === revision.current) { setIssues(items); setError(""); }
+      } catch (error) {
+        if (!signal.aborted) setError(error instanceof Error ? error.message : "Не удалось загрузить обращения");
+      } finally { if (!signal.aborted) setLoading(false); controller = undefined; }
+    }
+    const wake = () => { void poll(); };
+    wake();
+    const timer = window.setInterval(wake, 10000);
+    window.addEventListener("focus", wake); document.addEventListener("visibilitychange", wake);
+    return () => {
+      stopped = true; controller?.abort(); clearInterval(timer);
+      window.removeEventListener("focus", wake); document.removeEventListener("visibilitychange", wake);
+    };
   }, [gateway, attempt]);
   const { house, selected } = useHouseSelection();
   const [draft, setDraft] = useState(() => emptyDraft(selected));
+  const dirty = !!(draft.title.trim() || draft.description.trim() || draft.photos.length);
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
   const [chatDrafts, setChatDrafts] = useState<Record<string, string>>({});
   const [chatPhotos, updateChatPhotos] = useState<Record<string, ChatDraftPhoto[]>>({});
   const [creating, setCreating] = useState(false);
@@ -82,6 +105,7 @@ export function IssueProvider({ children, gateway }: { children: ReactNode; gate
   function resetDraft() { setDraft(emptyDraft(selected)); requestId.current = null; }
   async function removeIssue(id: string) {
     await gateway.remove(id);
+    revision.current++;
     setIssues(current => current.filter(issue => issue.id !== id));
     setCreatedIssueId(current => current === id ? null : current);
     setChatDrafts(current => { const next = { ...current }; delete next[id]; return next; });
@@ -101,6 +125,7 @@ export function IssueProvider({ children, gateway }: { children: ReactNode; gate
     setCreating(true);
     const id = requestId.current;
     const task = Promise.resolve().then(() => gateway.create(input, id)).then(issue => {
+      revision.current++;
       setIssues(current => current.some(item => item.id === issue.id) ? current : [issue, ...current]);
       resetDraft();
       setCreatedIssueId(issue.id);

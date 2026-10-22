@@ -1,4 +1,6 @@
 import { AppProviders } from "./app-providers";
+import { Suspense } from "react";
+import { StartupScreen } from "@/shared/ui/startup-screen";
 import type { Metadata, Viewport } from "next";
 import { ApplicationShell } from "@/widgets/application-shell";
 import "@/shared/styles";
@@ -22,7 +24,7 @@ export function RootLayout({ children, bridge }: Readonly<{ children: React.Reac
   return (
     <html lang="ru" suppressHydrationWarning>
       <head><meta name="color-scheme" content="light dark" suppressHydrationWarning />{bridge}</head>
-      <body><AppProviders><ApplicationShell>{children}</ApplicationShell></AppProviders></body>
+      <body><Suspense fallback={<StartupScreen />}><AppProviders><ApplicationShell>{children}</ApplicationShell></AppProviders></Suspense></body>
     </html>
   );
 }

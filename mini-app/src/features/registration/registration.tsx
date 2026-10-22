@@ -1,5 +1,6 @@
 "use client";
 import { BrandWordmark } from "@/shared/ui/brand-mark";
+import { parseProfile } from "@/entities/house/model/api";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useApi } from "@/shared/api/context";
 import { endpoints } from "@/shared/api/client";
@@ -60,6 +61,26 @@ function RegistrationForm({ initial, onComplete, refresh, additional, onApproved
   const house = company?.houses.find(h => h.id === houseId);
   const entrance = house?.entrances.find(e => e.number === entranceNumber);
   const pending = ((!additional || !!preferredHouseId) && initial.status === "pending") || (submitted && !approved);
+  useEffect(() => {
+    if (!additional || !submitted || approved) return;
+    const controller = new AbortController();
+    let checking = false;
+    const check = async () => {
+      if (document.hidden || checking) return;
+      checking = true;
+      try {
+        const profile = parseProfile(await api(endpoints.me, { signal: controller.signal }));
+        if (!controller.signal.aborted && profile.apartments.some(a => a.houseId === String(houseId) && a.number === Number(apartment))) {
+          setApproved(true); onApproved?.();
+          if (preferredHouseId) onComplete();
+        }
+      } catch { /* Keep the pending form available; membership refresh will retry. */ }
+      finally { checking = false; }
+    };
+    const timer = window.setInterval(() => void check(), 10000);
+    window.addEventListener("focus", check);
+    return () => { controller.abort(); clearInterval(timer); window.removeEventListener("focus", check); };
+  }, [additional, submitted, approved, api, houseId, apartment, onApproved, onComplete, preferredHouseId]);
 
   async function submit() {
     if (busy || !house || !entrance) return;
