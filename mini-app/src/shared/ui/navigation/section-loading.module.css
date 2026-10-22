@@ -1,0 +1,4 @@
+.loading { position:fixed; inset:calc(78 * var(--u) + env(safe-area-inset-top)) 0 calc(100 * var(--u) + env(safe-area-inset-bottom)); display:grid; align-content:center; justify-items:center; gap:16px; width:min(100%,440px); margin-inline:auto; padding:24px 16px; text-align:center; color:var(--color-muted); pointer-events:none; }
+.loading img { display:block; width:144px; height:108px; object-fit:contain; }
+.loading p { margin:0; font-size:calc(17 * var(--u)); line-height:1.5; }
+.progress { width:112px; }

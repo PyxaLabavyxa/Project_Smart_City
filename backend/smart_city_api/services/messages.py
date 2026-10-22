@@ -5,6 +5,7 @@ from app.database.models import (
     User,
     UserApartment,
 )
+from app.services.inbox import notify_residents
 from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -81,6 +82,22 @@ async def send_message(
                 MessageNotification(message_id=message.id, max_user_id=max_id)
                 for max_id in recipients
             ]
+        )
+        resident_ids = await session.scalars(
+            select(UserApartment.user_id).where(
+                UserApartment.apartment_id == recipient.id, UserApartment.user_id != user_id
+            )
+        )
+        await notify_residents(
+            session,
+            resident_ids,
+            key=f"apartment-message:{message.id}",
+            kind="personal_message",
+            title=f"Сообщение от квартиры {sender.number}",
+            body=message.text,
+            house_id=sender.house_id,
+            apartment_id=recipient.id,
+            href=f"/messages/{sender.number}",
         )
         await session.commit()
     except IntegrityError:

@@ -3,6 +3,14 @@
 import asyncio
 import logging
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
+
+from maxapi.enums.parse_mode import ParseMode
+from maxapi.types import LinkButton
+from maxapi.types.errors import Error
+from maxapi.types.input_media import InputMedia
+from maxapi.utils.inline_keyboard import InlineKeyboardBuilder
+from sqlalchemy import select, update
 
 from maxapi.types import LinkButton
 from maxapi.types.errors import Error
@@ -15,6 +23,8 @@ from app.database.models import (
     AnnouncementPrivateDelivery,
     House,
     HouseChat,
+    InboxNotification,
+    MiniAppPresence,
     StaffHouse,
     StaffUser,
     User,
@@ -24,6 +34,7 @@ from app.services.planned_works import announcement_message
 from chatbot.keyboards.inline import mini_app_username
 
 logger = logging.getLogger(__name__)
+WELCOME_IMAGE = Path(__file__).resolve().parents[1] / "assets" / "welcome-house.png"
 
 
 class MaxRejected(ValueError):
@@ -43,20 +54,26 @@ async def check_permissions(bot, chat_id):
     me = checked(await bot.get_me_from_chat(chat_id=chat_id))
     permissions = {getattr(p, "value", p) for p in (me.permissions or [])}
     if not me.is_owner and (
-        not me.is_admin or not {"write", "pin_message", "read_all_messages"}.issubset(permissions)
+        not me.is_admin
+        or not {"write", "pin_message", "read_all_messages"}.issubset(permissions)
     ):
         raise MaxRejected(403)
 
 
-def menu_keyboard():
+def menu_keyboard(house_id):
     builder = InlineKeyboardBuilder()
     username = mini_app_username()
     for label, section in [
-        ("Сообщить о проблеме", "report"),
-        ("Обращения дома", "issues"),
-        ("Контакты УК", "contacts"),
+        ("📝 Сообщить о проблеме", "report"),
+        ("🏠 Обращения дома", "issues"),
+        ("☎️ Контакты УК", "contacts"),
     ]:
-        builder.row(LinkButton(text=label, url=f"https://max.ru/{username}?startapp={section}"))
+        builder.row(
+            LinkButton(
+                text=label,
+                url=f"https://max.ru/{username}?startapp={section}_house_{house_id}",
+            )
+        )
     return builder.as_markup()
 
 
@@ -88,13 +105,16 @@ async def recover_interrupted(sessions):
         await session.execute(
             update(AnnouncementDelivery)
             .where(
-                AnnouncementDelivery.status == "sending", AnnouncementDelivery.attempted_at < cutoff
+                AnnouncementDelivery.status == "sending",
+                AnnouncementDelivery.attempted_at < cutoff,
             )
             .values(status="uncertain", error=delivery_error(None, uncertain=True))
         )
         await session.execute(
             update(HouseChat)
-            .where(HouseChat.menu_status == "sending", HouseChat.menu_attempted_at < cutoff)
+            .where(
+                HouseChat.menu_status == "sending", HouseChat.menu_attempted_at < cutoff
+            )
             .values(
                 menu_status="uncertain",
                 status="attention",
@@ -127,15 +147,19 @@ async def process_menu(bot, sessions):
     try:
         await check_permissions(bot, chat_id)
         text = (
-            f"Привет! Я Домовед — помощник жителей дома: {address}.\n\n"
+            f"👋 Привет! Я Домовед — помощник жителей дома.\n📍 {address}\n\n"
             "Через кнопки ниже можно сообщить о проблеме, посмотреть обращения и контакты УК. "
             "В приложении проверьте выбранный адрес.\n\n"
-            "Здесь появляются только важные объявления управляющей компании. "
+            "🔔 Здесь появляются только важные объявления управляющей компании. "
             "Обращения и личная переписка остаются в мини-приложении."
         )
+        attachments = [
+            await asyncio.to_thread(InputMedia, str(WELCOME_IMAGE)),
+            menu_keyboard(house_id),
+        ]
         if mid:
             edited = await bot.edit_message(
-                message_id=mid, text=text, attachments=[menu_keyboard()], notify=False
+                message_id=mid, text=text, attachments=attachments, notify=False
             )
             if isinstance(edited, Error) and edited.code == 404:
                 mid = None
@@ -145,7 +169,7 @@ async def process_menu(bot, sessions):
             sending = True
             result = checked(
                 await bot.send_message(
-                    chat_id=chat_id, text=text, attachments=[menu_keyboard()], notify=False
+                    chat_id=chat_id, text=text, attachments=attachments, notify=False
                 )
             )
             mid = result.message.body.mid
@@ -178,7 +202,12 @@ async def process_menu(bot, sessions):
                 HouseChat.revision == revision,
                 HouseChat.menu_status == "sending",
             )
-            .values(menu_status=status, status=state, error=error, checked_at=datetime.now(UTC))
+            .values(
+                menu_status=status,
+                status=state,
+                error=error,
+                checked_at=datetime.now(UTC),
+            )
         )
     return True
 
@@ -219,13 +248,20 @@ async def process_announcement(bot, sessions):
             )
             return True
         delivery_id, chat_id = delivery.id, delivery.chat_id
-        text = announcement_message(announcement)
+        text, message_format = announcement_message(announcement)
         delivery.status, delivery.attempted_at = "sending", datetime.now(UTC)
     sending, mid = False, None
     try:
         await check_permissions(bot, chat_id)
         sending = True
-        result = checked(await bot.send_message(chat_id=chat_id, text=text, notify=True))
+        result = checked(
+            await bot.send_message(
+                chat_id=chat_id,
+                text=text,
+                notify=True,
+                parse_mode=ParseMode(message_format) if message_format else None,
+            )
+        )
         mid = result.message.body.mid
         status, error = "sent", ""
     except Exception as exc:
@@ -238,7 +274,10 @@ async def process_announcement(bot, sessions):
     async with sessions.begin() as session:
         await session.execute(
             update(AnnouncementDelivery)
-            .where(AnnouncementDelivery.id == delivery_id, AnnouncementDelivery.status == "sending")
+            .where(
+                AnnouncementDelivery.id == delivery_id,
+                AnnouncementDelivery.status == "sending",
+            )
             .values(
                 status=status,
                 message_id=mid,
@@ -272,18 +311,54 @@ async def process_private_announcement(bot, sessions):
         )
         target = targets.get(delivery.user_id)
         if not target or unavailable_reason(target["user"]):
-            delivery.status, delivery.error = "cancelled", "Доступ или настройки жителя изменились"
+            delivery.status, delivery.error = (
+                "cancelled",
+                "Доступ или настройки жителя изменились",
+            )
             return True
-        delivery_id, user_id, max_id = delivery.id, delivery.user_id, target["user"].max_user_id
-        text = announcement_message(announcement)
+        online = await session.scalar(
+            select(MiniAppPresence.user_id)
+            .where(
+                MiniAppPresence.user_id == delivery.user_id,
+                MiniAppPresence.expires_at > datetime.now(UTC),
+            )
+            .limit(1)
+        )
+        saved = await session.scalar(
+            select(InboxNotification.id).where(
+                InboxNotification.user_id == delivery.user_id,
+                InboxNotification.event_key == f"announcement:{announcement.id}",
+            )
+        )
+        if online is not None and saved is not None:
+            delivery.status, delivery.error = (
+                "cancelled",
+                "Сохранено в уведомлениях: житель в мини-приложении",
+            )
+            return True
+        delivery_id, user_id, max_id = (
+            delivery.id,
+            delivery.user_id,
+            target["user"].max_user_id,
+        )
+        text, message_format = announcement_message(announcement)
         delivery.status, delivery.attempted_at = "sending", datetime.now(UTC)
     mid, blocked = None, False
     try:
-        result = checked(await bot.send_message(user_id=max_id, text=text, notify=True))
+        result = checked(
+            await bot.send_message(
+                user_id=max_id,
+                text=text,
+                notify=True,
+                parse_mode=ParseMode(message_format) if message_format else None,
+            )
+        )
         mid = result.message.body.mid
         status, error = "sent", ""
     except Exception as exc:
-        uncertain = not isinstance(exc, MaxRejected) or exc.code >= 500 or exc.code == 408
+        uncertain = (
+            not isinstance(exc, MaxRejected) or exc.code >= 500 or exc.code == 408
+        )
         blocked = isinstance(exc, MaxRejected) and exc.code in (403, 404)
         status = "uncertain" if uncertain else "failed"
         error = (

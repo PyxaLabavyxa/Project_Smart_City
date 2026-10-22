@@ -135,3 +135,7 @@
 .placeDetails :global([data-number-choice]) > span:first-child { font-size:calc(14 * var(--u)); gap:2px; }
 .placeDetails :global([data-number-choice]) strong,.placeDetails :global([data-number-choice]) > span:last-child { font-size:calc(18 * var(--u)); }
 .placeHint { margin:0; color:var(--color-muted); font-size:14px; line-height:1.7; }
+
+.houseAddress { display:flex; align-items:flex-start; gap:8px; margin:4px 0 8px; color:var(--color-muted); font-size:13px; line-height:1.5; overflow-wrap:anywhere; }
+.houseAddress svg { flex-shrink:0; margin-top:1px; color:var(--color-action); }
+.sheet .houseAddress { margin-bottom:12px; }

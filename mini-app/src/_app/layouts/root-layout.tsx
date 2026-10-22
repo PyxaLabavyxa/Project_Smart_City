@@ -3,10 +3,11 @@ import type { Metadata, Viewport } from "next";
 import { ApplicationShell } from "@/widgets/application-shell";
 import "@/shared/styles";
 import "../styles/globals.css";
+import { appIcon } from "@/shared/ui/artwork-assets";
 
 export const metadata: Metadata = {
   title: "Домовед",
-  icons: { icon: "/images/brand/app-icon.png", apple: "/images/brand/app-icon.png" },
+  icons: { icon: appIcon.src, apple: "/images/brand/app-icon.png" },
   description: "Ваш дом, обращения и связь с соседями.",
 };
 
@@ -20,7 +21,7 @@ export const viewport: Viewport = {
 export function RootLayout({ children, bridge }: Readonly<{ children: React.ReactNode; bridge: React.ReactNode }>) {
   return (
     <html lang="ru" suppressHydrationWarning>
-      <head>{bridge}</head>
+      <head><meta name="color-scheme" content="light dark" suppressHydrationWarning />{bridge}</head>
       <body><AppProviders><ApplicationShell>{children}</ApplicationShell></AppProviders></body>
     </html>
   );

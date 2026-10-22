@@ -83,7 +83,7 @@ def test_materials_are_valid_and_match_documented_application_routes():
             current["properties"] = {
                 key: current["properties"][key] for key in schema["properties"]
             }
-        if name == "WorkResponse":
+        if name == "WorkResponse" and schema["properties"]["ends_at"].get("type") == "string":
             # Intentional contract extension: an unknown work end is null, never a fake date.
             # All other deployed fields and the dated-work format remain unchanged.
             original = schema["properties"]["ends_at"]

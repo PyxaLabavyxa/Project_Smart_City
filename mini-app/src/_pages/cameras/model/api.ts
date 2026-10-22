@@ -1,18 +1,9 @@
-import { useCallback } from "react";
-import { commonZones, isOutdoorZone, useHouseSelection, validLocation, type House, type HouseLocation } from "@/entities/house";
-import { useApi } from "@/shared/api/context";
+import { commonZones, isOutdoorZone, validLocation, type House, type HouseLocation } from "@/entities/house";
 import { endpoints, type ApiClient } from "@/shared/api/client";
-import { array, number, record, string } from "@/shared/api/parse";
-import { useRemote } from "@/shared/api/use-remote";
+import { number, record, string } from "@/shared/api/parse";
 import type { Camera } from "./camera";
 import type { CameraGateway } from "./camera-gateway";
 
-export function useCameras() {
-  const { house } = useHouseSelection();
-  const api = useApi();
-  const load = useCallback(async (signal: AbortSignal) => array(await api(endpoints.cameras(house.id), { signal }), value => parseCamera(value, house)), [api, house]);
-  return useRemote(load);
-}
 export function parseCamera(value: unknown, house: House): Camera {
   const c = record(value);
   if (c.status !== "online" && c.status !== "maintenance" && c.status !== "unavailable") throw new Error("Неизвестный статус камеры");

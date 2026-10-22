@@ -1,7 +1,8 @@
 "use strict";
 
-const chatTopics = { outage: "⚠️ Отключение коммунальных услуг", works: "🔧 Ремонт и обслуживание дома", meeting: "👥 Собрание жителей", other: "ℹ️ Информация для жителей" };
-function announcementTopic(topic, work) { return work ? "🔧 Запланированные работы" : chatTopics[topic]; }
+const chatTopics = { outage: "Отключение коммунальных услуг", works: "Ремонт и обслуживание дома", meeting: "Собрание жителей", other: "Информация для жителей" };
+const announcementTopics = { outage: "⚠️ Отключение коммунальных услуг", works: "🔧 Ремонт и обслуживание дома", meeting: "👥 Собрание жителей", other: "📌 Информация для жителей" };
+function announcementTopic(topic, work) { return work ? "🔧 Запланированные работы" : announcementTopics[topic]; }
 const deliveryLabels = { draft: "Черновик", pending: "В очереди", sending: "Отправляется", sent: "Отправлено", failed: "Не отправлено", uncertain: "Нужно проверить чат", cancelled: "Отменено" };
 let maxChatRows = [], maxChatRequest = 0, announcementRequest = 0, maxChatBusy = false;
 let announcementPage = 1, announcementTotal = 0, announcementBusy = false;
@@ -96,7 +97,7 @@ function renderAnnouncementHouses(selected) {
   updateAnnouncementPreview();
 }
 function renderResidents() {
-  $("announcement-residents").innerHTML = residentOptions.length ? residentOptions.map(r => `<label class="announcement-house resident-choice"><input type="checkbox" value="${r.id}"${selectedResidentIds.has(r.id) ? " checked" : ""}${!r.available ? " disabled" : ""}><span><strong>${esc(r.name)}</strong><small>MAX ID ${r.max_user_id}</small><small>${r.apartments.map(esc).join("; ")}</small>${r.reason ? `<small class="resident-unavailable">${esc(r.reason)}</small>` : ""}</span></label>`).join("") : '<p class="form-help">Жители не найдены. Попробуйте другое имя или MAX ID.</p>';
+  $("announcement-residents").innerHTML = residentOptions.length ? residentOptions.map(r => `<label class="announcement-house resident-choice"><input type="checkbox" value="${r.id}"${selectedResidentIds.has(r.id) ? " checked" : ""}${!r.available ? " disabled" : ""}><span><strong>${esc(r.name)}</strong><small>MAX ID ${r.max_user_id}</small><small>${r.apartments.map(esc).join("; ")}</small>${r.reason ? `<small class="resident-unavailable">${esc(r.reason)}</small>` : ""}</span></label>`).join("") : '<p class="form-help">Жители не найдены. Попробуйте имя, MAX ID или адрес с номером квартиры.</p>';
   $("selected-announcement-residents").innerHTML = [...selectedResidentIds].map(id => `<button type="button" class="resident-chip" data-remove-resident="${id}" aria-label="Убрать ${esc(residentDirectory.get(id)?.name || 'получателя')}">${esc(residentDirectory.get(id)?.name || 'Недоступный получатель')} <span aria-hidden="true">×</span></button>`).join("");
   $("announcement-residents-more").hidden = residentOptions.length >= residentTotal;
   updateAnnouncementPreview();

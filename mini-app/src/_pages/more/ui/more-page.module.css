@@ -47,10 +47,10 @@
 .footer p { font-size:calc(16 * var(--u)); margin-top:calc(-5 * var(--u)); }
 .companyCard { display:flex; gap:calc(17 * var(--u)); align-items:center; padding:calc(14 * var(--u)); border-radius:calc(18 * var(--u)); background:var(--color-surface); }
 .companyCard > span { display:grid; place-items:center; width:calc(70 * var(--u)); height:calc(70 * var(--u)); flex-shrink:0; border-radius:12px; background:var(--color-soft); color:var(--color-ink); }
-.companyCard h2 { font-size:calc(24 * var(--u)); margin:0; }
+.companyCard h2 { font-size:calc(22 * var(--u)); margin:0; }
 .companyCard p { margin:4px 0 0; color:var(--color-muted); font-size:calc(18 * var(--u)); }
 .contactActions { margin:calc(16 * var(--u)) 0 calc(25 * var(--u)); padding:0 calc(14 * var(--u)); border-radius:calc(16 * var(--u)); background:var(--color-surface); }
-.contactAction { display:flex; align-items:center; gap:calc(20 * var(--u)); min-height:calc(73 * var(--u)); width:100%; border:0; padding:calc(10 * var(--u)) 0; background:transparent; color:var(--color-ink); text-align:left; font-size:calc(19 * var(--u)); font-weight:600; }
+.contactAction { display:flex; align-items:center; gap:calc(20 * var(--u)); min-height:calc(73 * var(--u)); width:100%; border:0; padding:calc(10 * var(--u)) 0; background:transparent; color:var(--color-ink); text-align:left; font-size:calc(18 * var(--u)); font-weight:600; }
 .contactAction + .contactAction { border-top:1px solid var(--color-line); }
 .contactAction .icon { width:calc(48 * var(--u)); height:calc(48 * var(--u)); }
 .contactAction > span:nth-child(2) { flex:1; }
@@ -76,3 +76,5 @@
 
 .footer { min-height:calc(155 * var(--u)); justify-content:center; padding-top:calc(20 * var(--u)); gap:calc(22 * var(--u)); }
 .mascot { width:calc(125 * var(--u)); height:calc(135 * var(--u)); flex-shrink:0; opacity:.77; }
+
+.websiteLink { min-width:0; max-width:65%; text-align:right; font-size:calc(15 * var(--u)); color:var(--color-action); text-decoration:underline; text-underline-offset:3px; overflow-wrap:anywhere; }

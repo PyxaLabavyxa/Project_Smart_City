@@ -12,6 +12,9 @@ from pydantic import (
     model_validator,
 )
 
+from app.services.announcement_format import announcement_message as format_message
+from app.services.announcement_format import announcement_topic as format_topic
+
 
 class WorkSchedule(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
@@ -37,16 +40,8 @@ class WorkSchedule(BaseModel):
         return self
 
 
-TOPICS = {
-    "outage": "⚠️ Отключение коммунальных услуг",
-    "works": "🔧 Ремонт и обслуживание дома",
-    "meeting": "👥 Собрание жителей",
-    "other": "ℹ️ Информация для жителей",
-}
-
-
 def announcement_topic(announcement):
-    return "🔧 Запланированные работы" if announcement.work else TOPICS[announcement.topic]
+    return format_topic(announcement.topic, planned_work=bool(announcement.work))
 
 
 def announcement_body(announcement):
@@ -64,7 +59,9 @@ def announcement_body(announcement):
 
 
 def announcement_message(announcement):
-    return (
-        f"🔔 Уведомление от УК\n{announcement_topic(announcement)}\n\n"
-        f"{announcement.title}\n\n{announcement_body(announcement)}\n\nУправляющая компания"
+    return format_message(
+        announcement.topic,
+        announcement.title,
+        announcement_body(announcement),
+        planned_work=bool(announcement.work),
     )

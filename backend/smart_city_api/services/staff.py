@@ -15,6 +15,7 @@ from app.database.models import (
     StaffUser,
     User,
 )
+from app.services.inbox import notify_residents
 from fastapi import HTTPException
 from sqlalchemy import func, or_, select, update
 from sqlalchemy.exc import IntegrityError
@@ -47,6 +48,7 @@ async def accessible_issue(
         Issue.id == issue_id,
         Issue.house_id.in_(house_scope(staff_id)),
         Issue.rejected_at.is_(None),
+        Issue.deleted_at.is_(None),
     )
     if lock:
         query = query.with_for_update()
@@ -65,7 +67,7 @@ def row_query():
     return (
         select(Issue, House.address, User.name, Apartment.number, func.coalesce(photos.c.count, 0))
         .join(House, House.id == Issue.house_id)
-        .join(User, User.id == Issue.user_id)
+        .outerjoin(User, User.id == Issue.user_id)
         .outerjoin(Apartment, Apartment.id == Issue.apartment_id)
         .outerjoin(photos, photos.c.issue_id == Issue.id)
     )
@@ -84,7 +86,7 @@ def issue_row(row) -> IssueRow:
         created_at=issue.created_at,
         house_id=issue.house_id,
         address=address,
-        author=author,
+        author=author or issue.reporter_name or "Заявитель",
         entrance=None if outdoor else issue.entrance,
         floor=None if outdoor else issue.floor,
         zone=issue.zone,
@@ -103,7 +105,11 @@ async def list_issues(
     page: int,
     page_size: int,
 ) -> StaffIssuePage:
-    conditions = [Issue.house_id.in_(house_scope(staff_id)), Issue.rejected_at.is_(None)]
+    conditions = [
+        Issue.house_id.in_(house_scope(staff_id)),
+        Issue.rejected_at.is_(None),
+        Issue.deleted_at.is_(None),
+    ]
     if house_id is not None:
         conditions.append(Issue.house_id == house_id)
     if priority is not None:
@@ -152,6 +158,7 @@ async def detail(session: AsyncSession, staff_id: int, issue_id: int) -> IssueDe
                 Issue.id == issue_id,
                 Issue.house_id.in_(house_scope(staff_id)),
                 Issue.rejected_at.is_(None),
+                Issue.deleted_at.is_(None),
             )
         )
     ).one_or_none()
@@ -191,6 +198,14 @@ async def detail(session: AsyncSession, staff_id: int, issue_id: int) -> IssueDe
     ).all()
     return IssueDetail(
         **issue_row(row).model_dump(),
+        resident_id=row[0].user_id,
+        reporter_phone=row[0].reporter_phone,
+        reporter_apartment=row[0].reporter_apartment,
+        created_by=await session.scalar(
+            select(StaffUser.name).where(StaffUser.id == row[0].created_by_staff_id)
+        )
+        if row[0].created_by_staff_id
+        else None,
         photos=[PhotoOutput(id=p.id, url=f"/api/v1/staff/photos/{p.id}") for p in photos],
         history=[EventOutput(status=e.status, created_at=e.created_at) for e in reversed(events)],
         messages=[
@@ -212,9 +227,13 @@ async def detail(session: AsyncSession, staff_id: int, issue_id: int) -> IssueDe
                 message_id=n.message_id,
                 author=name,
                 delivery=(
-                    "sent"
+                    "not_required"
+                    if n.max_user_id is None
+                    else "sent"
                     if n.sent_at
-                    else "read"
+                    else {"online": "in_app", "preferences": "muted"}.get(
+                        n.suppression_reason, "read"
+                    )
                     if n.suppressed_at
                     else "retrying"
                     if n.attempts
@@ -281,7 +300,7 @@ async def perform_action(
     prior = await previous_action(session, staff.id, body.request_id, fingerprint)
     if prior:
         return prior
-    author = await session.get(User, issue.user_id)
+    author = await session.get(User, issue.user_id) if issue.user_id else None
     house = await session.get(House, issue.house_id)
     message = None
     if isinstance(body, StatusInput):
@@ -295,6 +314,7 @@ async def perform_action(
                 Issue.id == issue.id,
                 Issue.status == body.expected_status,
                 Issue.rejected_at.is_(None),
+                Issue.deleted_at.is_(None),
             )
             .values(status=body.status)
         )
@@ -330,7 +350,8 @@ async def perform_action(
         notification = StaffNotification(
             issue_id=issue.id,
             staff_id=staff.id,
-            max_user_id=author.max_user_id,
+            max_user_id=author.max_user_id if author else None,
+            suppressed_at=None if author else datetime.now(UTC),
             kind=kind,
             status=body.status.value if isinstance(body, StatusInput) else None,
             message_id=message.id if message else None,
@@ -340,6 +361,23 @@ async def perform_action(
         )
         session.add(notification)
         await session.flush()
+        await notify_residents(
+            session,
+            [issue.user_id],
+            key=f"staff-action:{notification.id}",
+            kind="issue_message" if kind == "message" else "issue_status",
+            title=f"УК ответила по обращению №{issue.id}"
+            if kind == "message"
+            else f"Изменён статус вашего обращения №{issue.id}: "
+            + {
+                IssueStatus.NEW: "ожидает рассмотрения",
+                IssueStatus.IN_PROGRESS: "в работе",
+                IssueStatus.RESOLVED: "решено",
+            }[body.status],
+            body=f"{issue.title}\n{body.text}" if kind == "message" else issue.title,
+            house_id=issue.house_id,
+            href=f"/issues/{issue.id}/chat" if kind == "message" else f"/issues/{issue.id}",
+        )
         result = ActionOutput(notification_id=notification.id)
         await session.commit()
         return result
@@ -358,7 +396,11 @@ async def reject_issue(
     fingerprint = action_hash(issue_id, "rejection", body)
     issue = await session.scalar(
         select(Issue)
-        .where(Issue.id == issue_id, Issue.house_id.in_(house_scope(staff_id)))
+        .where(
+            Issue.id == issue_id,
+            Issue.house_id.in_(house_scope(staff_id)),
+            Issue.deleted_at.is_(None),
+        )
         .with_for_update()
     )
     if issue is None:
@@ -368,13 +410,14 @@ async def reject_issue(
         return prior
     if issue.rejected_at is not None or issue.status != body.expected_status:
         raise HTTPException(409, "Обращение уже изменено. Обновите список")
-    author = await session.get(User, issue.user_id)
+    author = await session.get(User, issue.user_id) if issue.user_id else None
     house = await session.get(House, issue.house_id)
     changed = await session.execute(
         update(Issue)
         .where(
             Issue.id == issue_id,
             Issue.rejected_at.is_(None),
+            Issue.deleted_at.is_(None),
             Issue.status == body.expected_status,
         )
         .values(rejected_at=datetime.now(UTC), rejection_reason=body.reason)
@@ -388,7 +431,8 @@ async def reject_issue(
     notice = StaffNotification(
         issue_id=issue_id,
         staff_id=staff_id,
-        max_user_id=author.max_user_id,
+        max_user_id=author.max_user_id if author else None,
+        suppressed_at=None if author else datetime.now(UTC),
         kind="rejection",
         status="rejected",
         text=(
@@ -402,6 +446,16 @@ async def reject_issue(
     try:
         await session.flush()
         notice_id = notice.id
+        await notify_residents(
+            session,
+            [issue.user_id],
+            key=f"staff-action:{notice_id}",
+            kind="issue_rejection",
+            title=f"Обращение №{issue.id} отклонено",
+            body=f"{issue.title}\nПричина: {body.reason}",
+            house_id=issue.house_id,
+            href="/issues",
+        )
         await session.commit()
     except IntegrityError:
         await session.rollback()

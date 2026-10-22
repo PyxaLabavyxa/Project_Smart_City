@@ -1,6 +1,2 @@
-.art { pointer-events:none; }
-.art img { object-fit:contain; object-position:right bottom; }
-.night { display:none; }
-:global(:root[data-theme="dark"]) .art { opacity:1; mask-image:none; }
-:global(:root[data-theme="dark"]) .day { display:none; }
-:global(:root[data-theme="dark"]) .night { display:block; }
+.art { pointer-events:none; background:var(--art-light) right bottom / contain no-repeat; }
+:global(:root[data-theme="dark"]) .art { opacity:1; mask-image:none; background-image:var(--art-dark); }

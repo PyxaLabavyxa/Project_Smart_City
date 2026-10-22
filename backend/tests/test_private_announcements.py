@@ -3,16 +3,17 @@ from types import SimpleNamespace as NS
 from unittest.mock import AsyncMock
 
 import pytest
-from app.database.models import AnnouncementPrivateDelivery, User, UserApartment
-from chatbot.middlewares.private_dialog import PrivateDialogMiddleware, record_dialog
-from chatbot.services.house_chat_delivery import process_private_announcement
+from maxapi.enums.parse_mode import ParseMode
 from maxapi.types.errors import Error
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-
 from tests.test_house_chat_delivery import bot_stub
 from tests.test_house_chats import BODY
 from tests.test_staff import ROOT, login
+
+from app.database.models import AnnouncementPrivateDelivery, House, User, UserApartment
+from chatbot.middlewares.private_dialog import PrivateDialogMiddleware, record_dialog
+from chatbot.services.house_chat_delivery import process_private_announcement
 
 pytest_plugins = ["tests.test_api", "tests.test_staff"]
 
@@ -85,8 +86,11 @@ def test_private_draft_freezes_deduplicated_eligible_recipients(staff_api):
     assert not asyncio.run(process_private_announcement(bot, sessions))
     bot.send_message.assert_awaited_once_with(
         user_id=101,
-        text="🔔 Уведомление от УК\n🔧 Ремонт и обслуживание дома\n\n"
-        + BODY["title"] + "\n\n" + BODY["text"] + "\n\nУправляющая компания",
+        text="<b>🔔 Уведомление от УК</b>\n🔧 Ремонт и обслуживание дома\n\n<b>"
+        + BODY["title"]
+        + "</b>\n\n"
+        + BODY["text"],
+        parse_mode=ParseMode.HTML,
         notify=True,
     )
 
@@ -174,3 +178,24 @@ def test_dialog_flag_can_be_restored_after_user_opens_bot(staff_api):
     asyncio.run(record_dialog(101, False, client.app.state.database.sessions))
     with Session(engine) as session:
         assert not session.get(User, 1).bot_dialog_started
+
+
+def test_resident_address_search_preserves_scope_and_matches_all_apartments(staff_api):
+    client, engine, _ = staff_api
+    enable(engine)
+    with Session(engine) as session:
+        session.get(House, 1).address = "г. Казань, ул. Солнечная, 1"
+        session.get(House, 2).address = "г. Казань, ул. Солнечная, 2"
+        session.commit()
+    login(client)
+
+    def ids(query):
+        result = client.get(ROOT + "/announcement-residents", params={"q": query})
+        assert result.status_code == 200
+        return {row["id"] for row in result.json()["items"]}
+
+    assert ids("Солнечная, KV 7") == {1}
+    assert ids("Солнечная 1, кв 19") == {1, 2}
+    assert ids("кв 9") == set()
+    assert ids("Солнечная 2 кв 7") == set()
+    assert ids("101") == {1}

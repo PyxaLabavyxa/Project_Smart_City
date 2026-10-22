@@ -1,5 +1,11 @@
+import { launchTarget } from "./launch-route";
+
 export class ApiError extends Error {
   constructor(message: string, public status: number) { super(message); }
+}
+
+export function apiUrl(path: string) {
+  return `${(process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api/v1").replace(/\/$/, "")}${path}`;
 }
 
 export type ApiClient = ReturnType<typeof createApiClient>;
@@ -47,6 +53,8 @@ export const endpoints = {
   me: "/me",
   notifications: "/me/notifications",
   registration: "/registration",
+  registrationState: (houseId?: string) => houseId ? `/registration/houses/${encodeURIComponent(houseId)}` : "/registration",
+  invitation: (houseId: string) => `/houses/${encodeURIComponent(houseId)}/invitation`,
   apartments: (house: string) => `/houses/${encodeURIComponent(house)}/apartments`,
   issues: (house: string) => `/houses/${encodeURIComponent(house)}/issues`,
   issue: (id: string) => `/issues/${encodeURIComponent(id)}`,
@@ -67,4 +75,9 @@ export function maxLaunchData(): string {
   const params = new URLSearchParams(window.location.hash.slice(1));
   const values = params.getAll("WebAppData");
   return values.length === 1 ? values[0] : "";
+}
+
+export function maxLaunchTarget() {
+  const bridge = (window as Window & { WebApp?: { initDataUnsafe?: { start_param?: unknown } } }).WebApp;
+  return launchTarget(maxLaunchData(), bridge?.initDataUnsafe?.start_param);
 }

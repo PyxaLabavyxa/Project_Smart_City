@@ -7,6 +7,7 @@ export function parseProfile(value: unknown) {
   const profile = record(value);
   return {
     id: number(profile.id), name: string(profile.name),
+    onboardingStatus: profile.onboarding_status === "completed" ? "completed" as const : profile.onboarding_status === "skipped" ? "skipped" as const : "not_started" as const,
     apartments: array(profile.apartments, parseApartment),
     houses: array(profile.houses, value => {
       const h = record(value);

@@ -81,6 +81,7 @@ export function ReportIssueForm({ cancelHref = "/issues", cancelLabel = "Все 
     {draft.step >= 0 && <ol className={styles.steps} style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` }} aria-label="Этапы обращения">{steps.map((step, index) => <li key={step.id} data-reached={step.id <= draft.step || undefined} aria-current={draft.step === step.id ? "step" : undefined}><span>{step.id < draft.step ? "✓" : index + 1}</span>{step.label}</li>)}</ol>}
     <fieldset key={draft.step} className={styles.fields} disabled={saving} data-motion-panel>
       <legend tabIndex={-1}>{draft.step < 0 ? "Где возникла проблема?" : stepTitles[draft.step]}</legend>
+      {draft.step < 3 && <p className={styles.houseAddress}><Icon name="pin" size={20} /><span>{house.address}</span></p>}
       {draft.step > 0 && draft.step < 3 && <p className={styles.context}>{draft.step > 1 && `${categoryLabel} · `}{formatLocation(draft.place)} <button type="button" onClick={() => goToStep(-1)}>Изменить место</button></p>}
       {draft.step <= 0 && <><ReportLocationPicker value={draft.place} onChange={place => updateDraft({ place })} details={draft.step === 0} showScopes={draft.step < 0} />{error("place")}</>}
       {draft.step === 1 && <><div className={styles.categories} role="radiogroup" aria-label="Подкатегория" tabIndex={-1} aria-invalid={!!errors.category} aria-describedby={errors.category ? "category-error" : undefined}>

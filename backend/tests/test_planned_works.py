@@ -1,5 +1,6 @@
 import asyncio
 from datetime import UTC, datetime, timedelta
+from html import escape
 from unittest.mock import AsyncMock
 
 import pytest
@@ -8,11 +9,13 @@ from app.database.models import (
     AnnouncementDelivery,
     AnnouncementPrivateDelivery,
     HouseWork,
+    InboxNotification,
     StaffHouse,
     User,
     UserApartment,
 )
 from chatbot.services.house_chat_delivery import process_announcement, process_private_announcement
+from maxapi.enums.parse_mode import ParseMode
 from maxapi.types.errors import Error
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -74,6 +77,10 @@ def test_work_is_published_atomically_once_in_each_house_and_private_audience_is
     with Session(engine) as session:
         assert session.scalar(select(func.count()).select_from(HouseWork)) == 2
         assert session.scalar(select(func.count()).select_from(AnnouncementPrivateDelivery)) == 2
+        notifications = session.scalars(select(InboxNotification)).all()
+        assert len(notifications) == 3
+        assert {n.user_id: n.house_id for n in notifications} == {1: 1, 2: 1, 3: 2}
+        assert all(n.href == "/" and "МСК" in n.body for n in notifications)
     first = client.get("/api/v1/houses/1/works", headers=headers()).json()[0]
     second = client.get("/api/v1/houses/2/works", headers=headers(103)).json()[0]
     assert first["title"] == second["title"] == BODY["title"]
@@ -98,8 +105,8 @@ def test_work_notification_includes_dates_and_matches_staff_preview(staff_api):
     auth = login(client)
     result = send(client, auth, create(client, auth, body(channels=["groups", "private"])))
     expected = (
-        f"🔔 Уведомление от УК\n🔧 Запланированные работы\n\n"
-        f"{result['title']}\n\n{result['message_body']}\n\nУправляющая компания"
+        f"<b>🔔 Уведомление от УК</b>\n🔧 Запланированные работы\n\n"
+        f"<b>{escape(result['title'])}</b>\n\n{escape(result['message_body'])}"
     )
     assert result["message_topic"] == "🔧 Запланированные работы"
     assert "МСК" in expected and result["work"]["location"] in expected
@@ -108,6 +115,9 @@ def test_work_notification_includes_dates_and_matches_staff_preview(staff_api):
     asyncio.run(process_announcement(bot, sessions))
     asyncio.run(process_private_announcement(bot, sessions))
     assert all(call.kwargs["text"] == expected for call in bot.send_message.await_args_list)
+    assert all(
+        call.kwargs["parse_mode"] == ParseMode.HTML for call in bot.send_message.await_args_list
+    )
 
 
 def test_unknown_end_is_published_delivered_and_completed_without_changing_the_notice(staff_api):
@@ -127,7 +137,7 @@ def test_unknown_end_is_published_delivered_and_completed_without_changing_the_n
     bot = bot_stub()
     asyncio.run(process_private_announcement(bot, client.app.state.database.sessions))
     text = bot.send_message.call_args.kwargs["text"]
-    assert "🔔 Уведомление от УК\n🔧 Запланированные работы" in text
+    assert "<b>🔔 Уведомление от УК</b>\n🔧 Запланированные работы" in text
     assert "Срок окончания уточняется" in bot.send_message.call_args.kwargs["text"]
     path = ROOT + f"/announcements/{draft['id']}/complete-work"
     other = login(client, "other")
@@ -219,7 +229,7 @@ def test_migration_preserves_legacy_works_and_protects_schedules(tmp_path, monke
     url = "sqlite:///" + (tmp_path / "works.db").as_posix()
     monkeypatch.setenv("DATABASE_URL", url.replace("sqlite:///", "sqlite+aiosqlite:///"))
     config = Config(str(Path(__file__).resolve().parents[1] / "alembic.ini"))
-    command.upgrade(config, "0017")
+    command.upgrade(config, "0022")
     engine = create_engine(url)
     try:
         with engine.begin() as connection:
@@ -242,12 +252,12 @@ def test_migration_preserves_legacy_works_and_protects_schedules(tmp_path, monke
             assert (
                 connection.scalar(text("SELECT title FROM house_works WHERE id=1")) == "Legacy work"
             )
-        command.downgrade(config, "0017")
+        command.downgrade(config, "0022")
         command.upgrade(config, "head")
         with engine.begin() as connection:
             connection.execute(text("UPDATE house_works SET ends_at=NULL WHERE id=1"))
         with pytest.raises(RuntimeError, match="Keep open-ended works"):
-            command.downgrade(config, "0018")
+            command.downgrade(config, "0023")
         with engine.begin() as connection:
             connection.execute(
                 text("UPDATE house_works SET ends_at='2030-01-01 12:00:00' WHERE id=1")
@@ -267,12 +277,12 @@ def test_migration_preserves_legacy_works_and_protects_schedules(tmp_path, monke
             )
             session.commit()
         with pytest.raises(RuntimeError, match="Keep open-ended work schedules"):
-            command.downgrade(config, "0018")
+            command.downgrade(config, "0023")
         with Session(engine) as session:
             session.scalar(select(Announcement)).work = body()["work"]
             session.commit()
         with pytest.raises(RuntimeError, match="Keep planned work"):
-            command.downgrade(config, "0017")
+            command.downgrade(config, "0022")
     finally:
         engine.dispose()
 

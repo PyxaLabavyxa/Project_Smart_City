@@ -22,7 +22,7 @@ export function IssuesPage({ initialCategory = "" }: { initialCategory?: string 
   function resetFilters() {
     setFilters(current => ({ ...initialIssueFilters, onlyMine: current.onlyMine }));
   }
-  if ((loading || error) && !issues.length) return <RequestState loading={loading} error={error} reload={reload} />;
+  if ((loading || error) && !issues.length) return <RequestState loading={loading} error={error} reload={reload} page />;
   return <div className={styles.content}><HomeAddress compact /><header className={styles.heading}>
     <h1>Обращения</h1>
   </header>

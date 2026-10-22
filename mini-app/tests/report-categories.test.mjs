@@ -35,13 +35,13 @@ test('entrance categories work upstairs; private apartments exclude common prope
   assert.deepEqual(values('apartment'), ['Водоснабжение', 'Отопление', 'Электричество', 'Безопасность', 'Другое']);
 });
 
-test('entrance starts with a plan; courtyard and apartment start with categories', () => {
+test('new drafts start with scope selection; explicit places keep their next step', () => {
   for (const zone of ['courtyard', 'parking', 'house', 'apartment']) {
-    assert.equal(emptyDraft(place(zone)).step, 1);
+    assert.equal(emptyDraft(place(zone)).step, -1);
     assert.equal(initialReportStep(place(zone)), 1);
   }
   for (const zone of ['corridor', 'stairs', 'elevator', 'technical', 'entrance']) {
-    assert.equal(emptyDraft(place(zone)).step, 0);
+    assert.equal(emptyDraft(place(zone)).step, -1);
     assert.equal(initialReportStep(place(zone)), 0);
   }
 });

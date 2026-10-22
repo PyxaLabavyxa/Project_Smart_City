@@ -11,6 +11,7 @@ from app.database.models import (
     User,
     UserApartment,
 )
+from app.services.inbox import notify_residents, notify_staff
 
 STAFF_SITE_NOTICE = (
     "🏢 Для управляющей компании также реализован сайт — заявки и работа с домами:\n"
@@ -34,16 +35,20 @@ def normalize_name(name):
     return name
 
 
-async def registration_state(session, user_id):
+async def registration_state(session, user_id, *, house_id=None):
     user = await session.get(User, user_id)
-    complete = await session.scalar(
-        select(UserApartment.id).where(UserApartment.user_id == user_id).limit(1)
-    )
+    apartments = select(UserApartment.id).where(UserApartment.user_id == user_id)
+    requests = select(RegistrationRequest).where(RegistrationRequest.user_id == user_id)
+    if house_id is not None:
+        apartments = apartments.join(
+            Apartment, Apartment.id == UserApartment.apartment_id
+        ).where(Apartment.house_id == house_id)
+        requests = requests.join(
+            Apartment, Apartment.id == RegistrationRequest.apartment_id
+        ).where(Apartment.house_id == house_id)
+    complete = await session.scalar(apartments.limit(1))
     latest = await session.scalar(
-        select(RegistrationRequest)
-        .where(RegistrationRequest.user_id == user_id)
-        .order_by(RegistrationRequest.id.desc())
-        .limit(1)
+        requests.order_by(RegistrationRequest.id.desc()).limit(1)
     )
     return {
         "name": user.name,
@@ -171,6 +176,17 @@ async def submit_registration(
     if auto_approve:
         session.add(UserApartment(user_id=user_id, apartment_id=apartment.id))
     await session.flush()
+    await notify_staff(
+        session,
+        apartment.house_id,
+        key=f"registration:{application.id}:created",
+        kind="registration",
+        title="Новый житель добавил квартиру"
+        if auto_approve
+        else "Новая заявка на квартиру",
+        body=f"{name} · квартира {apartment.number}",
+        href="#registrations",
+    )
     return {
         **await registration_state(session, user_id),
         "application_status": application.status,
@@ -201,3 +217,19 @@ async def decide_registration(session, application, *, approve, staff_id):
     application.decided_at = datetime.now(UTC)
     application.decided_by = staff_id
     await session.flush()
+    apartment = await session.get(Apartment, application.apartment_id)
+    await notify_residents(
+        session,
+        [application.user_id],
+        key=f"registration:{application.id}:{application.status}",
+        kind="registration",
+        title="Квартира подтверждена" if approve else "Заявка на квартиру отклонена",
+        body=f"Квартира {apartment.number}. "
+        + (
+            "Теперь доступны сервисы вашего дома."
+            if approve
+            else "Уточните данные у управляющей компании."
+        ),
+        house_id=apartment.house_id,
+        href="/more",
+    )

@@ -4,7 +4,6 @@ from typing import Annotated, Literal
 from app.database.enums import IssuePriority, IssueStatus
 from app.database.models import (
     ChatPhoto,
-    CompanyHouse,
     House,
     IssueMessage,
     IssuePhoto,
@@ -36,7 +35,13 @@ from smart_city_api.schemas.cameras import (
     StaffCreateCamera,
     StaffProbeCamera,
 )
-from smart_city_api.schemas.contacts import ContactsInput, ContactsOutput
+from smart_city_api.schemas.contacts import (
+    BulkContactsInput,
+    BulkContactsOutput,
+    BulkContactsPatchInput,
+    ContactsInput,
+    ContactsOutput,
+)
 from smart_city_api.schemas.staff import (
     ActionOutput,
     HouseOutput,
@@ -45,14 +50,23 @@ from smart_city_api.schemas.staff import (
     MessageInput,
     ProfileOutput,
     RejectInput,
+    ReportResidentPage,
+    StaffCreateIssue,
+    StaffIssueOptions,
     StaffIssuePage,
     StaffTokenOutput,
     StatusInput,
 )
-from smart_city_api.services import camera_media, chat_photos
+from smart_city_api.services import camera_media, chat_photos, staff_reports
 from smart_city_api.services import cameras as camera_service
 from smart_city_api.services import staff as service
-from smart_city_api.services.contacts import read_contacts, save_contacts, staff_house
+from smart_city_api.services.contacts import (
+    patch_contacts_bulk,
+    read_contacts,
+    save_contacts,
+    save_contacts_bulk,
+    staff_house,
+)
 from smart_city_api.services.photos import photo_path
 from smart_city_api.services.staff_accounts import delete_registration
 
@@ -129,6 +143,16 @@ async def update_contacts(house_id: int, body: ContactsInput, session: Session, 
     return await save_contacts(session, employee.id, house_id, body)
 
 
+@router.post("/contacts/bulk", response_model=BulkContactsOutput)
+async def update_contacts_bulk(body: BulkContactsInput, session: Session, employee: Staff):
+    return await save_contacts_bulk(session, employee.id, body)
+
+
+@router.patch("/contacts/bulk", response_model=BulkContactsOutput)
+async def edit_contacts_bulk(body: BulkContactsPatchInput, session: Session, employee: Staff):
+    return await patch_contacts_bulk(session, employee.id, body)
+
+
 async def authenticate_login(body: LoginInput, request: Request, session: Session):
     require_same_origin(request)
     await check_login_limit(
@@ -200,17 +224,9 @@ async def profile(session: Session, employee: Staff, authentication: StaffAuth):
             .order_by(House.address)
         )
     ).all()
-    contact_houses = (
-        await session.scalars(
-            select(House)
-            .join(CompanyHouse, CompanyHouse.house_id == House.id)
-            .where(House.id.in_(service.house_scope(employee.id)))
-            .order_by(House.address)
-        )
-    ).all()
     return ProfileOutput(
         name=employee.name,
-        contact_houses=[HouseOutput(id=h.id, address=h.address) for h in contact_houses],
+        contact_houses=[HouseOutput(id=h.id, address=h.address) for h in houses],
         houses=[
             HouseOutput(
                 id=h.id,
@@ -233,7 +249,7 @@ async def issues(
     priority: IssuePriority | None = None,
     q: Annotated[str, Query(max_length=200)] = "",
     page: Annotated[int, Query(ge=1, le=100000)] = 1,
-    page_size: Annotated[int, Query(ge=1, le=100)] = 25,
+    page_size: Annotated[int, Query(ge=1, le=100)] = 10,
 ):
     return await service.list_issues(
         session, employee.id, house_id, status, priority, q, page, page_size
@@ -243,6 +259,27 @@ async def issues(
 @router.get("/issues/{issue_id}", response_model=IssueDetail)
 async def issue_detail(issue_id: int, session: Session, employee: Staff):
     return await service.detail(session, employee.id, issue_id)
+
+
+@router.get("/houses/{house_id}/issue-options", response_model=StaffIssueOptions)
+async def issue_options(house_id: int, session: Session, employee: Staff):
+    return await staff_reports.issue_options(session, employee.id, house_id)
+
+
+@router.get("/houses/{house_id}/report-residents", response_model=ReportResidentPage)
+async def report_residents(
+    house_id: int,
+    session: Session,
+    employee: Staff,
+    q: Annotated[str, Query(max_length=100)] = "",
+    page: Annotated[int, Query(ge=1, le=100000)] = 1,
+):
+    return await staff_reports.report_residents(session, employee.id, house_id, q, page)
+
+
+@router.post("/issues", response_model=IssueDetail, status_code=201)
+async def create_staff_issue(data: StaffCreateIssue, session: Session, employee: Staff):
+    return await staff_reports.create_staff_issue(session, employee.id, data)
 
 
 @router.post("/issues/{issue_id}/status", response_model=ActionOutput)

@@ -1,7 +1,13 @@
 from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
-from app.database.models import IssueMessage, MiniAppPresence, StaffNotification, User
+from app.database.models import (
+    InboxNotification,
+    IssueMessage,
+    MiniAppPresence,
+    StaffNotification,
+    User,
+)
 from fastapi import HTTPException
 from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -53,8 +59,27 @@ async def update_presence(
                     StaffNotification.sent_at.is_(None),
                     StaffNotification.suppressed_at.is_(None),
                 )
-                .values(suppressed_at=now, lease_token=None)
+                .values(suppressed_at=now, suppression_reason="read", lease_token=None)
             )
+            notification_ids = await session.scalars(
+                select(StaffNotification.id).where(
+                    StaffNotification.issue_id == issue_id,
+                    StaffNotification.max_user_id == user.max_user_id,
+                    StaffNotification.kind == "message",
+                    StaffNotification.message_id <= last_message_id,
+                )
+            )
+            keys = [f"staff-action:{ident}" for ident in notification_ids]
+            if keys:
+                await session.execute(
+                    update(InboxNotification)
+                    .where(
+                        InboxNotification.user_id == user.id,
+                        InboxNotification.event_key.in_(keys),
+                        InboxNotification.read_at.is_(None),
+                    )
+                    .values(read_at=now)
+                )
     if current is None:
         current = MiniAppPresence(user_id=user.id, client_id=str(client_id), sequence=0)
         session.add(current)

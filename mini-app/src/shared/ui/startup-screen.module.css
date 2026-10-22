@@ -1,8 +1,6 @@
 .screen { position:fixed; inset:0; z-index:100; background:var(--color-bg); color:var(--color-ink); overflow:auto; }
 .canvas { position:relative; isolation:isolate; width:min(100%,480px); min-height:100%; height:100dvh; margin:auto; background:#edf8ff; overflow:hidden; }
-.scene { position:absolute; inset:0; z-index:-1; pointer-events:none; }
-.scene img { object-fit:cover; object-position:center bottom; }
-.night { display:none; }
+.scene { position:absolute; inset:0; z-index:-1; pointer-events:none; background:var(--art-light) center bottom / cover no-repeat; }
 .content { position:relative; width:min(100% - 64px,328px); margin:auto; padding-top:max(24px,env(safe-area-inset-top)); text-align:center; }
 .mark { display:flex; justify-content:center; height:84px; align-items:center; }
 .mark > span { width:230px; }
@@ -14,8 +12,7 @@
 .actions button { min-height:44px; padding:10px 14px; border:0; border-radius:10px; font:inherit; font-size:13px; background:var(--color-action); color:var(--color-on-action); cursor:pointer; }
 .actions button + button { background:var(--color-soft); color:var(--color-ink); }
 :global(:root[data-theme="dark"]) .canvas { background:#042137; }
-:global(:root[data-theme="dark"]) .day { display:none; }
-:global(:root[data-theme="dark"]) .night { display:block; }
+:global(:root[data-theme="dark"]) .scene { background-image:var(--art-dark); }
 @media(max-height:740px) { .mark { height:55px; } .mark > span { width:195px; } .content h2 { margin-top:14px; font-size:24px; } .description { margin-bottom:16px; font-size:13px; } .content { padding-top:max(12px,env(safe-area-inset-top)); } }
 @media(max-height:580px) { .description { display:none; } .content h2 { margin-bottom:16px; font-size:22px; } }
 @media(prefers-reduced-motion:no-preference) { .screen[data-complete] { animation:ready .18s ease-out .32s both; } @keyframes ready { to { opacity:0; } } }

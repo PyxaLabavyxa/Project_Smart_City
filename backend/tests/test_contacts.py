@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 from alembic.migration import MigrationContext
 from alembic.operations import Operations
-from app.database.models import CompanyHouse, ManagementCompany
+from app.database.models import CompanyHouse, ManagementCompany, StaffHouse
 from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import Session
 
@@ -18,6 +18,118 @@ def contact(kind="phone", value="+7 (495) 123-45-67", **changes):
     return {
         "kind": kind, "label": "Диспетчерская", "value": value, "note": "Круглосуточно", **changes
     }
+
+
+def test_contact_picker_includes_assigned_companyless_house_and_excludes_others(staff_api):
+    client, engine, _ = staff_api
+    with Session(engine) as session:
+        session.add(ManagementCompany(id=1, name="УК другого дома"))
+        session.flush()
+        session.add(CompanyHouse(house_id=2, company_id=1))
+        session.commit()
+    csrf = login(client)
+    profile = client.get(ROOT + "/me").json()
+    assert [house["id"] for house in profile["contact_houses"]] == [1]
+    items = [contact()]
+    # Use the same scoped save/read path for a house without a company entry.
+    saved = client.post(ROOT + "/houses/1/contacts", headers=csrf, json={"items": items})
+    assert saved.status_code == 200
+    assert client.get("/api/v1/houses/1/contacts", headers=headers()).json()["items"] == items
+
+
+def test_bulk_patch_preserves_each_houses_email_notes_and_extra_contacts(staff_api):
+    client, engine, _ = staff_api
+    with Session(engine) as session:
+        session.add(StaffHouse(staff_id=1, house_id=2))
+        session.commit()
+    csrf = login(client)
+    original = {}
+    for house in (1, 2):
+        original[house] = [
+            contact(value=f"100{house}", note=f"Часы дома {house}"),
+            contact("email", f"house{house}@example.ru", label="Почта", note=""),
+            contact(value=f"200{house}", label="Консьерж", note="Личный график"),
+        ]
+        response = client.post(
+            ROOT + f"/houses/{house}/contacts", headers=csrf, json={"items": original[house]}
+        )
+        assert response.status_code == 200
+    body = {"house_ids": [1, 2], "changes": {"dispatcher": {"value": "7777"}}}
+    assert client.patch(ROOT + "/contacts/bulk", json=body).status_code == 403
+    response = client.patch(ROOT + "/contacts/bulk", headers=csrf, json=body)
+    assert response.status_code == 200, response.text
+    for house in (1, 2):
+        expected = [{**original[house][0], "value": "7777"}, *original[house][1:]]
+        assert client.get(ROOT + f"/houses/{house}/contacts").json()["items"] == expected
+    # Repeating a field update is idempotent.
+    assert client.patch(ROOT + "/contacts/bulk", headers=csrf, json=body).status_code == 200
+
+
+def test_bulk_patch_authorizes_and_validates_all_houses_before_writing(staff_api):
+    client, _, _ = staff_api
+    csrf = login(client)
+    original = [contact()]
+    client.post(ROOT + "/houses/1/contacts", headers=csrf, json={"items": original})
+    path = ROOT + "/contacts/bulk"
+    body = {"house_ids": [1, 2], "changes": {"dispatcher": {"value": "7777"}}}
+    assert client.patch(path, headers=csrf, json=body).status_code == 404
+    body["house_ids"] = [1]
+    body["changes"]["dispatcher"]["value"] = "bad number"
+    assert client.patch(path, headers=csrf, json=body).status_code == 422
+    assert client.get(ROOT + "/houses/1/contacts").json()["items"] == original
+    for invalid in ({}, {"dispatcher": {}}, {"unknown": {"value": "123"}}):
+        assert client.patch(
+            path, headers=csrf, json={"house_ids": [1], "changes": invalid}
+        ).status_code == 422
+
+
+def test_bulk_patch_note_only_delete_and_extra_upsert_preserve_other_data(staff_api):
+    client, engine, _ = staff_api
+    with Session(engine) as session:
+        session.add(StaffHouse(staff_id=1, house_id=2))
+        session.commit()
+    csrf = login(client)
+    for house in (1, 2):
+        items = [contact("email", f"house{house}@example.ru", label="Почта", note="")]
+        if house == 1:
+            items += [contact(), contact(label="Консьерж", value="5555")]
+        client.post(ROOT + f"/houses/{house}/contacts", headers=csrf, json={"items": items})
+    body = {
+        "house_ids": [1, 2],
+        "changes": {"dispatcher": {"note": "Новый график"}, "email": {"value": ""}},
+        "extra_changes": [{"label": "Консьерж", "kind": "phone",
+                           "contact": contact(label="Консьерж", value="9999")}],
+    }
+    response = client.patch(ROOT + "/contacts/bulk", headers=csrf, json=body)
+    assert response.status_code == 200, response.text
+    first = client.get(ROOT + "/houses/1/contacts").json()["items"]
+    assert first == [contact(note="Новый график"), contact(label="Консьерж", value="9999")]
+    # A note without a number must never fabricate a dispatcher in an empty house.
+    assert client.get(ROOT + "/houses/2/contacts").json()["items"] == [
+        contact(label="Консьерж", value="9999")
+    ]
+    extra_only = {"house_ids": [1, 2], "extra_changes": body["extra_changes"]}
+    assert client.patch(ROOT + "/contacts/bulk", headers=csrf, json=extra_only).status_code == 200
+    assert client.get(ROOT + "/houses/2/contacts").json()["items"] == [
+        contact(label="Консьерж", value="9999")
+    ]
+
+
+def test_bulk_patch_limit_failure_is_atomic(staff_api):
+    client, engine, _ = staff_api
+    with Session(engine) as session:
+        session.add(StaffHouse(staff_id=1, house_id=2))
+        session.commit()
+    csrf = login(client)
+    full = [contact("address", f"Адрес {index}", label=f"Офис {index}") for index in range(12)]
+    client.post(ROOT + "/houses/1/contacts", headers=csrf, json={"items": [contact()]})
+    client.post(ROOT + "/houses/2/contacts", headers=csrf, json={"items": full})
+    response = client.patch(ROOT + "/contacts/bulk", headers=csrf, json={
+        "house_ids": [1, 2], "changes": {"email": {"value": "new@example.ru"}}
+    })
+    assert response.status_code == 422
+    assert client.get(ROOT + "/houses/1/contacts").json()["items"] == [contact()]
+    assert client.get(ROOT + "/houses/2/contacts").json()["items"] == full
 
 
 def test_staff_contacts_persist_replace_and_are_visible_only_to_house_residents(staff_api):
@@ -128,5 +240,75 @@ def test_contacts_migration_upgrades_and_downgrades_without_changing_houses(tmp_
                 assert connection.scalar(text("SELECT address FROM houses")) == "Existing house"
                 module.upgrade()
                 assert "house_contacts" in inspect(connection).get_table_names()
+    finally:
+        engine.dispose()
+
+
+def test_bulk_contacts_authorizes_every_house_before_replacing_any(staff_api):
+    client, _, _ = staff_api
+    path = ROOT + "/contacts/bulk"
+    body = {"house_ids": [1, 2], "items": [contact("schedule", "Mon-Fri 09:00-18:00")]}
+    assert client.post(path, json=body).status_code == 401
+    csrf = login(client)
+    original = [contact()]
+    assert client.post(ROOT + "/houses/1/contacts", headers=csrf, json={"items": original}).status_code == 200
+    assert client.post(path, json=body).status_code == 403
+    assert client.post(path, headers=csrf, json=body).status_code == 404
+    assert client.get(ROOT + "/houses/1/contacts").json()["items"] == original
+    assert client.get("/api/v1/houses/2/contacts", headers=headers(103)).json()["items"] == []
+
+
+def test_bulk_contacts_schedules_and_later_individual_edit(staff_api):
+    client, engine, _ = staff_api
+    with Session(engine) as session:
+        session.add(StaffHouse(staff_id=1, house_id=2))
+        session.commit()
+    csrf = login(client)
+    items = [contact(), contact("schedule", "Mon-Fri 09:00-18:00", label="График работы", note="")]
+    saved = client.post(ROOT + "/contacts/bulk", headers=csrf, json={"house_ids": [2, 1], "items": items})
+    assert saved.status_code == 200, saved.text
+    assert saved.json() == {"house_ids": [2, 1], "updated_count": 2}
+    for house, resident in ((1, 101), (2, 103)):
+        assert client.get(f"/api/v1/houses/{house}/contacts", headers=headers(resident)).json()["items"] == items
+    assert client.post(ROOT + "/houses/1/contacts", headers=csrf, json={"items": []}).status_code == 200
+    assert client.get(ROOT + "/houses/1/contacts").json()["items"] == []
+    assert client.get(ROOT + "/houses/2/contacts").json()["items"] == items
+
+
+@pytest.mark.parametrize("ids", [[], [1, 1], [0], [-1], [1] * 501])
+def test_invalid_bulk_house_selection_preserves_contacts(staff_api, ids):
+    client, _, _ = staff_api
+    csrf = login(client)
+    path = ROOT + "/houses/1/contacts"
+    client.post(path, headers=csrf, json={"items": [contact()]})
+    assert client.post(ROOT + "/contacts/bulk", headers=csrf, json={"house_ids": ids, "items": []}).status_code == 422
+    assert client.get(path).json()["items"] == [contact()]
+
+
+def test_schedule_migration_preserves_contacts_and_refuses_lossy_downgrade(tmp_path):
+    modules = []
+    for name in ("0007_house_contacts", "0018_contact_schedules"):
+        spec = importlib.util.spec_from_file_location(name, Path(__file__).resolve().parents[1] / f"migrations/versions/{name}.py")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        modules.append(module)
+    original, schedules = modules
+    engine = create_engine(f"sqlite:///{tmp_path / 'schedules.db'}")
+    try:
+        with engine.begin() as connection, Operations.context(MigrationContext.configure(connection)):
+            connection.execute(text("CREATE TABLE houses (id INTEGER PRIMARY KEY)"))
+            connection.execute(text("INSERT INTO houses VALUES (1)"))
+            original.upgrade()
+            connection.execute(text("INSERT INTO house_contacts (house_id, position, label, kind, value) VALUES (1, 0, 'Office', 'phone', '112')"))
+            schedules.upgrade()
+            assert connection.scalar(text("SELECT value FROM house_contacts")) == "112"
+            connection.execute(text("INSERT INTO house_contacts (house_id, position, label, kind, value) VALUES (1, 1, 'Hours', 'schedule', 'Mon-Fri')"))
+            with pytest.raises(RuntimeError, match="schedules"):
+                schedules.downgrade()
+            assert connection.scalar(text("SELECT count(*) FROM house_contacts")) == 2
+            connection.execute(text("DELETE FROM house_contacts WHERE kind = 'schedule'"))
+            schedules.downgrade()
+            assert connection.scalar(text("SELECT value FROM house_contacts")) == "112"
+            assert "schedule" not in inspect(connection).get_check_constraints("house_contacts")[0]["sqltext"]
     finally:
         engine.dispose()

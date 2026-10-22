@@ -1,0 +1,33 @@
+.content { display:grid; gap:20px; }
+.intro { display:flex; align-items:center; gap:10px; }
+.intro > div { flex:1; min-width:0; }
+.intro h2 { font-size:21px; line-height:1.25; margin:0 0 8px; letter-spacing:-.4px; }
+.intro p { font-size:14px; line-height:1.55; color:var(--color-muted); margin:0; }
+.mascot { width:106px; height:112px; flex-shrink:0; }
+.invitation { border:1px solid var(--color-line); border-radius:24px; padding:22px 20px 14px; background:var(--color-surface); text-align:center; }
+.address { display:flex; align-items:flex-start; justify-content:center; gap:7px; margin:0 0 16px; font-size:15px; font-weight:600; line-height:1.5; }
+.address svg { flex-shrink:0; margin-top:2px; color:var(--color-teal); }
+.qr { width:min(100%,224px); aspect-ratio:1; margin:0 auto; background:#fff; border-radius:12px; overflow:hidden; }
+.qr img { display:block; width:100%; height:100%; object-fit:contain; }
+.qr p { display:grid; place-content:center; height:100%; padding:20px; margin:0; color:#073448; font-size:14px; line-height:1.5; }
+.qr button { min-height:44px; border:1px solid #dae7f1; border-radius:10px; margin-top:10px; background:#fff; color:#073448; }
+.caption { color:var(--color-muted); font-size:13px; line-height:1.5; margin:12px 0 20px; }
+.primary { composes:primary from "@/shared/styles/controls.module.css"; width:100%; min-height:50px; font-size:15px; }
+.secondary { composes:button from "@/shared/styles/controls.module.css"; width:100%; border:1px solid var(--color-line); background:var(--color-surface); min-height:50px; font-size:14px; }
+.linkLabel { display:block; margin:18px 0 6px; color:var(--color-muted); font-size:12px; text-align:left; }
+.link { display:block; width:100%; min-width:0; font-size:12px; border:1px solid var(--color-line); border-radius:10px; background:var(--color-bg); color:var(--color-ink); min-height:44px; padding:10px; }
+.textButton { display:flex; align-items:center; justify-content:center; gap:7px; width:100%; min-height:44px; border:0; background:transparent; color:var(--color-primary); font-size:13px; padding:10px 0; }
+.textButton:disabled { opacity:.55; }
+.posterSection { padding:4px 0; }
+.posterHeading { display:flex; gap:12px; align-items:flex-start; }
+.posterHeading > svg { flex-shrink:0; margin-top:2px; color:var(--color-teal); }
+.posterHeading h2 { margin:0 0 6px; font-size:19px; line-height:1.3; letter-spacing:-.3px; }
+.posterHeading p { margin:0; color:var(--color-muted); font-size:13px; line-height:1.6; }
+.preview { margin:14px 0; }
+.preview summary { min-height:44px; cursor:pointer; font-size:14px; color:var(--color-primary); padding:12px 0; }
+.preview img { display:block; width:100%; height:auto; margin:8px 0 18px; background:#fff; border:1px solid var(--color-line); border-radius:8px; }
+.feedback { color:var(--color-success); font-size:13px; line-height:1.5; margin:0; }
+.feedback:empty { display:none; }
+.error { color:var(--color-danger); font-size:13px; line-height:1.5; margin:0; }
+.note { margin:0; color:var(--color-muted); font-size:12px; line-height:1.6; text-align:center; }
+@media(max-width:360px) { .invitation { padding:18px 14px 12px; }.mascot { width:84px; height:112px; }.intro h2 { font-size:19px; } }

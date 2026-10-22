@@ -1,8 +1,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { demoIssues } from './fixtures/issues.ts';
-import { houseHealthScore } from '../src/entities/issue/model/issue-workflow.ts';
+import { houseHealthScore, canDeleteIssue } from '../src/entities/issue/model/issue-workflow.ts';
 import { filterIssues, initialIssueFilters, selectIssueTab } from '../src/entities/issue/model/issue-filters.ts';
+
+test('only own issues that have never left new may be deleted', () => {
+  const fresh = { mine: true, status: 'new', history: [{ status: 'new' }] };
+  assert.equal(canDeleteIssue(fresh), true);
+  assert.equal(canDeleteIssue({ ...fresh, mine: false }), false);
+  for (const status of ['accepted', 'assigned', 'in-progress', 'awaiting-confirmation', 'completed']) {
+    assert.equal(canDeleteIssue({ ...fresh, status }), false);
+    assert.equal(canDeleteIssue({ ...fresh, history: [{ status }, { status: 'new' }] }), false);
+  }
+});
 
 test('health indicator uses actual open issues and priority', () => {
   assert.equal(houseHealthScore([]), 100);

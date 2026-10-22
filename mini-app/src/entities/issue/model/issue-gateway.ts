@@ -6,4 +6,5 @@ export interface IssueGateway {
   list(signal?: AbortSignal): Promise<readonly IssueRecord[]>;
   get(id: string, signal?: AbortSignal): Promise<IssueRecord>;
   create(input: CreateIssueInput, requestId: string): Promise<IssueRecord>;
+  remove(id: string): Promise<void>;
 }

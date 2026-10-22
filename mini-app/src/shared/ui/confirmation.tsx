@@ -10,6 +10,7 @@ const ConfirmationContext = createContext<(options: Confirmation) => Promise<boo
 export function ConfirmationProvider({ children }: { children: ReactNode }) {
   const [request, setRequest] = useState<Request | null>(null);
   const pending = useRef<Request | null>(null);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const confirm = useCallback((options: Confirmation) => {
     if (pending.current) return Promise.resolve(false);
     return new Promise<boolean>(resolve => {
@@ -18,12 +19,16 @@ export function ConfirmationProvider({ children }: { children: ReactNode }) {
       setRequest(next);
     });
   }, []);
-  useEffect(() => () => { pending.current?.resolve(false); pending.current = null; }, []);
+  useEffect(() => () => { pending.current?.resolve(false); pending.current = null; clearTimeout(closeTimer.current); }, []);
   function finish(confirmed: boolean) {
     const current = pending.current;
+    if (!current) return;
     pending.current = null;
-    setRequest(null);
-    current?.resolve(confirmed);
+    current.resolve(confirmed);
+    const animate = CSS.supports("transition-behavior", "allow-discrete") && document.documentElement.dataset.motionInput !== "keyboard" && !matchMedia("(prefers-reduced-motion: reduce)").matches;
+    // Resolve the action immediately; keep only the closing visual for its exit.
+    if (animate) closeTimer.current = setTimeout(() => setRequest(value => value === current ? null : value), 150);
+    else setRequest(null);
   }
   return <ConfirmationContext value={confirm}>{children}{request && <ConfirmationDialog request={request} onFinish={finish} />}</ConfirmationContext>;
 }
@@ -32,7 +37,7 @@ function ConfirmationDialog({ request, onFinish }: { request: Request; onFinish:
   const dialog = useRef<HTMLDialogElement>(null);
   const cancel = useRef<HTMLButtonElement>(null);
   const id = useId();
-  useEffect(() => { dialog.current?.showModal(); cancel.current?.focus({ preventScroll: true }); }, []);
+  useEffect(() => { dialog.current?.showModal(); cancel.current?.focus({ preventScroll: true }); }, [request]);
   return <dialog ref={dialog} className={styles.dialog} aria-labelledby={`${id}-title`} aria-describedby={`${id}-description`}
     onCancel={event => { event.preventDefault(); dialog.current?.close("cancel"); }}
     onClose={event => onFinish(event.currentTarget.returnValue === "confirm")}>

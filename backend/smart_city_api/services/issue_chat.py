@@ -1,6 +1,7 @@
 from datetime import UTC
 
 from app.database.models import Issue, IssueMessage, StaffUser, User
+from app.services.inbox import notify_staff
 from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -19,7 +20,10 @@ async def own_issue(
     session: AsyncSession, user_id: int, issue_id: int, *, lock: bool = False
 ) -> Issue:
     statement = select(Issue).where(
-        Issue.id == issue_id, Issue.user_id == user_id, Issue.rejected_at.is_(None)
+        Issue.id == issue_id,
+        Issue.user_id == user_id,
+        Issue.rejected_at.is_(None),
+        Issue.deleted_at.is_(None),
     )
     issue = await session.scalar(statement.with_for_update() if lock else statement)
     if issue is None:
@@ -72,7 +76,7 @@ async def send_message(
     session: AsyncSession, user: User, issue_id: int, data: IssueMessageInput, photos=()
 ) -> IssueMessageOutput:
     user_id, author = user.id, user.name
-    await own_issue(session, user_id, issue_id, lock=True)
+    issue = await own_issue(session, user_id, issue_id, lock=True)
     request_key = f"resident:{user_id}:{data.request_id}"
     statement = select(IssueMessage).where(
         IssueMessage.issue_id == issue_id, IssueMessage.request_id == request_key
@@ -90,6 +94,15 @@ async def send_message(
     try:
         await session.flush()
         chat_photos.attach(session, message.id, photos, issue=True)
+        await notify_staff(
+            session,
+            issue.house_id,
+            key=f"issue-message:{message.id}",
+            kind="resident_message",
+            title=f"Ответ жителя по обращению №{issue.id}",
+            body=data.text,
+            href=f"#issue-{issue.id}",
+        )
         await session.commit()
     except IntegrityError:
         await session.rollback()

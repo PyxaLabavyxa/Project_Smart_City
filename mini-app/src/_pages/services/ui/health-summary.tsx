@@ -14,7 +14,7 @@ export function HealthSummary() {
   const { issues, loading, error, reload } = useIssues();
   const [selected, select] = useState(29);
   const [days,setDays]=useState(30);
-  if (loading || error) return <RequestState loading={loading} error={error} reload={reload} />;
+  if (loading || error) return <RequestState loading={loading} error={error} reload={reload} page />;
   const score = houseHealthScore(issues);
   const problems = issues.filter(issue => issue.status !== "completed");
   const history = healthHistory(issues).slice(-days);

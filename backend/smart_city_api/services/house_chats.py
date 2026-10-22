@@ -5,12 +5,15 @@ from app.database.models import (
     Announcement,
     AnnouncementDelivery,
     AnnouncementPrivateDelivery,
+    Apartment,
     House,
     HouseChat,
     HouseWork,
+    UserApartment,
 )
 from app.services.announcement_audience import residents, unavailable_reason
 from app.services.house_chats import code_hash
+from app.services.inbox import notify_residents
 from app.services.planned_works import WorkSchedule, announcement_body, announcement_topic
 from fastapi import HTTPException
 from sqlalchemy import delete, func, select, update
@@ -23,6 +26,7 @@ from smart_city_api.schemas.house_chats import (
     ResidentChoice,
 )
 from smart_city_api.services.contacts import staff_house
+from smart_city_api.services.resident_search import matches_resident
 from smart_city_api.services.staff import house_scope
 
 
@@ -124,10 +128,10 @@ async def resident_choices(session, staff_id, query="", page=1):
     )
     targets = await residents(session, staff_id, list(houses))
     choices = []
-    query = query.casefold().strip()
     for uid, target in targets.items():
         user = target["user"]
-        if query and query not in user.name.casefold() and query not in str(user.max_user_id):
+        addresses = [(houses[h], n) for h, n in target["apartments"]]
+        if not matches_resident(query, user.name, user.max_user_id, addresses):
             continue
         reason = unavailable_reason(user)
         choices.append(
@@ -390,6 +394,45 @@ async def publish(session, staff_id, announcement_id, version):
                 location=schedule.location,
             )
             for house_id in row.house_ids
+        )
+    if schedule:
+        # One inbox entry per resident, pointing to an affected house they belong to.
+        members = await session.execute(
+            select(UserApartment.user_id, Apartment.house_id)
+            .join(Apartment, Apartment.id == UserApartment.apartment_id)
+            .where(Apartment.house_id.in_(row.house_ids))
+            .distinct()
+            .order_by(Apartment.house_id, UserApartment.user_id)
+        )
+        homes = {}
+        for user_id, house_id in members:
+            homes.setdefault(user_id, house_id)
+        for house_id in row.house_ids:
+            await notify_residents(
+                session,
+                [uid for uid, home in homes.items() if home == house_id],
+                key=f"announcement:{row.id}",
+                kind="announcement",
+                title="Работы в доме: " + row.title,
+                body=announcement_body(row),
+                house_id=house_id,
+                href="/",
+            )
+    else:
+        recipients = (
+            select(UserApartment.user_id)
+            .join(Apartment, Apartment.id == UserApartment.apartment_id)
+            .where(Apartment.house_id.in_(row.house_ids))
+        )
+        if row.audience == "residents":
+            recipients = recipients.where(UserApartment.user_id.in_(row.resident_ids))
+        await notify_residents(
+            session,
+            await session.scalars(recipients.distinct()),
+            key=f"announcement:{row.id}",
+            kind="announcement",
+            title="Объявление УК: " + row.title,
+            body=row.text,
         )
     await session.commit()
     return await read_announcement(session, staff_id, row.id)

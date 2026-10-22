@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import Link from "next/link";
 import { useApi } from "@/shared/api/context";
 import { endpoints } from "@/shared/api/client";
 import { useRemote } from "@/shared/api/use-remote";
@@ -12,42 +13,67 @@ import { parseNotificationPreferences, type NotificationPreferences } from "./no
 import styles from "./settings.module.css";
 
 const themes = [
-  { value: "light", title: "Светлая", icon: "sun" },
-  { value: "dark", title: "Тёмная", icon: "moon" },
-  { value: "system", title: "Системная", icon: "device" },
+  { value: "light", title: "Светлая", text: "Светлый фон и тёмный текст", icon: "sun" },
+  { value: "dark", title: "Тёмная", text: "Мягкие цвета на тёмном фоне", icon: "moon" },
+  { value: "system", title: "Системная", text: "Как на вашем устройстве", icon: "device" },
 ] as const;
 const notifications = [
   { key: "personal_messages", title: "Личные сообщения", text: "Новые сообщения от соседей" },
   { key: "issue_messages", title: "Ответы по обращениям", text: "Новые сообщения от управляющей компании" },
   { key: "issue_statuses", title: "Статусы обращений", text: "Начало работ, решение или отклонение обращения" },
-  { key: "announcements", title: "Объявления дома", text: "Рассылка новостей УК пока не подключена. Ваш выбор сохранится." },
+  { key: "announcements", title: "Объявления дома", text: "Важные новости и объявления управляющей компании" },
 ] as const;
 
 export function SettingsPage() {
-  const [tab, setTab] = useState<"appearance" | "notifications">("appearance");
+  const theme = useThemePreference();
+  const selected = themes.find(item => item.value === theme) ?? themes[2];
+  return <SectionPage title="Настройки">
+    <nav className={styles.sections} aria-label="Разделы настроек">
+      <ul className={styles.sectionList}>
+        <li><Link href="/settings/appearance" className={styles.sectionLink}>
+          <span className={styles.sectionIcon}><Icon name={selected.icon} size={26} /></span>
+          <span className={styles.sectionText}><strong>Оформление</strong><small>{selected.title} тема</small></span>
+          <Icon name="arrow" size={18} />
+        </Link></li>
+        <li><Link href="/settings/notifications" className={styles.sectionLink}>
+          <span className={styles.sectionIcon}><Icon name="bell" size={26} /></span>
+          <span className={styles.sectionText}><strong>Уведомления</strong><small>О чём бот будет писать в MAX</small></span>
+          <Icon name="arrow" size={18} />
+        </Link></li>
+      </ul>
+    </nav>
+  </SectionPage>;
+}
+
+export function AppearanceSettingsPage() {
   const theme = useThemePreference();
   const [themeError, setThemeError] = useState("");
   function chooseTheme(value: ThemePreference) {
     try { setTheme(value); setThemeError(""); }
     catch { setThemeError("Не удалось сохранить тему. Разрешите хранение данных для этого сайта."); }
   }
-  return <SectionPage title="Настройки" backHref={null}>
-    <div className={styles.tabs} role="tablist" aria-label="Разделы настроек">
-      <button id="appearance-tab" role="tab" aria-selected={tab === "appearance"} aria-controls="settings-panel" tabIndex={tab === "appearance" ? 0 : -1} onClick={() => setTab("appearance")} onKeyDown={event => { if (event.key === "ArrowRight" || event.key === "ArrowLeft") { setTab("notifications"); document.getElementById("notifications-tab")?.focus(); } }}>Оформление</button>
-      <button id="notifications-tab" role="tab" aria-selected={tab === "notifications"} aria-controls="settings-panel" tabIndex={tab === "notifications" ? 0 : -1} onClick={() => setTab("notifications")} onKeyDown={event => { if (event.key === "ArrowRight" || event.key === "ArrowLeft") { setTab("appearance"); document.getElementById("appearance-tab")?.focus(); } }}>Уведомления</button>
-    </div>
-    <div id="settings-panel" role="tabpanel" aria-labelledby={tab === "appearance" ? "appearance-tab" : "notifications-tab"}>
-      {tab === "appearance" ? <>
-        <h2 className={styles.heading}>Тема приложения</h2>
-        <fieldset className={styles.themes}><legend className={styles.srOnly}>Выберите тему</legend>{themes.map(item => <label key={item.value} className={styles.theme}>
+  return <SectionPage title="Оформление" description="Выберите удобную тему приложения.">
+    <div className={styles.content}>
+      <fieldset className={styles.themes}>
+        <legend className={styles.srOnly}>Тема приложения</legend>
+        {themes.map(item => <label key={item.value} className={styles.theme}>
+          <span className={styles.preview} data-theme-preview={item.value} aria-hidden="true">
+            <span className={styles.previewPage}><span className={styles.previewHeader} /><span className={styles.previewHouse}><Icon name="building" size={26} /></span><span className={styles.previewLine} /><span className={styles.previewRow} /><span className={styles.previewRow} /><span className={styles.previewNav}><i /><i /><i /></span></span>
+          </span>
+          <span className={styles.themeTitle}>{item.title}</span>
+          <span className={styles.srOnly}>{item.text}</span>
           <input type="radio" name="theme" value={item.value} checked={theme === item.value} onChange={() => chooseTheme(item.value)} />
-          <span className={styles.preview} data-theme-preview={item.value}><Icon name={item.icon} size={28} /></span><strong>{item.title}</strong>
-        </label>)}</fieldset>
-        <p className={styles.note}>Системная тема следует настройкам вашего устройства. Выбор сохраняется в этом браузере.</p>
-        {themeError && <p role="alert" className={styles.error}>{themeError}</p>}
-      </> : <NotificationSettings />}
+          <span className={styles.selection} aria-hidden="true"><Icon name="check" size={17} /></span>
+        </label>)}
+      </fieldset>
+      <p className={styles.note}>Системная тема меняется вместе с настройками устройства. Светлая и тёмная остаются такими, как вы выбрали, независимо от темы MAX.</p>
+      {themeError && <p role="alert" className={styles.error}>{themeError}</p>}
     </div>
   </SectionPage>;
+}
+
+export function NotificationSettingsPage() {
+  return <SectionPage title="Уведомления"><div className={styles.content}><NotificationSettings /></div></SectionPage>;
 }
 
 function NotificationSettings() {
@@ -69,7 +95,6 @@ function NotificationSettings() {
     finally { setSaving(false); }
   }
   return <>
-    <h2 className={styles.heading}>Уведомления в MAX</h2>
     <p className={styles.note}>Выберите, о чём бот будет вам писать. Сами сообщения и история обращений останутся в приложении.</p>
     {state.loading && !current && <p role="status">Загрузка настроек…</p>}
     {state.error && !current && <div role="alert"><p>{state.error}</p><RefreshButton className={styles.retry} onRefresh={state.reload} loading={state.loading}>Повторить</RefreshButton></div>}

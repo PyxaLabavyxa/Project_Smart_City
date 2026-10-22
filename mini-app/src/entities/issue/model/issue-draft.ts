@@ -6,7 +6,7 @@ export function initialReportStep(place: HouseLocation): number {
   return reportScope(place) === "entrance" ? 0 : 1;
 }
 export function emptyDraft(place: HouseLocation): IssueDraft {
-  return { place, category: "", title: "", description: "", step: initialReportStep(place), photos: [] };
+  return { place, category: "", title: "", description: "", step: -1, photos: [] };
 }
 
 export function updateIssueDraft(draft: IssueDraft, patch: Partial<IssueDraft>): IssueDraft {

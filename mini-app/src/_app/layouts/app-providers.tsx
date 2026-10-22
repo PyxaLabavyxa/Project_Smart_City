@@ -1,5 +1,7 @@
 "use client";
 import { useCallback, useMemo, useState, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import { createUtilitiesGateway } from "@/entities/utilities/api-gateway";
 import { UtilitiesProvider } from "@/entities/utilities";
 import { HouseSelectionProvider, type House } from "@/entities/house";
@@ -9,18 +11,28 @@ import { createIssueGateway } from "@/entities/issue/model/api-gateway";
 import { MessageProvider } from "@/entities/message";
 import { createMessageGateway } from "@/entities/message/model/api-gateway";
 import { ApiContext, useApi } from "@/shared/api/context";
-import { createApiClient, endpoints, maxLaunchData } from "@/shared/api/client";
+import { createApiClient, endpoints, maxLaunchData, maxLaunchTarget } from "@/shared/api/client";
+import { browserLaunchTarget, launchNavigationHref } from "@/shared/api/launch-route";
+import { launchApartmentId } from "@/entities/house/model/launch-selection";
 import { readPages } from "@/shared/api/pagination";
 import { useRemote } from "@/shared/api/use-remote";
 import { RefreshButton } from "@/shared/ui/refresh-button";
-import { RegistrationScreen } from "@/features/registration/registration";
 import { MiniAppPresence } from "@/features/mini-app-presence";
+import { NotificationsProvider } from "@/features/notifications/provider";
 import { LaunchNavigation } from "@/features/launch-navigation";
-import { OnboardingProvider } from "@/features/onboarding/onboarding";
+import { OnboardingProvider } from "@/features/onboarding/onboarding-provider";
+import type { OnboardingStatus } from "@/features/onboarding/onboarding-context";
 import { ThemeSync } from "@/features/settings/theme-sync";
 import { StartupScreen } from "@/shared/ui/startup-screen";
 import { ConfirmationProvider } from "@/shared/ui/confirmation";
 import { InteractionMode } from "@/shared/ui/interaction-mode";
+import { preloadImages } from "@/shared/ui/image-preload";
+import { startupImageSources } from "@/shared/ui/artwork-assets";
+import { HomeStartup } from "./home-startup";
+import { CameraListProvider } from "@/_pages/cameras/model/camera-list-provider";
+
+const RegistrationScreen = dynamic(() => import("@/features/registration/registration").then(module => module.RegistrationScreen));
+const ChatHouseAccess = dynamic(() => import("@/features/registration/chat-house-access").then(module => module.ChatHouseAccess));
 
 export function AppProviders({ children }: { children: ReactNode }) {
   const localEnabled = process.env.NEXT_PUBLIC_ENABLE_LOCAL_LOGIN === "true";
@@ -56,44 +68,63 @@ function AuthenticatedApp({ children, mode }: { children: ReactNode; mode: "loca
   const load = useCallback(async (signal: AbortSignal) => {
     const initData = maxLaunchData();
     const api = createApiClient();
-    if (mode === "local") await api(endpoints.localLogin, { body: {}, signal });
-    else if (initData) await api(endpoints.login, { body: { init_data: initData }, signal });
-    return api;
+    const launch = (mode === "max" ? maxLaunchTarget() : undefined) ?? browserLaunchTarget(window.location.search);
+    const path = new URL(launchNavigationHref(launch) ?? window.location.href, window.location.origin).pathname;
+    const authenticate = mode === "local" ? api(endpoints.localLogin, { body: {}, signal }) : initData ? api(endpoints.login, { body: { init_data: initData }, signal }) : Promise.resolve();
+    const artwork = preloadImages(startupImageSources(path), signal).catch(error => {
+      signal.throwIfAborted();
+      throw new Error("Не удалось загрузить изображения. Проверьте подключение и повторите попытку.", { cause: error });
+    });
+    await Promise.all([authenticate, artwork]);
+    return { api, launch };
   }, [mode]);
   const state = useRemote(load);
   if (!state.data) return <StartupScreen error={state.error} actions={state.error ? <RefreshButton onRefresh={state.reload} loading={state.loading}>Повторить</RefreshButton> : undefined} />;
-  return <ApiContext value={state.data}>{mode === "max" && <LaunchNavigation />}<MiniAppPresence /><ResidentProfileView>{children}</ResidentProfileView></ApiContext>;
+  return <ApiContext value={state.data.api}><NotificationsProvider><LaunchNavigation target={launchNavigationHref(state.data.launch)} /><MiniAppPresence /><ResidentProfileView launchHouseId={state.data.launch?.houseId}>{children}</ResidentProfileView></NotificationsProvider></ApiContext>;
 }
 
-function ResidentProfileView({ children }: { children: ReactNode }) {
+function ResidentProfileView({ children, launchHouseId }: { children: ReactNode; launchHouseId?: string }) {
   const api = useApi();
+  const router = useRouter();
+  const [chatEntryDismissed, setChatEntryDismissed] = useState(false);
   const load = useCallback(async (signal: AbortSignal) => parseProfile(await api(endpoints.me, { signal })), [api]);
   const state = useRemote(load);
   if (!state.data) return <StartupScreen error={state.error} actions={state.error ? <RefreshButton onRefresh={state.reload} loading={state.loading}>Повторить</RefreshButton> : undefined} />;
-  return <>{state.error && <div role="alert"><p>{state.error}</p><RefreshButton onRefresh={state.reload} loading={state.loading}>Обновить квартиры</RefreshButton></div>}{state.data.apartments.length ? <ResidentHomes profile={state.data} refreshHomes={state.reload}>{children}</ResidentHomes> : <RegistrationScreen onComplete={state.reload} />}</>;
+  const targetHouse = chatEntryDismissed ? undefined : launchHouseId;
+  if (targetHouse && launchApartmentId(state.data.apartments, targetHouse) === undefined) return <ChatHouseAccess
+    key={targetHouse} houseId={targetHouse}
+    hasApartments={state.data.apartments.length > 0}
+    onComplete={state.reload}
+    onHome={() => { setChatEntryDismissed(true); router.replace("/"); }}
+  />;
+  return <>{state.error && <div role="alert"><p>{state.error}</p><RefreshButton onRefresh={state.reload} loading={state.loading}>Обновить квартиры</RefreshButton></div>}{state.data.apartments.length ? <ResidentHomes profile={state.data} refreshHomes={state.reload} launchHouseId={targetHouse}>{children}</ResidentHomes> : <RegistrationScreen onComplete={state.reload} />}</>;
 }
 
-function ResidentHomes({ profile, children, refreshHomes }: { profile: ResidentProfile; children: ReactNode; refreshHomes: () => void }) {
-  const [selected, choose] = useState(profile.apartments[0]?.id);
-  const resident = profile.apartments.find(a => a.id === selected);
+function ResidentHomes({ profile, children, refreshHomes, launchHouseId }: { profile: ResidentProfile; children: ReactNode; refreshHomes: () => void; launchHouseId?: string }) {
+  const [selected, choose] = useState<number>();
+  const apartmentId = selected ?? launchApartmentId(profile.apartments, launchHouseId);
+  const resident = profile.apartments.find(a => a.id === apartmentId);
   const house = profile.houses.find(h => h.id === resident?.houseId);
   const choices = profile.apartments.map(a => ({ id: a.id, houseId: a.houseId, apartment: a.number, address: profile.houses.find(h => h.id === a.houseId)?.address ?? "Дом" }));
   if (!resident || !house) return <main className="connection-screen"><h1>Дом пока не привязан</h1><p>Добавьте квартиру через чатбот, затем откройте приложение заново.</p></main>;
-  return <ConnectedHouse key={resident.id} userId={profile.id} house={{ ...house, residentApartment: resident.number, residentApartmentId: resident.id }} choices={choices} choose={choose} refreshHomes={refreshHomes}>{children}</ConnectedHouse>;
+  return <ConnectedHouse deferOnboarding={!!launchHouseId} key={resident.id} userId={profile.id} onboardingStatus={profile.onboardingStatus} house={{ ...house, residentApartment: resident.number, residentApartmentId: resident.id, apartments: profile.apartments.filter(a => a.houseId === house.id) }} choices={choices} choose={choose} refreshHomes={refreshHomes}>{children}</ConnectedHouse>;
 }
 
-function ConnectedHouse({ userId, house, choices, choose, children, refreshHomes }: { userId: number; house: House; choices: { id: number; houseId: string; apartment: number; address: string }[]; choose: (id: number) => void; children: ReactNode; refreshHomes: () => void }) {
+function ConnectedHouse({ userId, onboardingStatus, house, choices, choose, children, refreshHomes, deferOnboarding }: { onboardingStatus: OnboardingStatus; deferOnboarding: boolean; userId: number; house: House; choices: { id: number; houseId: string; apartment: number; address: string }[]; choose: (id: number) => void; children: ReactNode; refreshHomes: () => void }) {
   const api = useApi();
   const load = useCallback((signal: AbortSignal) => readPages(api, endpoints.apartments(house.id), parseApartment, signal), [api, house.id]);
   const state = useRemote(load);
-  const currentHouse = useMemo(() => ({ ...house, apartments: state.data ?? [] }), [house, state.data]);
+  const currentHouse = useMemo(() => ({ ...house, apartments: state.data ?? house.apartments }), [house, state.data]);
   const issueGateway = useMemo(() => createIssueGateway(api, currentHouse), [api, currentHouse]);
   const messageGateway = useMemo(() => createMessageGateway(api, currentHouse), [api, currentHouse]);
   const utilitiesGateway = useMemo(() => createUtilitiesGateway(api, house.residentApartmentId!), [api, house.residentApartmentId]);
-  if (!state.data) return <StartupScreen error={state.error} actions={state.error ? <RefreshButton onRefresh={state.reload} loading={state.loading}>Повторить</RefreshButton> : undefined} />;
-  return <HouseSelectionProvider house={currentHouse} choices={choices} choose={choose} refreshHomes={refreshHomes}>
+  return <HouseSelectionProvider house={currentHouse} choices={choices} choose={choose} refreshHomes={refreshHomes} apartmentsState={{ loading: !state.data && state.loading, error: state.data ? "" : state.error, reload: state.reload }}>
     <IssueProvider gateway={issueGateway}><MessageProvider gateway={messageGateway}>
-      <UtilitiesProvider gateway={utilitiesGateway}><OnboardingProvider userId={userId}>{children}</OnboardingProvider></UtilitiesProvider>
+      <UtilitiesProvider gateway={utilitiesGateway}>
+        <CameraListProvider><HomeStartup>
+          <OnboardingProvider userId={userId} status={onboardingStatus} deferAutomatic={deferOnboarding}>{children}</OnboardingProvider>
+        </HomeStartup></CameraListProvider>
+      </UtilitiesProvider>
     </MessageProvider></IssueProvider>
   </HouseSelectionProvider>;
 }

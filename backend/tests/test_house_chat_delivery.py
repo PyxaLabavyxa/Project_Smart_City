@@ -2,16 +2,18 @@ import asyncio
 from types import SimpleNamespace as NS
 from unittest.mock import AsyncMock
 
+from maxapi import Dispatcher, Router
+from maxapi.enums.parse_mode import ParseMode
+from maxapi.types.errors import Error
+from maxapi.types.input_media import InputMedia
+from sqlalchemy import delete, select
+from sqlalchemy.orm import Session
+from tests.test_house_chats import BODY, connect
+from tests.test_staff import ROOT, login
+
 from app.database.models import AnnouncementDelivery, HouseChat, StaffHouse
 from chatbot.handlers import house_chats as handlers
 from chatbot.services.house_chat_delivery import process_announcement, process_menu
-from maxapi import Dispatcher, Router
-from maxapi.types.errors import Error
-from sqlalchemy import delete, select
-from sqlalchemy.orm import Session
-
-from tests.test_house_chats import BODY, connect
-from tests.test_staff import ROOT, login
 
 pytest_plugins = ["tests.test_api", "tests.test_staff"]
 
@@ -58,6 +60,17 @@ def test_menu_once_and_restore_reuses_message(staff_api):
     assert not asyncio.run(process_menu(bot, sessions))
     assert bot.send_message.await_count == 1
     assert bot.send_message.call_args.kwargs["notify"] is False
+    attachments = bot.send_message.call_args.kwargs["attachments"]
+    assert isinstance(attachments[0], InputMedia)
+    assert attachments[0].type.value == "image"
+    assert attachments[0].path.endswith("welcome-house.png")
+    menu = attachments[1].model_dump()
+    buttons = [button for row in menu["payload"]["buttons"] for button in row]
+    assert [button["url"].split("?startapp=")[1] for button in buttons] == [
+        "report_house_1",
+        "issues_house_1",
+        "contacts_house_1",
+    ]
     with Session(engine) as s:
         assert s.get(HouseChat, 1).menu_message_id == "message-1"
     auth = login(client)
@@ -79,9 +92,12 @@ def test_only_explicit_announcements_are_delivered(staff_api):
     assert bot.send_message.await_count == 1
     assert (
         bot.send_message.call_args.kwargs["text"]
-        == "🔔 Уведомление от УК\n🔧 Ремонт и обслуживание дома\n\n"
-        + BODY["title"] + "\n\n" + BODY["text"] + "\n\nУправляющая компания"
+        == "<b>🔔 Уведомление от УК</b>\n🔧 Ремонт и обслуживание дома\n\n<b>"
+        + BODY["title"]
+        + "</b>\n\n"
+        + BODY["text"]
     )
+    assert bot.send_message.call_args.kwargs["parse_mode"] == ParseMode.HTML
     with Session(engine) as s:
         assert s.scalar(select(AnnouncementDelivery)).status == "sent"
 

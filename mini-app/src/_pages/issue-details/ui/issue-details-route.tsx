@@ -37,13 +37,13 @@ function IssueDetailsLoader({ id, view }: { id: string; view: "details" | "chat"
     if (anotherHouse && target) choose(target.id);
   }, [anotherHouse, target, choose]);
   if (loading || error) {
-    const state = <RequestState loading={loading} error={error} reload={reload} />;
+    const state = <RequestState loading={loading} error={error} reload={reload} page />;
     return view === "chat" ? <ChatScreen title="Управляющая компания" subtitle={`Обращение №${id}`} backHref={`/issues/${id}`} backLabel="Назад к обращению">{state}</ChatScreen> : state;
   }
-  if (anotherHouse) return <RequestState loading={!!target} error={target ? "" : "Обновите список квартир, чтобы открыть дом этого обращения."} reload={reload} />;
+  if (anotherHouse) return <RequestState loading={!!target} error={target ? "" : "Обновите список квартир, чтобы открыть дом этого обращения."} reload={reload} page />;
   const issue = data?.issue;
   if (!issue) return <IssueNotFoundPage />;
   if (view === "chat") return issue.mine ? <IssueChatPage issue={issue} /> : <IssueNotFoundPage />;
   if (createdIssueId === id) return <IssueCreated issue={issue} onOpen={() => { dismissCreationNotice(); window.scrollTo({ top: 0, behavior: "instant" }); }} />;
-  return <IssueDetailsPage issue={issue} />;
+  return <IssueDetailsPage issue={issue} onChanged={reload} />;
 }

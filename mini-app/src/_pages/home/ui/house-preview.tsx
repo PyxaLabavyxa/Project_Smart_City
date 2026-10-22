@@ -3,10 +3,12 @@ import { useHouseSelection, isOutdoorZone, floorCount, totalApartments, HouseEle
 import { Icon } from "@/shared/ui/icon";
 import { useIssues } from "@/entities/issue";
 import styles from "./home-page.module.css";
+import { RequestState } from "@/shared/ui/navigation/request-state";
 
 export function HousePreview({ showHeading = false }: { showHeading?: boolean }) {
-  const { house, selected, select } = useHouseSelection();
+  const { house, selected, select, apartmentsState } = useHouseSelection();
   const { issues } = useIssues();
+  if (apartmentsState.loading || apartmentsState.error) return <RequestState {...apartmentsState} />;
   return <section className={styles.house} aria-label={showHeading ? "Ваш дом" : "Схема дома"}>
     {showHeading && <header className={styles.houseHeading}><h2>Ваш дом</h2><p>{house.floors} этажей · {totalApartments(house)} квартир</p></header>}
     <HouseElevation house={house} selected={selected} onSelect={select} problemPlaces={issues.filter(issue => issue.status !== "completed").flatMap(issue => issue.place ? [issue.place] : [])} />

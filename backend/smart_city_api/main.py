@@ -12,6 +12,9 @@ from sqlalchemy.exc import SQLAlchemyError
 from smart_city_api.api.router import router
 from smart_city_api.api.routes.auth import router as auth_router
 from smart_city_api.api.routes.house_chats import router as house_chats_router
+from smart_city_api.api.routes.inbox import resident_router as resident_inbox_router
+from smart_city_api.api.routes.inbox import staff_router as staff_inbox_router
+from smart_city_api.api.routes.invitations import router as invitations_router
 from smart_city_api.api.routes.registration import router as registration_router
 from smart_city_api.api.routes.resident import router as resident_router
 from smart_city_api.api.routes.services import router as services_router
@@ -49,6 +52,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         swagger_ui_parameters={"filter": True, "displayRequestDuration": True},
     )
     app.state.settings = settings
+    app.include_router(resident_inbox_router)
+    app.include_router(staff_inbox_router)
 
     @app.get("/docs", include_in_schema=False)
     async def swagger_redirect():
@@ -98,6 +103,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(staff_router)
     app.include_router(house_chats_router)
     app.include_router(registration_router)
+    app.include_router(invitations_router)
     app.mount(
         "/staff",
         StaticFiles(directory=Path(__file__).parent / "staff_web", html=True),

@@ -18,6 +18,8 @@ export function applyTheme() {
   const preference = readTheme();
   const dark = preference === "dark" || (preference === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
   document.documentElement.dataset.theme = dark ? "dark" : "light";
+  document.documentElement.style.colorScheme = dark ? "dark" : "only light";
+  document.querySelector('meta[name="color-scheme"]')?.setAttribute("content", dark ? "dark" : "only light");
   document.querySelector('meta[name="theme-color"]')?.setAttribute("content", dark ? "#091f2c" : "#f1f9fc");
 }
 

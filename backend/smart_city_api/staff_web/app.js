@@ -3,6 +3,7 @@
 const $ = (id) => document.getElementById(id);
 const apiRoot = "/api/v1/staff";
 const cameraPageSize = 8;
+const issuePageSize = 10;
 const statuses = { new: "Новое", in_progress: "В работе", resolved: "Решено" };
 const priorities = { 1: "Высокий", 2: "Средний", 3: "Низкий" };
 const categories = {
@@ -75,13 +76,16 @@ function showLogin() {
   confirmationDialog.close("cancel");
   $("camera-action-menu").hidePopover();
   window.resetCameraManagement?.();
+  window.resetStaffReport?.();
   window.resetChatManagement?.();
+  window.resetStaffInbox?.();
   state.profile = null; state.detail = null; state.listRequest++; state.detailRequest++;
   $("issue-dialog").close(); $("photo-dialog").close();
   $("full-photo").removeAttribute("src"); $("detail-content").replaceChildren();
   $("registrations-body").replaceChildren();
   cameraRequest++; cameraItems = []; $("cameras-body").replaceChildren(); $("camera-table-body").replaceChildren();
   contactState.request++; contactState.house = ""; contactState.loaded = false; contactState.dirty = false; contactState.loading = false;
+  window.resetStaffContacts?.();
   $("contact-rows").replaceChildren(); $("contacts-form").hidden = true;
   $("issues-body").replaceChildren(); $("workspace").hidden = true;
   $("login-screen").hidden = false; $("boot").hidden = true;
@@ -108,15 +112,20 @@ async function enterWorkspace() {
   state.profile = await api("/me"); state.page = 1; state.status = "";
   $("staff-name").textContent = state.profile.name;
   $("avatar").textContent = state.profile.name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
-  $("house-filter").innerHTML = '<option value="">Все мои дома</option>' + state.profile.houses.map((house) => `<option value="${house.id}">${esc(house.address)}</option>`).join("");
+  $("house-filter").innerHTML = '<option value="">Все дома</option>' + state.profile.houses.map((house) => `<option value="${house.id}">${esc(house.address)}</option>`).join("");
   $("camera-house").innerHTML = $("house-filter").innerHTML;
   $("camera-status").value = "all"; $("camera-zone").value = ""; cameraPage = 1;
   $("camera-entrance").value = ""; $("camera-floor").value = "";
   updateCameraLocationOptions();
-  $("contact-house").innerHTML = state.profile.contact_houses.map((house) => `<option value="${house.id}">${esc(house.address)}</option>`).join("");
   $("priority-filter").value = ""; $("search").value = "";
   $("no-houses").hidden = state.profile.houses.length > 0;
   $("login-screen").hidden = true; $("workspace").hidden = false; $("boot").hidden = true;
+  window.initStaffInbox?.({ api, esc, icon, date, open: href => {
+    const issue = /^#issue-([1-9]\d*)$/.exec(href);
+    location.hash = issue ? "#issues" : href;
+    switchSection();
+    if (issue) void openDetail(Number(issue[1]));
+  } });
   window.scrollTo(0, 0);
   updateStatSelection();
   await loadList();
@@ -133,14 +142,14 @@ function badge(status) { return `<span class="badge ${esc(status)}"><i class="st
 async function loadList() {
   if (!state.profile) return;
   const request = ++state.listRequest;
-  const params = new URLSearchParams({ page: state.page, page_size: 25 });
+  const params = new URLSearchParams({ page: state.page, page_size: issuePageSize });
   for (const [key, value] of Object.entries({ status: state.status, house_id: $("house-filter").value, priority: $("priority-filter").value, q: $("search").value.trim() })) if (value) params.set(key, value);
   $("refresh").disabled = true;
   try {
     const data = await api(`/issues?${params}`);
     if (request !== state.listRequest || !state.profile) return;
     showError("list-error", ""); state.total = data.total;
-    if (state.page > 1 && (state.page - 1) * 25 >= data.total) { state.page = Math.max(1, Math.ceil(data.total / 25)); return loadList(); }
+    if (state.page > 1 && (state.page - 1) * issuePageSize >= data.total) { state.page = Math.max(1, Math.ceil(data.total / issuePageSize)); return loadList(); }
     $("count-all").textContent = Object.values(data.counts).reduce((a, b) => a + b, 0);
     $("count-new").textContent = data.counts.new; $("count-progress").textContent = data.counts.in_progress;
     $("count-resolved").textContent = data.counts.resolved; $("nav-count").textContent = data.counts.new;
@@ -152,8 +161,8 @@ async function loadList() {
       <td class="status-cell">${badge(issue.status)}</td><td class="date-cell">${esc(date(issue.created_at, true))}</td>
       <td class="open-cell"><button class="row-open" data-open="${issue.id}" aria-label="Открыть обращение №${issue.id}">Открыть</button></td></tr>`).join("");
     $("empty").hidden = data.total !== 0;
-    $("prev-page").disabled = state.page <= 1; $("next-page").disabled = state.page * 25 >= data.total;
-    $("page-label").textContent = data.total ? `${(state.page - 1) * 25 + 1}–${Math.min(state.page * 25, data.total)} из ${data.total} обращений` : "Нет обращений";
+    $("prev-page").disabled = state.page <= 1; $("next-page").disabled = state.page * issuePageSize >= data.total;
+    $("page-label").textContent = data.total ? `${(state.page - 1) * issuePageSize + 1}–${Math.min(state.page * issuePageSize, data.total)} из ${data.total} обращений` : "Нет обращений";
     $("sync-label").textContent = `Обновлено ${new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}`;
   } catch (error) {
     if (request !== state.listRequest) return;
@@ -167,11 +176,12 @@ function renderConversation(detail) {
   const atEnd = conversation.scrollHeight - conversation.scrollTop - conversation.clientHeight < 35;
   conversation.innerHTML = detail.messages.length ? detail.messages.map((message) => {
     const delivery = detail.notifications.find((notice) => notice.message_id === message.id);
-    const deliveryText = delivery ? { read: "Прочитано в мини-приложении", sent: "Уведомление отправлено в MAX", pending: "Ожидает отправки в MAX", retrying: "Бот повторит отправку в MAX" }[delivery.delivery] : "";
+    const deliveryText = delivery ? { read: "Прочитано в мини-приложении", in_app: "Сохранено в уведомлениях · житель в мини-приложении", muted: "Уведомления в MAX отключены жителем", sent: "Уведомление отправлено в MAX", pending: "Ожидает отправки в MAX", retrying: "Бот повторит отправку в MAX", not_required: "Заметка УК" }[delivery.delivery] : "";
     return `<div class="bubble ${message.direction}"><div class="message-top"><strong>${esc(message.author)}${message.direction === "staff" ? " · УК" : " · житель"}</strong><time>${esc(date(message.created_at, true))}</time></div><p>${esc(message.text)}</p>${message.photos?.length ? `<div class="photos">${message.photos.map((photo, index) => `<button type="button" class="photo-thumb" data-chat-photo="${Number(photo.id)}" aria-label="Открыть фото сообщения ${index + 1}"><img src="${esc(apiRoot + "/chat-photos/" + Number(photo.id))}" alt="Фото в сообщении ${index + 1}" loading="lazy"></button>`).join("")}</div>` : ""}${deliveryText ? `<div class="delivery-label">${esc(deliveryText)}</div>` : ""}</div>`;
   }).join("") : '<p class="conversation-empty">Здесь можно уточнить детали у жителя. Он ответит в чате обращения мини-приложения. Если чат закрыт, бот пришлёт уведомление.</p>';
+  if (!detail.resident_id) conversation.querySelector(".conversation-empty")?.replaceChildren(document.createTextNode("Заметки по звонкам и уточнениям. Видны только УК."));
   conversation.scrollTop = atEnd ? conversation.scrollHeight : oldTop;
-  const pending = detail.notifications.filter((notice) => !["sent", "read"].includes(notice.delivery)).length;
+  const pending = detail.notifications.filter((notice) => !["sent", "read", "not_required", "in_app", "muted"].includes(notice.delivery)).length;
   $("delivery-summary").textContent = pending ? `Уведомлений в очереди: ${pending}. Бот доставит их автоматически. Прочитанные в чате сообщения не дублируются.` : "Ответы и уточнения сохраняются в чате обращения.";
   $("history").innerHTML = detail.history.length ? detail.history.map((event) => `<li>${badge(event.status)}<time>${esc(date(event.created_at))}</time></li>`).join("") : `<li>${badge(detail.status)}<span class="muted">История изменений пока пуста</span></li>`;
   $("live-status").innerHTML = badge(detail.status);
@@ -196,6 +206,20 @@ async function openDetail(id) {
       <details class="section rejection-section"><summary>${icon("close")} Отклонить обращение</summary><form id="reject-form" class="message-form"><label for="reject-reason">Причина отклонения</label><textarea id="reject-reason" minlength="3" maxlength="1500" required placeholder="Объясните жителю, почему обращение отклонено"></textarea><p class="form-help">Обращение исчезнет из списков. Бот отправит автору указанную причину.</p><button class="danger" type="submit">Отклонить обращение</button></form><p id="reject-error" class="error detail-error" role="alert" hidden></p></details></div>`;
     renderConversation(detail);
     if (!$("issue-dialog").open) $("issue-dialog").showModal();
+    if (detail.created_by || detail.reporter_phone || detail.reporter_apartment) {
+      const info = document.createElement("section"); info.className = "section reporter-details";
+      info.innerHTML = `<h3>Заявитель</h3><p>${esc(detail.author)}${detail.reporter_apartment ? ` · кв. ${Number(detail.reporter_apartment)}` : ""}</p>${detail.reporter_phone ? `<p><a href="tel:${esc(detail.reporter_phone.replace(/[^+0-9]/g, ""))}">${esc(detail.reporter_phone)}</a></p>` : ""}${detail.created_by ? `<p class="form-help">Приняла УК: ${esc(detail.created_by)}</p>` : ""}`;
+      $("detail-content").querySelector(".detail-meta").after(info);
+    }
+    if (!detail.resident_id) {
+      $("message-form").closest("section").querySelector("h3").textContent = "Заметки УК";
+      $("message-text").placeholder = "Итоги звонка или уточнения";
+      $("message-form").querySelector("label").textContent = "Заметка";
+      $("message-form").querySelector('button[type="submit"]').textContent = "Сохранить заметку";
+      $("message-form").closest("section").querySelector(":scope > .form-help").hidden = true;
+      $("status-form").nextElementSibling.textContent = "История статусов сохраняется в обращении.";
+      $("reject-form").querySelector(".form-help").textContent = "Обращение исчезнет из списка. Причина сохранится в истории.";
+    }
     $("status-form").addEventListener("submit", saveStatus);
     $("reject-form").addEventListener("submit", rejectIssue);
     $("message-form").addEventListener("submit", sendMessage);
@@ -218,7 +242,7 @@ async function saveStatus(event) {
   try {
     await api(`/issues/${detail.id}/status`, { method: "POST", body: JSON.stringify({ status, expected_status: detail.status, request_id: statusAction.id }) });
     detail.status = status; statusAction = null;
-    toast("Статус сохранён. Уведомление поставлено в очередь MAX.");
+    toast(detail.resident_id ? "Статус сохранён. Уведомление поставлено в очередь MAX." : "Статус сохранён.");
     const updated = await api(`/issues/${detail.id}`); renderConversation(updated);
     await loadList();
   } catch (error) { if ($("detail-error")) showError("detail-error", error.message); }
@@ -234,7 +258,7 @@ async function rejectIssue(event) {
   try {
     await api(`/issues/${detail.id}/reject`, { method: "POST", body: JSON.stringify({ reason, expected_status: detail.status, request_id: rejectionAction.id }) });
     rejectionAction = null; $("issue-dialog").close();
-    toast("Обращение отклонено. Причина поставлена в очередь отправки в MAX.");
+    toast(detail.resident_id ? "Обращение отклонено. Причина поставлена в очередь отправки в MAX." : "Обращение отклонено.");
     await loadList();
   } catch (error) { if ($("reject-error")) showError("reject-error", error.message); }
   finally { setBusy(false); }
@@ -255,7 +279,7 @@ async function sendMessage(event) {
     await api(`/issues/${detail.id}/messages${photos.length ? "/with-photos" : ""}`, { method: "POST", body });
     $("message-photos").value = ""; $("chat-photo-hint").textContent = "До 10 фото · JPG, PNG, WebP · до 10 МБ каждое";
     $("message-text").value = ""; $("message-count").textContent = "0 / 1500"; messageAction = null;
-    toast("Сообщение добавлено в чат обращения.");
+    toast(detail.resident_id ? "Сообщение добавлено в чат обращения." : "Заметка сохранена.");
     const updated = await api(`/issues/${detail.id}`); renderConversation(updated);
   } catch (error) { if ($("message-error")) showError("message-error", error.message); }
   finally { setBusy(false); }
@@ -294,7 +318,7 @@ document.querySelectorAll(".stat").forEach((button) => button.addEventListener("
 for (const id of ["house-filter", "priority-filter"]) $(id).addEventListener("change", () => { state.page = 1; loadList(); });
 $("search").addEventListener("input", () => { clearTimeout(searchTimer); searchTimer = setTimeout(() => { state.page = 1; loadList(); }, 300); });
 $("prev-page").addEventListener("click", () => { if (state.page > 1) { state.page--; loadList(); } });
-$("next-page").addEventListener("click", () => { if (state.page * 25 < state.total) { state.page++; loadList(); } });
+$("next-page").addEventListener("click", () => { if (state.page * issuePageSize < state.total) { state.page++; loadList(); } });
 $("issues-body").addEventListener("click", (event) => { const button = event.target.closest("[data-open]"); if (button) openDetail(Number(button.dataset.open)); });
 $("close-detail").addEventListener("click", () => { if (!state.busy) $("issue-dialog").close(); });
 $("issue-dialog").addEventListener("cancel", (event) => { if (state.busy) event.preventDefault(); });
@@ -345,7 +369,7 @@ function renderCameraItems(items = cameraItems) {
         <td data-label="Пояснение">${camera.moderation_status === "rejected" && camera.moderation_reason ? `<p class="camera-explanation">${esc(camera.moderation_reason)}</p>` : '<span class="muted">—</span>'}</td>
         <td data-label="Управление"><button type="button" class="camera-menu-trigger" data-camera="${Number(camera.id)}" data-status="${esc(camera.moderation_status)}" popovertarget="camera-action-menu" aria-expanded="false" aria-label="Действия с камерой: ${esc(camera.name)}">Действия ${icon("chevron")}</button></td></tr>`;
       return `<article class="staff-camera-card">
-        <button type="button" class="staff-camera-preview" data-view-camera="${Number(camera.id)}" data-name="${esc(camera.name)}" data-place="${esc(camera.address + " · " + location)}" aria-label="Смотреть камеру: ${esc(camera.name)}"><img data-frame-src="${apiRoot}/cameras/${Number(camera.id)}/frame" alt="" loading="lazy"><span class="camera-preview-fallback">${icon("camera")}<span>Получаем кадр…</span></span><span class="camera-preview-open">Смотреть камеру ↗</span></button>
+        <button type="button" class="staff-camera-preview" data-view-camera="${Number(camera.id)}" data-name="${esc(camera.name)}" data-place="${esc(camera.address + " · " + location)}" aria-label="Смотреть камеру: ${esc(camera.name)}"><img hidden data-frame-src="${apiRoot}/cameras/${Number(camera.id)}/frame" alt=""><span class="camera-preview-fallback">${icon("camera")}<span>Получаем кадр…</span></span><span class="camera-preview-open">Смотреть камеру ↗</span></button>
         <div class="staff-camera-card-body"><span class="badge camera-${esc(camera.moderation_status)}"><span class="status-dot"></span>${esc(decision)}</span><h2>${esc(camera.name)}</h2><p class="camera-card-address">${esc(camera.address)}</p><p class="muted">${esc(location)}</p><p class="row-meta">${esc(camera.owner_name)}</p>${camera.note ? `<p class="camera-card-note">${esc(camera.note)}</p>` : ""}${camera.moderation_status === "rejected" && camera.moderation_reason ? `<p class="camera-explanation">${esc(camera.moderation_reason)}</p>` : ""}
         <button type="button" class="camera-menu-trigger" data-camera="${Number(camera.id)}" data-status="${esc(camera.moderation_status)}" popovertarget="camera-action-menu" aria-expanded="false" aria-label="Действия с камерой: ${esc(camera.name)}">Действия ${icon("chevron")}</button></div></article>`;
     }).join("");
@@ -425,7 +449,10 @@ $("cameras-section").addEventListener("click", event => {
   cameraMenu.innerHTML = `<button data-decision="view">${icon("camera")}Смотреть камеру</button>${control.dataset.status === "pending" ? `<button data-decision="approved">${icon("check")}Одобрить</button><button data-decision="rejected">${icon("close")}Отклонить</button>` : ""}<button data-decision="delete" class="camera-delete">${icon("trash")}Удалить камеру</button>`;
   const rect = control.getBoundingClientRect();
   const height = 12 + cameraMenu.querySelectorAll("button").length * 46;
-  cameraMenu.style.left = `${Math.max(8, Math.min(rect.right - 208, innerWidth - 216))}px`;
+  cameraMenu.dataset.side = rect.bottom + height + 8 > innerHeight ? "above" : "below";
+  const width = Math.min(cameraView === "grid" ? rect.width : 208, innerWidth - 16);
+  cameraMenu.style.width = `${width}px`;
+  cameraMenu.style.left = `${Math.max(8, Math.min(rect.left, innerWidth - width - 8))}px`;
   cameraMenu.style.top = `${Math.max(8, rect.bottom + height + 8 > innerHeight ? rect.top - height - 6 : rect.bottom + 6)}px`;
 });
 cameraMenu.addEventListener("toggle", event => {
@@ -490,7 +517,7 @@ function switchSection() {
   }
   if (registrations && state.profile) void loadRegistrations();
   if (cameras && state.profile) void loadCameras();
-  if (contacts && state.profile && !contactState.loaded && !contactState.loading) void loadContacts();
+  if (contacts && state.profile && !contactState.loaded && !contactState.loading) void window.loadStaffContacts?.();
   if ((maxChats || announcements) && state.profile) void loadChatManagement(announcements);
 }
 async function loadRegistrations() {
@@ -545,101 +572,4 @@ $("registrations-body").addEventListener("click", async event => {
     }
   } catch (error) { showError("registrations-error", error.message); }
   finally { state.busy = false; button.disabled = false; }
-});
-
-const contactKinds = { phone: "Телефон", email: "Электронная почта", address: "Адрес", website: "Сайт" };
-function contactValueAttributes(kind) {
-  if (kind === "email") return 'type="email" placeholder="info@example.ru"';
-  if (kind === "website") return 'type="url" placeholder="https://example.ru"';
-  if (kind === "phone") return 'type="tel" placeholder="+7 (000) 000-00-00"';
-  return 'type="text" placeholder="Адрес приёмной"';
-}
-function renderContactRows(items) {
-  $("contact-rows").innerHTML = items.map((item, index) => `<fieldset class="contact-row" data-contact-row>
-    <legend>Контакт ${index + 1}</legend>
-    <label>Название<input data-contact-field="label" value="${esc(item.label)}" maxlength="100" required placeholder="Например, диспетчерская"></label>
-    <label>Тип<select data-contact-field="kind">${Object.entries(contactKinds).map(([kind, label]) => `<option value="${kind}"${kind === item.kind ? " selected" : ""}>${label}</option>`).join("")}</select></label>
-    <label class="contact-value">Контакт<input data-contact-field="value" ${contactValueAttributes(item.kind)} value="${esc(item.value)}" maxlength="300" required></label>
-    <label class="contact-note">Примечание<input data-contact-field="note" value="${esc(item.note)}" maxlength="200" placeholder="Часы работы или пояснение"></label>
-    <button type="button" class="secondary remove-contact" data-remove-contact="${index}" aria-label="Удалить контакт ${index + 1}">Удалить</button>
-  </fieldset>`).join("");
-  $("contacts-empty").hidden = items.length > 0;
-  $("add-contact").disabled = items.length >= 12;
-}
-function readContactDraft() {
-  return [...$("contact-rows").querySelectorAll("[data-contact-row]")].map(row => Object.fromEntries(
-    [...row.querySelectorAll("[data-contact-field]")].map(input => [input.dataset.contactField, input.value.trim()])
-  ));
-}
-function contactBusy(busy) {
-  $("contacts-fields").disabled = busy;
-  $("contact-house").disabled = busy || !state.profile?.contact_houses.length;
-  $("refresh-contacts").disabled = busy;
-  $("contacts-form").setAttribute("aria-busy", String(busy));
-}
-async function loadContacts() {
-  if (!state.profile || contactState.saving) return;
-  const house = $("contact-house").value;
-  const request = ++contactState.request;
-  contactState.house = house; contactState.loaded = false; contactState.loading = true; contactState.dirty = false;
-  $("contacts-form").hidden = true; $("contact-rows").replaceChildren(); $("contact-company").textContent = "";
-  showError("contacts-error", ""); contactBusy(true);
-  $("contacts-status").textContent = house ? "Загружаем контакты…" : "Пока вам не назначены дома. Попросите администратора добавить доступ.";
-  try {
-    if (!house) return;
-    const data = await api(`/houses/${encodeURIComponent(house)}/contacts`);
-    if (request !== contactState.request || !state.profile) return;
-    $("contact-company").textContent = data.company_name;
-    renderContactRows(data.items); contactState.loaded = true;
-    $("contacts-form").hidden = false; $("contacts-status").textContent = "";
-  } catch (error) {
-    if (request === contactState.request && state.profile) { showError("contacts-error", error.message); $("contacts-status").textContent = "Нажмите «Обновить», чтобы повторить загрузку."; }
-  } finally {
-    if (request === contactState.request) { contactState.loading = false; contactBusy(false); }
-  }
-}
-async function canDiscardContacts() {
-  return !contactState.dirty || await confirmAction({ title: "Сбросить изменения?", description: "Несохранённые контакты будут заменены данными с сервера.", confirmLabel: "Сбросить", destructive: true });
-}
-$("refresh-contacts").addEventListener("click", async () => { if (await canDiscardContacts() && state.profile) void loadContacts(); });
-$("contact-house").addEventListener("change", async () => {
-  const nextHouse = $("contact-house").value;
-  $("contact-house").value = contactState.house;
-  if (await canDiscardContacts() && state.profile) { $("contact-house").value = nextHouse; void loadContacts(); }
-});
-$("contact-rows").addEventListener("input", () => { contactState.dirty = true; $("contacts-status").textContent = "Есть несохранённые изменения."; });
-$("contact-rows").addEventListener("change", event => {
-  contactState.dirty = true;
-  if (event.target.dataset.contactField === "kind") {
-    const input = event.target.closest("[data-contact-row]").querySelector('[data-contact-field="value"]');
-    const temporary = document.createElement("div"); temporary.innerHTML = `<input ${contactValueAttributes(event.target.value)}>`;
-    input.type = temporary.firstChild.type; input.placeholder = temporary.firstChild.placeholder;
-  }
-});
-$("add-contact").addEventListener("click", () => {
-  const items = readContactDraft(); if (items.length >= 12) return;
-  items.push({ label: "", kind: "phone", value: "", note: "" });
-  renderContactRows(items); contactState.dirty = true;
-  $("contact-rows").lastElementChild.querySelector("input").focus();
-});
-$("contact-rows").addEventListener("click", event => {
-  const button = event.target.closest("[data-remove-contact]"); if (!button) return;
-  const items = readContactDraft(); items.splice(Number(button.dataset.removeContact), 1);
-  renderContactRows(items); contactState.dirty = true; $("add-contact").focus();
-});
-$("contacts-form").addEventListener("submit", async event => {
-  event.preventDefault(); if (!contactState.loaded || contactState.saving || contactState.loading) return;
-  const house = contactState.house, request = contactState.request;
-  const items = readContactDraft();
-  contactState.saving = true; contactBusy(true); showError("contacts-error", "");
-  $("contacts-status").textContent = "Сохраняем контакты…";
-  try {
-    const data = await api(`/houses/${encodeURIComponent(house)}/contacts`, { method: "POST", body: JSON.stringify({ items }) });
-    if (request !== contactState.request || !state.profile) return;
-    renderContactRows(data.items); contactState.dirty = false;
-    $("contacts-status").textContent = "Контакты сохранены и доступны жителям этого дома.";
-    toast("Контакты сохранены");
-  } catch (error) {
-    if (request === contactState.request && state.profile) { showError("contacts-error", error.message); $("contacts-status").textContent = "Данные остались в форме. Попробуйте ещё раз."; }
-  } finally { contactState.saving = false; contactBusy(contactState.loading); }
 });
