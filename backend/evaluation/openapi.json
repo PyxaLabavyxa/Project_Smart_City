@@ -4240,6 +4240,63 @@
         }
       }
     },
+    "/api/v1/staff/announcements/{announcement_id}/complete-work": {
+      "post": {
+        "tags": [
+          "Staff chats"
+        ],
+        "summary": "Complete Work",
+        "operationId": "complete_work_api_v1_staff_announcements__announcement_id__complete_work_post",
+        "security": [
+          {
+            "StaffSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "announcement_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Announcement Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VersionInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnnouncementOutput"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/registration": {
       "get": {
         "tags": [
@@ -4668,6 +4725,16 @@
             ],
             "title": "Audience",
             "default": "houses"
+          },
+          "work": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WorkSchedule"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -4764,6 +4831,38 @@
           "audience": {
             "type": "string",
             "title": "Audience"
+          },
+          "work": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WorkSchedule"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "message_body": {
+            "type": "string",
+            "title": "Message Body",
+            "default": ""
+          },
+          "message_topic": {
+            "type": "string",
+            "title": "Message Topic",
+            "default": ""
+          },
+          "work_completed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Work Completed At"
           }
         },
         "type": "object",
@@ -7268,6 +7367,18 @@
             "exclusiveMinimum": 0.0,
             "title": "Apartment Number"
           },
+          "entrance": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entrance"
+          },
           "additional": {
             "type": "boolean",
             "title": "Additional",
@@ -8206,13 +8317,25 @@
             "title": "Starts At"
           },
           "ends_at": {
-            "type": "string",
-            "format": "date-time",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Ends At"
           },
           "location": {
             "type": "string",
             "title": "Location"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "default": ""
           }
         },
         "type": "object",
@@ -8224,6 +8347,40 @@
           "location"
         ],
         "title": "WorkResponse"
+      },
+      "WorkSchedule": {
+        "properties": {
+          "starts_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Starts At"
+          },
+          "ends_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ends At"
+          },
+          "location": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Location"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "starts_at",
+          "location"
+        ],
+        "title": "WorkSchedule"
       }
     },
     "securitySchemes": {

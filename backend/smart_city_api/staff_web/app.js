@@ -342,7 +342,12 @@ setInterval(async () => {
     catch (error) { if ($("detail-error")) showError("detail-error", error.message); }
   }
 }, 20000);
-enterWorkspace().catch((error) => { showLogin(); if (error.status !== 401) showError("login-error", error.message); });
+function initializeWorkspace() {
+  enterWorkspace().catch((error) => { showLogin(); if (error.status !== 401) showError("login-error", error.message); });
+}
+// Section scripts are deferred too: wait until their handlers are registered.
+if (document.readyState === "complete") initializeWorkspace();
+else document.addEventListener("DOMContentLoaded", initializeWorkspace, { once: true });
 
 
 let registrationPage = 1, registrationTotal = 0, registrationRequest = 0;
