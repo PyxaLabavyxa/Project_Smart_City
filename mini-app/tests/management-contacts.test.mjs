@@ -16,6 +16,13 @@ test('unsafe website protocols and embedded credentials never produce clickable 
   }
 });
 
+test('the company website shown in information is a safe saved contact', () => {
+  const unsafe = { kind: 'website', label: 'Сайт', value: 'javascript:alert(1)', note: '' };
+  const website = { ...unsafe, value: 'https://example.ru/contacts' };
+  assert.equal(contactInformation([unsafe, website]).website, website);
+  assert.equal(contactInformation([unsafe]).website, undefined);
+});
+
 test('saved office and reception schedules are separate, non-clickable information', () => {
   const hours = { kind: 'schedule', label: 'График работы', value: 'Пн–пт, 9:00–18:00', note: '' };
   const reception = { ...hours, label: 'Приём жителей', value: 'Вт, 15:00–18:00' };

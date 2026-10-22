@@ -20,6 +20,118 @@ def contact(kind="phone", value="+7 (495) 123-45-67", **changes):
     }
 
 
+def test_contact_picker_includes_assigned_companyless_house_and_excludes_others(staff_api):
+    client, engine, _ = staff_api
+    with Session(engine) as session:
+        session.add(ManagementCompany(id=1, name="УК другого дома"))
+        session.flush()
+        session.add(CompanyHouse(house_id=2, company_id=1))
+        session.commit()
+    csrf = login(client)
+    profile = client.get(ROOT + "/me").json()
+    assert [house["id"] for house in profile["contact_houses"]] == [1]
+    items = [contact()]
+    # Use the same scoped save/read path for a house without a company entry.
+    saved = client.post(ROOT + "/houses/1/contacts", headers=csrf, json={"items": items})
+    assert saved.status_code == 200
+    assert client.get("/api/v1/houses/1/contacts", headers=headers()).json()["items"] == items
+
+
+def test_bulk_patch_preserves_each_houses_email_notes_and_extra_contacts(staff_api):
+    client, engine, _ = staff_api
+    with Session(engine) as session:
+        session.add(StaffHouse(staff_id=1, house_id=2))
+        session.commit()
+    csrf = login(client)
+    original = {}
+    for house in (1, 2):
+        original[house] = [
+            contact(value=f"100{house}", note=f"Часы дома {house}"),
+            contact("email", f"house{house}@example.ru", label="Почта", note=""),
+            contact(value=f"200{house}", label="Консьерж", note="Личный график"),
+        ]
+        response = client.post(
+            ROOT + f"/houses/{house}/contacts", headers=csrf, json={"items": original[house]}
+        )
+        assert response.status_code == 200
+    body = {"house_ids": [1, 2], "changes": {"dispatcher": {"value": "7777"}}}
+    assert client.patch(ROOT + "/contacts/bulk", json=body).status_code == 403
+    response = client.patch(ROOT + "/contacts/bulk", headers=csrf, json=body)
+    assert response.status_code == 200, response.text
+    for house in (1, 2):
+        expected = [{**original[house][0], "value": "7777"}, *original[house][1:]]
+        assert client.get(ROOT + f"/houses/{house}/contacts").json()["items"] == expected
+    # Repeating a field update is idempotent.
+    assert client.patch(ROOT + "/contacts/bulk", headers=csrf, json=body).status_code == 200
+
+
+def test_bulk_patch_authorizes_and_validates_all_houses_before_writing(staff_api):
+    client, _, _ = staff_api
+    csrf = login(client)
+    original = [contact()]
+    client.post(ROOT + "/houses/1/contacts", headers=csrf, json={"items": original})
+    path = ROOT + "/contacts/bulk"
+    body = {"house_ids": [1, 2], "changes": {"dispatcher": {"value": "7777"}}}
+    assert client.patch(path, headers=csrf, json=body).status_code == 404
+    body["house_ids"] = [1]
+    body["changes"]["dispatcher"]["value"] = "bad number"
+    assert client.patch(path, headers=csrf, json=body).status_code == 422
+    assert client.get(ROOT + "/houses/1/contacts").json()["items"] == original
+    for invalid in ({}, {"dispatcher": {}}, {"unknown": {"value": "123"}}):
+        assert client.patch(
+            path, headers=csrf, json={"house_ids": [1], "changes": invalid}
+        ).status_code == 422
+
+
+def test_bulk_patch_note_only_delete_and_extra_upsert_preserve_other_data(staff_api):
+    client, engine, _ = staff_api
+    with Session(engine) as session:
+        session.add(StaffHouse(staff_id=1, house_id=2))
+        session.commit()
+    csrf = login(client)
+    for house in (1, 2):
+        items = [contact("email", f"house{house}@example.ru", label="Почта", note="")]
+        if house == 1:
+            items += [contact(), contact(label="Консьерж", value="5555")]
+        client.post(ROOT + f"/houses/{house}/contacts", headers=csrf, json={"items": items})
+    body = {
+        "house_ids": [1, 2],
+        "changes": {"dispatcher": {"note": "Новый график"}, "email": {"value": ""}},
+        "extra_changes": [{"label": "Консьерж", "kind": "phone",
+                           "contact": contact(label="Консьерж", value="9999")}],
+    }
+    response = client.patch(ROOT + "/contacts/bulk", headers=csrf, json=body)
+    assert response.status_code == 200, response.text
+    first = client.get(ROOT + "/houses/1/contacts").json()["items"]
+    assert first == [contact(note="Новый график"), contact(label="Консьерж", value="9999")]
+    # A note without a number must never fabricate a dispatcher in an empty house.
+    assert client.get(ROOT + "/houses/2/contacts").json()["items"] == [
+        contact(label="Консьерж", value="9999")
+    ]
+    extra_only = {"house_ids": [1, 2], "extra_changes": body["extra_changes"]}
+    assert client.patch(ROOT + "/contacts/bulk", headers=csrf, json=extra_only).status_code == 200
+    assert client.get(ROOT + "/houses/2/contacts").json()["items"] == [
+        contact(label="Консьерж", value="9999")
+    ]
+
+
+def test_bulk_patch_limit_failure_is_atomic(staff_api):
+    client, engine, _ = staff_api
+    with Session(engine) as session:
+        session.add(StaffHouse(staff_id=1, house_id=2))
+        session.commit()
+    csrf = login(client)
+    full = [contact("address", f"Адрес {index}", label=f"Офис {index}") for index in range(12)]
+    client.post(ROOT + "/houses/1/contacts", headers=csrf, json={"items": [contact()]})
+    client.post(ROOT + "/houses/2/contacts", headers=csrf, json={"items": full})
+    response = client.patch(ROOT + "/contacts/bulk", headers=csrf, json={
+        "house_ids": [1, 2], "changes": {"email": {"value": "new@example.ru"}}
+    })
+    assert response.status_code == 422
+    assert client.get(ROOT + "/houses/1/contacts").json()["items"] == [contact()]
+    assert client.get(ROOT + "/houses/2/contacts").json()["items"] == full
+
+
 def test_staff_contacts_persist_replace_and_are_visible_only_to_house_residents(staff_api):
     client, engine, _ = staff_api
     with Session(engine) as session:

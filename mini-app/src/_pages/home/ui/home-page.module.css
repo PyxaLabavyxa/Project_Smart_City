@@ -62,7 +62,7 @@
 
 .house { padding:0; background:transparent; }
 .houseMeta { margin:calc(14 * var(--u)) 0 calc(20 * var(--u)); font-size:calc(18 * var(--u)); }
-.planButton { min-height:calc(66 * var(--u)); font-size:calc(22 * var(--u)); font-weight:400; gap:calc(14 * var(--u)); }
+.planButton { min-height:calc(60 * var(--u)); font-size:calc(20 * var(--u)); font-weight:400; gap:calc(14 * var(--u)); }
 .planButton svg { width:calc(32 * var(--u)); height:calc(32 * var(--u)); }
 .schedule { padding:calc(18 * var(--u)); margin-top:calc(30 * var(--u)); }
 .schedule h2 { font-size:calc(23 * var(--u)); margin:0 0 calc(16 * var(--u)); }

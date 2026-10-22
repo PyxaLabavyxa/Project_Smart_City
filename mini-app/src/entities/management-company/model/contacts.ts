@@ -14,6 +14,7 @@ export function contactInformation(items: readonly ManagementContact[]) {
       ?? items.find(item => item.kind === "phone" && item !== emergency),
     emergency,
     email: items.find(item => item.kind === "email"),
+    website: items.find(item => item.kind === "website" && contactHref(item)),
     office: items.find(item => item.kind === "address"),
     hours: items.find(item => item.kind === "schedule" && /график|работ/i.test(item.label)),
     reception: items.find(item => item.kind === "schedule" && /при[её]м/i.test(item.label)),

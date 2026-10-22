@@ -4,7 +4,7 @@ const cmFormDialog = $("staff-camera-form-dialog");
 const cmViewDialog = $("staff-camera-view-dialog");
 const cmTypeLabels = { snapshot: "Снимки", rtsp: "RTSP", rtmp: "RTMP", hls: "HLS", mjpeg: "MJPEG", onvif: "ONVIF", http_video: "HTTP-видео" };
 let cmTimer, cmController, cmGeneration = 0, cmVerified = null, cmRequest = null, cmSaving = false;
-let cmViewing = null, cmViewTimer;
+let cmViewing = null, cmViewTimer, cmViewGeneration = 0;
 
 function cmConnection() {
   const kind = $("staff-camera-type").value;
@@ -104,14 +104,16 @@ window.bindCameraPreviews = () => {
     const image = images[next++];
     if (!image?.isConnected) return;
     const preview = image.closest(".staff-camera-preview");
+    image.hidden = true;
     const finish = available => {
+      if (generation !== cmPreviewGeneration || !image.isConnected) return;
       image.onload = image.onerror = null;
       image.hidden = !available;
       preview.dataset.status = available ? "online" : "unavailable";
       preview.querySelector(".camera-preview-fallback > span").textContent = available ? "Кадр загружен" : "Камера недоступна";
       loadNext();
     };
-    image.onload = () => finish(true);
+    image.onload = () => image.decode().then(() => finish(true), () => finish(false));
     image.onerror = () => finish(false);
     image.src = image.dataset.frameSrc;
   }
@@ -122,9 +124,33 @@ window.bindCameraPreviews = () => {
 function cmRefreshView() {
   clearTimeout(cmViewTimer);
   if (!cmViewing || !cmViewDialog.open) return;
+  const generation = ++cmViewGeneration;
+  const image = $("staff-camera-view-image");
+  image.hidden = true;
+  $("staff-camera-view-error").hidden = true;
+  $("staff-camera-view-loading").hidden = false;
+  const current = () => generation === cmViewGeneration && cmViewing && cmViewDialog.open;
+  const failed = () => {
+    if (!current()) return;
+    image.hidden = true;
+    $("staff-camera-view-loading").hidden = true;
+    $("staff-camera-view-error").hidden = false;
+    $("staff-camera-view-time").textContent = "Не удалось обновить кадр";
+    $("refresh-staff-camera-view").disabled = false;
+  };
+  image.onload = async () => {
+    try { await image.decode(); } catch { failed(); return; }
+    if (!current()) return;
+    image.hidden = false;
+    $("staff-camera-view-loading").hidden = true;
+    $("staff-camera-view-time").textContent = `Кадр обновлён в ${new Date().toLocaleTimeString("ru-RU")}`;
+    $("refresh-staff-camera-view").disabled = false;
+    cmViewTimer = setTimeout(cmRefreshView, 5000);
+  };
+  image.onerror = failed;
   $("staff-camera-view-time").textContent = "Получаем кадр…";
   $("refresh-staff-camera-view").disabled = true;
-  $("staff-camera-view-image").src = `${apiRoot}/cameras/${cmViewing}/frame?t=${Date.now()}`;
+  image.src = `${apiRoot}/cameras/${cmViewing}/frame?t=${Date.now()}`;
 }
 window.openStaffCamera = id => {
   const camera = cameraItems.find(item => Number(item.id) === id);
@@ -145,20 +171,8 @@ $("cameras-section").addEventListener("click", event => {
   const control = event.target.closest("button[data-view-camera]");
   if (control) window.openStaffCamera(Number(control.dataset.viewCamera));
 });
-$("staff-camera-view-image").addEventListener("load", () => {
-  if (!cmViewing || !cmViewDialog.open) return;
-  $("staff-camera-view-image").hidden = false; $("staff-camera-view-error").hidden = true;
-  $("staff-camera-view-time").textContent = `Кадр обновлён в ${new Date().toLocaleTimeString("ru-RU")}`;
-  $("refresh-staff-camera-view").disabled = false;
-  cmViewTimer = setTimeout(cmRefreshView, 5000);
-});
-$("staff-camera-view-image").addEventListener("error", () => {
-  if (!cmViewing || !cmViewDialog.open) return;
-  $("staff-camera-view-image").hidden = true; $("staff-camera-view-error").hidden = false;
-  $("staff-camera-view-time").textContent = "Не удалось обновить кадр"; $("refresh-staff-camera-view").disabled = false;
-});
 $("refresh-staff-camera-view").addEventListener("click", cmRefreshView);
 $("close-staff-camera-view").addEventListener("click", () => cmViewDialog.close());
-cmViewDialog.addEventListener("close", () => { cmViewing = null; clearTimeout(cmViewTimer); $("staff-camera-view-image").removeAttribute("src"); });
+cmViewDialog.addEventListener("close", () => { cmViewing = null; cmViewGeneration++; clearTimeout(cmViewTimer); const image = $("staff-camera-view-image"); image.onload = image.onerror = null; image.removeAttribute("src"); });
 window.resetCameraManagement = () => { cmPreviewGeneration++; cmFormDialog.close(); cmViewDialog.close(); cmCancelProbe(); };
 if (cameraItems.length) window.bindCameraPreviews();

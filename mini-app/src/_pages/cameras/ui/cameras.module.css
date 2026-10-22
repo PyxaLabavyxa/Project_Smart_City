@@ -18,7 +18,9 @@
 .checking { background:var(--color-neutral); color:var(--color-muted); }
 .previewAvailability { margin-top:12px; }
 .preview { margin:0; }
-.playerSurface { position:relative; }
+.playerSurface { position:relative; border-radius:var(--radius-card); }
+.camera .playerSurface { border-radius:0; }
+.imageLoading { position:absolute; inset:0; display:grid; place-content:center; justify-items:center; gap:12px; border-radius:inherit; background:var(--color-neutral); color:var(--color-muted); font-size:14px; }
 .playbackControl { position:absolute; display:grid; place-items:center; border:1px solid rgb(255 255 255 / 35%); background:rgb(8 20 30 / 78%); color:#fff; cursor:pointer; touch-action:manipulation; }
 .playbackControl:hover { background:rgb(8 20 30 / 95%); }
 .playbackControl:focus-visible { outline:3px solid var(--color-action); outline-offset:4px; }

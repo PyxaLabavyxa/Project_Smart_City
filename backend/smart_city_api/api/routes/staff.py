@@ -4,7 +4,6 @@ from typing import Annotated, Literal
 from app.database.enums import IssuePriority, IssueStatus
 from app.database.models import (
     ChatPhoto,
-    CompanyHouse,
     House,
     IssueMessage,
     IssuePhoto,
@@ -39,6 +38,7 @@ from smart_city_api.schemas.cameras import (
 from smart_city_api.schemas.contacts import (
     BulkContactsInput,
     BulkContactsOutput,
+    BulkContactsPatchInput,
     ContactsInput,
     ContactsOutput,
 )
@@ -61,6 +61,7 @@ from smart_city_api.services import camera_media, chat_photos, staff_reports
 from smart_city_api.services import cameras as camera_service
 from smart_city_api.services import staff as service
 from smart_city_api.services.contacts import (
+    patch_contacts_bulk,
     read_contacts,
     save_contacts,
     save_contacts_bulk,
@@ -147,6 +148,11 @@ async def update_contacts_bulk(body: BulkContactsInput, session: Session, employ
     return await save_contacts_bulk(session, employee.id, body)
 
 
+@router.patch("/contacts/bulk", response_model=BulkContactsOutput)
+async def edit_contacts_bulk(body: BulkContactsPatchInput, session: Session, employee: Staff):
+    return await patch_contacts_bulk(session, employee.id, body)
+
+
 async def authenticate_login(body: LoginInput, request: Request, session: Session):
     require_same_origin(request)
     await check_login_limit(
@@ -218,17 +224,9 @@ async def profile(session: Session, employee: Staff, authentication: StaffAuth):
             .order_by(House.address)
         )
     ).all()
-    contact_houses = (
-        await session.scalars(
-            select(House)
-            .join(CompanyHouse, CompanyHouse.house_id == House.id)
-            .where(House.id.in_(service.house_scope(employee.id)))
-            .order_by(House.address)
-        )
-    ).all()
     return ProfileOutput(
         name=employee.name,
-        contact_houses=[HouseOutput(id=h.id, address=h.address) for h in contact_houses],
+        contact_houses=[HouseOutput(id=h.id, address=h.address) for h in houses],
         houses=[
             HouseOutput(
                 id=h.id,

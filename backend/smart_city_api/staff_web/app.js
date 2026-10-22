@@ -116,7 +116,6 @@ async function enterWorkspace() {
   $("camera-status").value = "all"; $("camera-zone").value = ""; cameraPage = 1;
   $("camera-entrance").value = ""; $("camera-floor").value = "";
   updateCameraLocationOptions();
-  $("contact-house").innerHTML = state.profile.contact_houses.map((house) => `<option value="${house.id}">${esc(house.address)}</option>`).join("");
   $("priority-filter").value = ""; $("search").value = "";
   $("no-houses").hidden = state.profile.houses.length > 0;
   $("login-screen").hidden = true; $("workspace").hidden = false; $("boot").hidden = true;
@@ -363,7 +362,7 @@ function renderCameraItems(items = cameraItems) {
         <td data-label="Пояснение">${camera.moderation_status === "rejected" && camera.moderation_reason ? `<p class="camera-explanation">${esc(camera.moderation_reason)}</p>` : '<span class="muted">—</span>'}</td>
         <td data-label="Управление"><button type="button" class="camera-menu-trigger" data-camera="${Number(camera.id)}" data-status="${esc(camera.moderation_status)}" popovertarget="camera-action-menu" aria-expanded="false" aria-label="Действия с камерой: ${esc(camera.name)}">Действия ${icon("chevron")}</button></td></tr>`;
       return `<article class="staff-camera-card">
-        <button type="button" class="staff-camera-preview" data-view-camera="${Number(camera.id)}" data-name="${esc(camera.name)}" data-place="${esc(camera.address + " · " + location)}" aria-label="Смотреть камеру: ${esc(camera.name)}"><img data-frame-src="${apiRoot}/cameras/${Number(camera.id)}/frame" alt="" loading="lazy"><span class="camera-preview-fallback">${icon("camera")}<span>Получаем кадр…</span></span><span class="camera-preview-open">Смотреть камеру ↗</span></button>
+        <button type="button" class="staff-camera-preview" data-view-camera="${Number(camera.id)}" data-name="${esc(camera.name)}" data-place="${esc(camera.address + " · " + location)}" aria-label="Смотреть камеру: ${esc(camera.name)}"><img hidden data-frame-src="${apiRoot}/cameras/${Number(camera.id)}/frame" alt=""><span class="camera-preview-fallback">${icon("camera")}<span>Получаем кадр…</span></span><span class="camera-preview-open">Смотреть камеру ↗</span></button>
         <div class="staff-camera-card-body"><span class="badge camera-${esc(camera.moderation_status)}"><span class="status-dot"></span>${esc(decision)}</span><h2>${esc(camera.name)}</h2><p class="camera-card-address">${esc(camera.address)}</p><p class="muted">${esc(location)}</p><p class="row-meta">${esc(camera.owner_name)}</p>${camera.note ? `<p class="camera-card-note">${esc(camera.note)}</p>` : ""}${camera.moderation_status === "rejected" && camera.moderation_reason ? `<p class="camera-explanation">${esc(camera.moderation_reason)}</p>` : ""}
         <button type="button" class="camera-menu-trigger" data-camera="${Number(camera.id)}" data-status="${esc(camera.moderation_status)}" popovertarget="camera-action-menu" aria-expanded="false" aria-label="Действия с камерой: ${esc(camera.name)}">Действия ${icon("chevron")}</button></div></article>`;
     }).join("");
@@ -443,7 +442,9 @@ $("cameras-section").addEventListener("click", event => {
   cameraMenu.innerHTML = `<button data-decision="view">${icon("camera")}Смотреть камеру</button>${control.dataset.status === "pending" ? `<button data-decision="approved">${icon("check")}Одобрить</button><button data-decision="rejected">${icon("close")}Отклонить</button>` : ""}<button data-decision="delete" class="camera-delete">${icon("trash")}Удалить камеру</button>`;
   const rect = control.getBoundingClientRect();
   const height = 12 + cameraMenu.querySelectorAll("button").length * 46;
-  cameraMenu.style.left = `${Math.max(8, Math.min(rect.right - 208, innerWidth - 216))}px`;
+  const width = Math.min(cameraView === "grid" ? rect.width : 208, innerWidth - 16);
+  cameraMenu.style.width = `${width}px`;
+  cameraMenu.style.left = `${Math.max(8, Math.min(rect.left, innerWidth - width - 8))}px`;
   cameraMenu.style.top = `${Math.max(8, rect.bottom + height + 8 > innerHeight ? rect.top - height - 6 : rect.bottom + 6)}px`;
 });
 cameraMenu.addEventListener("toggle", event => {

@@ -1393,6 +1393,32 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
       security:
       - StaffSession: []
+    patch:
+      tags:
+      - Staff
+      summary: Edit Contacts Bulk
+      operationId: edit_contacts_bulk_api_v1_staff_contacts_bulk_patch
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkContactsPatchInput'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkContactsOutput'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - StaffSession: []
   /api/v1/staff/auth/login:
     post:
       tags:
@@ -2712,12 +2738,6 @@ components:
       title: ApartmentResponse
     BulkContactsInput:
       properties:
-        items:
-          items:
-            $ref: '#/components/schemas/ContactInput'
-          type: array
-          maxItems: 12
-          title: Items
         house_ids:
           items:
             type: integer
@@ -2725,11 +2745,17 @@ components:
           maxItems: 500
           minItems: 1
           title: House Ids
+        items:
+          items:
+            $ref: '#/components/schemas/ContactInput'
+          type: array
+          maxItems: 12
+          title: Items
       additionalProperties: false
       type: object
       required:
-      - items
       - house_ids
+      - items
       title: BulkContactsInput
     BulkContactsOutput:
       properties:
@@ -2746,6 +2772,41 @@ components:
       - house_ids
       - updated_count
       title: BulkContactsOutput
+    BulkContactsPatchInput:
+      properties:
+        house_ids:
+          items:
+            type: integer
+          type: array
+          maxItems: 500
+          minItems: 1
+          title: House Ids
+        changes:
+          additionalProperties:
+            $ref: '#/components/schemas/ContactFieldPatch'
+          propertyNames:
+            enum:
+            - dispatcher
+            - email
+            - website
+            - office
+            - hours
+            - reception
+            - emergency
+          type: object
+          maxProperties: 7
+          title: Changes
+        extra_changes:
+          items:
+            $ref: '#/components/schemas/ExtraContactPatch'
+          type: array
+          maxItems: 24
+          title: Extra Changes
+      additionalProperties: false
+      type: object
+      required:
+      - house_ids
+      title: BulkContactsPatchInput
     CameraFrame:
       properties:
         src:
@@ -2997,6 +3058,21 @@ components:
       - command
       - expires_at
       title: ConnectionCode
+    ContactFieldPatch:
+      properties:
+        value:
+          type: string
+          maxLength: 300
+          title: Value
+          default: ''
+        note:
+          type: string
+          maxLength: 200
+          title: Note
+          default: ''
+      additionalProperties: false
+      type: object
+      title: ContactFieldPatch
     ContactInput:
       properties:
         label:
@@ -3224,6 +3300,33 @@ components:
       - status
       - created_at
       title: EventOutput
+    ExtraContactPatch:
+      properties:
+        label:
+          type: string
+          maxLength: 100
+          minLength: 1
+          title: Label
+        kind:
+          type: string
+          enum:
+          - phone
+          - email
+          - address
+          - website
+          - schedule
+          title: Kind
+        contact:
+          anyOf:
+          - $ref: '#/components/schemas/ContactInput'
+          - type: 'null'
+      additionalProperties: false
+      type: object
+      required:
+      - label
+      - kind
+      - contact
+      title: ExtraContactPatch
     HTTPValidationError:
       properties:
         detail:

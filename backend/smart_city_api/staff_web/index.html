@@ -8,15 +8,15 @@
   <title>Кабинет сотрудника · Домовед</title>
   <link rel="icon" href="/staff/assets/domoved-symbol.png" type="image/png">
   <link rel="preload" href="/staff/assets/onest-regular.ttf" as="font" type="font/ttf" crossorigin>
-  <link rel="stylesheet" href="/staff/style.css?v=20261021-cameras-13">
-  <link rel="stylesheet" href="/staff/camera-management.css?v=20261021-7">
-  <link rel="stylesheet" href="/staff/contacts-management.css?v=20261022-contacts-2">
+  <link rel="stylesheet" href="/staff/style.css?v=20261022-camera-contacts-3">
+  <link rel="stylesheet" href="/staff/camera-management.css?v=20261022-camera-contacts-3">
+  <link rel="stylesheet" href="/staff/contacts-management.css?v=20261022-contact-patch-1">
   <script src="/staff/confirmation.js?v=20261021-motion-4" defer></script>
-  <script src="/staff/app.js?v=20261022-reports-2" defer></script>
+  <script src="/staff/app.js?v=20261022-camera-eager-1" defer></script>
   <link rel="stylesheet" href="/staff/staff-report.css?v=20261022-2">
   <script src="/staff/staff-report.js?v=20261022-2" defer></script>
-  <script src="/staff/contacts-management.js?v=20261022-contacts-2" defer></script>
-  <script src="/staff/camera-management.js?v=20261021-7" defer></script>
+  <script src="/staff/contacts-management.js?v=20261022-contact-patch-1" defer></script>
+  <script src="/staff/camera-management.js?v=20261022-camera-contacts-3" defer></script>
   <link rel="stylesheet" href="/staff/chat-management.css?v=20261021-announcement-copy-2">
   <script src="/staff/chat-management.js?v=20261021-announcement-copy-2" defer></script>
 </head>
@@ -103,13 +103,9 @@
         </section>
       </div>
       <div id="contacts-section" class="content" hidden>
-        <div class="page-heading"><div><span class="eyebrow">ВСЕГДА НА СВЯЗИ</span><h1>Контакты УК</h1><p class="muted">Подскажите жителям, где вас найти и как связаться.</p></div><button id="refresh-contacts" class="secondary"><span data-icon="refresh" aria-hidden="true"></span> Обновить</button></div>
+        <div class="page-heading"><div><span class="eyebrow">ВСЕГДА НА СВЯЗИ</span><h1>Контакты УК</h1><p class="muted">Подскажите жителям, где вас найти и как связаться.</p></div><div class="contacts-heading-actions"><span id="contact-house-label" class="sr-only">Дома</span><button id="contact-house-trigger" class="contact-house-trigger" type="button" popovertarget="contact-house-picker" aria-expanded="false" aria-labelledby="contact-house-label contact-house-value"><span data-icon="building" aria-hidden="true"></span><span id="contact-house-value">Выберите дома</span><span data-icon="chevron" aria-hidden="true"></span></button><button id="refresh-contacts" class="secondary"><span data-icon="refresh" aria-hidden="true"></span> Обновить</button></div></div>
+        <div id="contact-house-picker" class="contact-house-picker" popover="auto" role="group" aria-label="Выбор домов"><fieldset id="contact-house-choices"><legend class="sr-only">Дома для сохранения контактов</legend><label class="contact-house-choice contact-house-all"><input id="contact-select-all" type="checkbox" autofocus><span>Выбрать все</span><small id="contact-house-count"></small></label><div id="contact-house-options" class="contact-house-options"></div></fieldset></div>
         <section class="inbox contacts-panel" aria-label="Редактор контактов">
-          <div class="contact-context">
-            <fieldset id="contact-scope" class="contact-scope"><legend>Для каких домов</legend><div class="contact-scope-options"><label><input type="radio" name="contact-scope" value="house" checked><span>Один дом</span></label><label><input type="radio" name="contact-scope" value="all"><span>Все дома <small id="contact-house-count"></small></span></label></div></fieldset>
-            <label id="contact-house-field" class="contact-house-field" for="contact-house">Дом<select id="contact-house"></select></label>
-            <div id="contact-all-notice" class="contact-all-notice" hidden><button id="show-contact-houses" class="secondary" type="button" aria-haspopup="dialog">Посмотреть дома</button></div>
-          </div>
           <div class="contacts-feedback"><p id="contacts-status" role="status"></p><p id="contacts-error" class="error" role="alert" hidden></p></div>
           <div id="contacts-body" class="contacts-body" hidden>
             <form id="contacts-form" hidden>
@@ -117,12 +113,11 @@
                 <div id="contact-rows"></div>
                 <details id="contact-extra" class="contact-extra"><summary>Другие контакты <span id="contact-extra-count"></span></summary><div id="contact-extra-rows"></div><button id="add-contact" type="button" class="secondary"><span data-icon="plus" aria-hidden="true"></span>Добавить контакт</button></details>
               </fieldset>
-              <footer class="contact-save-bar"><button id="save-contacts" type="submit" class="primary">Сохранить контакты</button></footer>
+              <footer class="contact-save-bar"><p id="contact-bulk-help" hidden>Изменятся только отредактированные поля.</p><button id="save-contacts" type="submit" class="primary">Сохранить контакты</button></footer>
             </form>
             <aside class="contact-preview" aria-labelledby="contact-preview-title"><div class="contact-preview-heading"><h2 id="contact-preview-title">Предпросмотр</h2></div><div class="contact-preview-company"><span data-icon="building" aria-hidden="true"></span><div><strong id="contact-company"></strong><p id="contact-preview-address"></p></div></div><div id="contact-preview-content"></div></aside>
           </div>
         </section>
-        <dialog id="contact-houses-dialog" class="contact-houses-dialog" aria-labelledby="contact-houses-title"><div class="contact-houses-heading"><h2 id="contact-houses-title">Дома для сохранения</h2><button id="close-contact-houses" type="button" aria-label="Закрыть список домов">×</button></div><ul id="contact-target-houses"></ul></dialog>
       </div>
       <div id="max-chats-section" class="content" hidden>
         <div class="page-heading"><div><h1>MAX-чаты</h1><p class="muted">Подключите домовые группы к Домоведу, чтобы жители видели меню, а УК могла отправлять объявления.</p></div><button id="refresh-max-chats" class="secondary">Обновить</button></div>
@@ -218,7 +213,7 @@
       <footer class="camera-form-actions"><button id="cancel-staff-camera" class="secondary" type="button">Отмена</button><button id="save-staff-camera" class="primary" type="submit" disabled>Добавить камеру</button></footer>
     </fieldset></form>
   </dialog>
-  <dialog id="staff-camera-view-dialog" class="staff-camera-dialog camera-view-dialog" aria-labelledby="staff-camera-view-title"><header class="camera-dialog-heading"><div><h2 id="staff-camera-view-title">Камера</h2><p id="staff-camera-view-place" class="muted"></p></div><button id="close-staff-camera-view" class="icon-button" type="button" aria-label="Закрыть просмотр камеры"><span data-icon="close" aria-hidden="true"></span></button></header><div class="camera-view-image"><img id="staff-camera-view-image" alt="Кадр с камеры"><div id="staff-camera-view-error" class="camera-unavailable" role="status" hidden><span data-icon="camera" aria-hidden="true"></span><strong>Камера недоступна</strong><span>Попробуйте обновить кадр</span></div></div><p id="staff-camera-view-note" class="camera-view-note" aria-label="Описание камеры" hidden></p><p id="staff-camera-view-reason" class="camera-view-reason" hidden></p><footer class="camera-view-footer"><span id="staff-camera-view-time" role="status">Получаем кадр…</span><button id="refresh-staff-camera-view" type="button" class="secondary"><span data-icon="refresh" aria-hidden="true"></span>Обновить кадр</button></footer></dialog>
+  <dialog id="staff-camera-view-dialog" class="staff-camera-dialog camera-view-dialog" aria-labelledby="staff-camera-view-title"><header class="camera-dialog-heading"><div><h2 id="staff-camera-view-title">Камера</h2><p id="staff-camera-view-place" class="muted"></p></div><button id="close-staff-camera-view" class="icon-button" type="button" aria-label="Закрыть просмотр камеры"><span data-icon="close" aria-hidden="true"></span></button></header><div class="camera-view-image"><div id="staff-camera-view-loading" class="camera-unavailable" role="status"><span data-icon="camera" aria-hidden="true"></span><span>Загружаем кадр…</span></div><img id="staff-camera-view-image" alt="Кадр с камеры"><div id="staff-camera-view-error" class="camera-unavailable" role="status" hidden><span data-icon="camera" aria-hidden="true"></span><strong>Камера недоступна</strong><span>Попробуйте обновить кадр</span></div></div><p id="staff-camera-view-note" class="camera-view-note" aria-label="Описание камеры" hidden></p><p id="staff-camera-view-reason" class="camera-view-reason" hidden></p><footer class="camera-view-footer"><span id="staff-camera-view-time" role="status">Получаем кадр…</span><button id="refresh-staff-camera-view" type="button" class="secondary"><span data-icon="refresh" aria-hidden="true"></span>Обновить кадр</button></footer></dialog>
   <div id="toast" class="toast" role="status" hidden></div>
   <div id="boot" class="boot" role="status"><img src="/staff/assets/domoved-symbol.png" alt="" width="72" height="72"><p>Открываем ваш Домовед…</p></div>
   <dialog id="staff-report-dialog" class="staff-report-dialog" aria-labelledby="staff-report-title">
