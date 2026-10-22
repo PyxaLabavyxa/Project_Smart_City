@@ -4,6 +4,11 @@ import asyncio
 import logging
 from datetime import UTC, datetime, timedelta
 
+from maxapi.types import LinkButton
+from maxapi.types.errors import Error
+from maxapi.utils.inline_keyboard import InlineKeyboardBuilder
+from sqlalchemy import select, update
+
 from app.database.models import (
     Announcement,
     AnnouncementDelivery,
@@ -15,11 +20,7 @@ from app.database.models import (
     User,
 )
 from app.services.announcement_audience import residents, unavailable_reason
-from maxapi.types import LinkButton
-from maxapi.types.errors import Error
-from maxapi.utils.inline_keyboard import InlineKeyboardBuilder
-from sqlalchemy import select, update
-
+from app.services.planned_works import announcement_message
 from chatbot.keyboards.inline import mini_app_username
 
 logger = logging.getLogger(__name__)
@@ -218,7 +219,7 @@ async def process_announcement(bot, sessions):
             )
             return True
         delivery_id, chat_id = delivery.id, delivery.chat_id
-        text = f"{announcement.title}\n\n{announcement.text}\n\nУправляющая компания"
+        text = announcement_message(announcement)
         delivery.status, delivery.attempted_at = "sending", datetime.now(UTC)
     sending, mid = False, None
     try:
@@ -274,7 +275,7 @@ async def process_private_announcement(bot, sessions):
             delivery.status, delivery.error = "cancelled", "Доступ или настройки жителя изменились"
             return True
         delivery_id, user_id, max_id = delivery.id, delivery.user_id, target["user"].max_user_id
-        text = f"{announcement.title}\n\n{announcement.text}\n\nУправляющая компания"
+        text = announcement_message(announcement)
         delivery.status, delivery.attempted_at = "sending", datetime.now(UTC)
     mid, blocked = None, False
     try:

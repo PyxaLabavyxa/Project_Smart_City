@@ -8,7 +8,14 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from app.database.models import (
-    Apartment, Base, CompanyHouse, House, ManagementCompany, RegistrationRequest, User, UserApartment,
+    Apartment,
+    Base,
+    CompanyHouse,
+    House,
+    ManagementCompany,
+    RegistrationRequest,
+    User,
+    UserApartment,
 )
 from chatbot.handlers import other_handlers, registration, staff_messages, user_handlers
 from chatbot.lexicon.lexicon import LEXICON
@@ -26,7 +33,9 @@ class RegistrationAccessTests(unittest.IsolatedAsyncioTestCase):
             company = ManagementCompany(name="Тестовая УК")
             house = House(
                 address="г. Казань, ул. Тестовая, 1",
-                entrances_count=1, floors_count=3, apartments_per_floor=4,
+                entrances_count=1,
+                floors_count=3,
+                apartments_per_floor=4,
             )
             resident = User(max_user_id=100, name="Иван Петров")
             session.add_all([company, house, resident])
@@ -34,7 +43,12 @@ class RegistrationAccessTests(unittest.IsolatedAsyncioTestCase):
             self.user_id = resident.id
             session.add(CompanyHouse(company_id=company.id, house_id=house.id))
             session.add_all(
-                Apartment(house_id=house.id, number=number, entrance=1, floor=(number - 1) // 4 + 1)
+                Apartment(
+                    house_id=house.id,
+                    number=number,
+                    entrance=1,
+                    floor=(number - 1) // 4 + 1,
+                )
                 for number in range(1, 13)
             )
         for module in (access, registration, user_handlers):
@@ -59,13 +73,19 @@ class RegistrationAccessTests(unittest.IsolatedAsyncioTestCase):
     def event(self, text="привет", payload=None, max_id=100):
         user = SimpleNamespace(user_id=max_id, full_name="Иван Петров")
         return SimpleNamespace(
-            update_type="message_callback" if payload is not None else "message_created",
+            update_type="message_callback"
+            if payload is not None
+            else "message_created",
             get_ids=lambda: (max_id, max_id),
-            callback=SimpleNamespace(payload=payload, user=user) if payload is not None else None,
+            callback=SimpleNamespace(payload=payload, user=user)
+            if payload is not None
+            else None,
             from_user=user,
             bot=SimpleNamespace(edit_message=AsyncMock()),
             message=SimpleNamespace(
-                body=SimpleNamespace(text=text, mid="registration-prompt", attachments=[]),
+                body=SimpleNamespace(
+                    text=text, mid="registration-prompt", attachments=[]
+                ),
                 answer=AsyncMock(),
                 edit=AsyncMock(),
             ),
@@ -96,7 +116,9 @@ class RegistrationAccessTests(unittest.IsolatedAsyncioTestCase):
             with self.subTest(text=text):
                 event = self.event(text=text)
                 await self.dispatcher.handle(event)
-                self.assertIn("сначала зарегистрируйтесь", self.assert_registration_prompt(event))
+                self.assertIn(
+                    "сначала зарегистрируйтесь", self.assert_registration_prompt(event)
+                )
 
     async def test_help_and_old_buttons_require_registration(self):
         events = [self.event(text="/help")]
@@ -105,7 +127,9 @@ class RegistrationAccessTests(unittest.IsolatedAsyncioTestCase):
             for payload in ("back_to_menu", "send_report", "my_issues", "staff_reply_1")
         )
         for event in events:
-            with self.subTest(payload=event.callback.payload if event.callback else "/help"):
+            with self.subTest(
+                payload=event.callback.payload if event.callback else "/help"
+            ):
                 await self.dispatcher.handle(event)
                 self.assert_registration_prompt(event)
 
@@ -123,24 +147,38 @@ class RegistrationAccessTests(unittest.IsolatedAsyncioTestCase):
             with self.subTest(status=status):
                 async with self.sessions.begin() as session:
                     await session.execute(delete(RegistrationRequest))
-                    session.add(RegistrationRequest(
-                        user_id=self.user_id, company_id=1, apartment_id=1,
-                        full_name="Иван Петров", source="bot", status=status,
-                    ))
+                    session.add(
+                        RegistrationRequest(
+                            user_id=self.user_id,
+                            company_id=1,
+                            apartment_id=1,
+                            full_name="Иван Петров",
+                            source="bot",
+                            status=status,
+                        )
+                    )
                 event = self.event()
                 await self.dispatcher.handle(event)
                 text = self.assert_registration_prompt(event)
-                self.assertIn("передана в УК" if status == "pending" else "отклонена", text)
+                self.assertIn(
+                    "передана в УК" if status == "pending" else "отклонена", text
+                )
 
     async def test_registered_resident_keeps_existing_menu_and_help(self):
         await self.link_apartment()
-        for text, expected in (("привет", LEXICON["unknown_message"]), ("/help", LEXICON["help"])):
+        for text, expected in (
+            ("привет", LEXICON["unknown_message"]),
+            ("/help", LEXICON["help"]),
+        ):
             with self.subTest(text=text):
                 event = self.event(text=text)
                 await self.dispatcher.handle(event)
                 event.message.answer.assert_awaited_once()
                 response = event.message.answer.call_args
-                self.assertEqual(response.args[0] if response.args else response.kwargs["text"], expected)
+                self.assertEqual(
+                    response.args[0] if response.args else response.kwargs["text"],
+                    expected,
+                )
                 self.assertEqual(self.payloads(response), {"send_report", "my_issues"})
         event = self.event(payload="back_to_menu")
         await self.dispatcher.handle(event)
@@ -161,17 +199,25 @@ class RegistrationAccessTests(unittest.IsolatedAsyncioTestCase):
         await self.dispatcher.handle(self.event(text="Петров Иван Сергеевич"))
         for payload in ("reg:company:1", "reg:house:1"):
             await self.dispatcher.handle(self.event(payload=payload))
+        self.assertEqual(await context.get_state(), FSMRegistration.entrance)
+        await self.dispatcher.handle(self.event(payload="reg:entrance:1:1"))
         self.assertEqual(await context.get_state(), FSMRegistration.apartment)
         invalid = self.event(text="не номер")
         await self.dispatcher.handle(invalid)
-        self.assertIn("номер квартиры цифрами", invalid.message.answer.call_args.args[0])
+        self.assertIn(
+            "номер квартиры цифрами", invalid.bot.edit_message.call_args.kwargs["text"]
+        )
         await self.dispatcher.handle(self.event(text="12"))
         async with self.sessions() as session:
-            link = await session.scalar(select(UserApartment).where(UserApartment.user_id == self.user_id))
+            link = await session.scalar(
+                select(UserApartment).where(UserApartment.user_id == self.user_id)
+            )
             self.assertIsNotNone(link)
         event = self.event()
         await self.dispatcher.handle(event)
-        self.assertEqual(self.payloads(event.message.answer.call_args), {"send_report", "my_issues"})
+        self.assertEqual(
+            self.payloads(event.message.answer.call_args), {"send_report", "my_issues"}
+        )
 
     async def test_lost_apartment_blocks_stale_report_state(self):
         await self.link_apartment()
@@ -179,7 +225,9 @@ class RegistrationAccessTests(unittest.IsolatedAsyncioTestCase):
         context = self.dispatcher.contexts[0]
         self.assertEqual(await context.get_state(), FSMReport.waiting)
         async with self.sessions.begin() as session:
-            await session.execute(delete(UserApartment).where(UserApartment.user_id == self.user_id))
+            await session.execute(
+                delete(UserApartment).where(UserApartment.user_id == self.user_id)
+            )
         event = self.event(text="Не работает лифт")
         await self.dispatcher.handle(event)
         self.assert_registration_prompt(event)
@@ -194,10 +242,14 @@ class RegistrationAccessTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_database_failure_does_not_unlock_menu(self):
         event = self.event()
-        with patch.object(access, "session_factory", side_effect=SQLAlchemyError("unavailable")):
+        with patch.object(
+            access, "session_factory", side_effect=SQLAlchemyError("unavailable")
+        ):
             await self.dispatcher.handle(event)
         event.message.answer.assert_awaited_once()
-        self.assertIn("Не удалось проверить регистрацию", event.message.answer.call_args.args[0])
+        self.assertIn(
+            "Не удалось проверить регистрацию", event.message.answer.call_args.args[0]
+        )
         self.assertEqual(self.payloads(event.message.answer.call_args), set())
 
 

@@ -7,9 +7,11 @@ from app.database.models import (
     AnnouncementPrivateDelivery,
     House,
     HouseChat,
+    HouseWork,
 )
 from app.services.announcement_audience import residents, unavailable_reason
 from app.services.house_chats import code_hash
+from app.services.planned_works import WorkSchedule, announcement_body, announcement_topic
 from fastapi import HTTPException
 from sqlalchemy import delete, func, select, update
 
@@ -141,6 +143,15 @@ async def resident_choices(session, staff_id, query="", page=1):
     return {"items": choices[(page - 1) * 50 : page * 50], "total": len(choices)}
 
 
+async def work_completed_at(session, row):
+    if not row.work or row.work.get("ends_at") is not None:
+        return None
+    value = await session.scalar(
+        select(func.min(HouseWork.ends_at)).where(HouseWork.announcement_id == row.id)
+    )
+    return value.replace(tzinfo=UTC) if value is not None and value.tzinfo is None else value
+
+
 async def read_announcement(session, staff_id, announcement_id):
     row = await owned_announcement(session, staff_id, announcement_id)
     recipients = (
@@ -207,6 +218,7 @@ async def read_announcement(session, staff_id, announcement_id):
                 "resident_ids",
                 "audience",
                 "excluded_count",
+                "work",
             )
         },
         deliveries=[
@@ -221,6 +233,9 @@ async def read_announcement(session, staff_id, announcement_id):
             for d, h, c in recipients
         ],
         private_deliveries=private_output,
+        message_body=announcement_body(row),
+        message_topic=announcement_topic(row),
+        work_completed_at=await work_completed_at(session, row),
     )
 
 
@@ -278,6 +293,7 @@ async def save_draft(session, staff_id, data, announcement_id=None):
         row = Announcement(staff_id=staff_id, version=1, status="draft")
         session.add(row)
     row.topic, row.title, row.text = data.topic, data.title, data.text
+    row.work = data.work.model_dump(mode="json") if data.work else None
     row.house_ids, row.channels, row.resident_ids = (
         sorted(houses),
         list(data.channels),
@@ -306,6 +322,9 @@ async def publish(session, staff_id, announcement_id, version):
         await staff_house(session, staff_id, house_id)
     if row.status != "draft":
         return await read_announcement(session, staff_id, row.id)
+    schedule = WorkSchedule.model_validate(row.work) if row.work else None
+    if schedule and schedule.ends_at is not None and schedule.ends_at <= datetime.now(UTC):
+        raise HTTPException(422, "Работы уже закончились. Укажите актуальные даты в черновике")
     deliveries = (
         await session.scalars(
             select(AnnouncementDelivery).where(AnnouncementDelivery.announcement_id == row.id)
@@ -320,6 +339,23 @@ async def publish(session, staff_id, announcement_id, version):
             chat.revision,
             "pending",
         )
+    if schedule and "private" in row.channels:
+        # House work notices use the current household audience at publication time.
+        candidates = await residents(session, staff_id, row.house_ids)
+        row.excluded_count = sum(bool(unavailable_reason(t["user"])) for t in candidates.values())
+        existing = set(
+            await session.scalars(
+                select(AnnouncementPrivateDelivery.user_id).where(
+                    AnnouncementPrivateDelivery.announcement_id == row.id
+                )
+            )
+        )
+        session.add_all(
+            AnnouncementPrivateDelivery(announcement_id=row.id, user_id=uid, status="draft")
+            for uid, target in candidates.items()
+            if uid not in existing and not unavailable_reason(target["user"])
+        )
+        await session.flush()
     private = (
         await session.scalars(
             select(AnnouncementPrivateDelivery).where(
@@ -333,7 +369,7 @@ async def publish(session, staff_id, announcement_id, version):
         else {}
     )
     eligible = {uid for uid, t in targets.items() if not unavailable_reason(t["user"])}
-    if not deliveries and not eligible:
+    if not deliveries and not eligible and not schedule:
         raise HTTPException(
             409, "Нет доступных получателей. Проверьте выбор жителей и их настройки уведомлений"
         )
@@ -343,12 +379,53 @@ async def publish(session, staff_id, announcement_id, version):
             "" if delivery.user_id in eligible else "Доступ или настройки жителя изменились"
         )
     row.status, row.sent_at = "queued", datetime.now(UTC)
+    if schedule:
+        session.add_all(
+            HouseWork(
+                house_id=house_id,
+                announcement_id=row.id,
+                title=row.title,
+                starts_at=schedule.starts_at,
+                ends_at=schedule.ends_at,
+                location=schedule.location,
+            )
+            for house_id in row.house_ids
+        )
+    await session.commit()
+    return await read_announcement(session, staff_id, row.id)
+
+
+async def complete_work(session, staff_id, announcement_id, version):
+    row = await owned_announcement(session, staff_id, announcement_id, lock=True)
+    if row.version != version:
+        raise HTTPException(409, "Публикация изменилась. Откройте её заново")
+    if row.status == "draft" or not row.work or row.work.get("ends_at") is not None:
+        raise HTTPException(409, "Вручную завершаются только опубликованные работы без срока")
+    for house_id in row.house_ids:
+        await staff_house(session, staff_id, house_id)
+    now = datetime.now(UTC)
+    if WorkSchedule.model_validate(row.work).starts_at >= now:
+        raise HTTPException(409, "Работа ещё не началась")
+    # Keep the published notice immutable. Only the calendar records the actual end.
+    await session.execute(
+        update(HouseWork)
+        .where(HouseWork.announcement_id == row.id, HouseWork.ends_at.is_(None))
+        .values(ends_at=now)
+    )
+    for model in (AnnouncementDelivery, AnnouncementPrivateDelivery):
+        await session.execute(
+            update(model)
+            .where(model.announcement_id == row.id, model.status.in_(("pending", "failed")))
+            .values(status="cancelled", error="Работа уже завершена")
+        )
     await session.commit()
     return await read_announcement(session, staff_id, row.id)
 
 
 async def retry_failed(session, staff_id, announcement_id):
     row = await owned_announcement(session, staff_id, announcement_id, lock=True)
+    if await work_completed_at(session, row):
+        raise HTTPException(409, "Работа уже завершена, повторная рассылка не требуется")
     deliveries = (
         await session.scalars(
             select(AnnouncementDelivery)

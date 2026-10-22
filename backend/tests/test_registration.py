@@ -66,6 +66,52 @@ def test_auto_approval_shared_state_and_idempotency(api):
     asyncio.run(bot_checks_same_state())
 
 
+def test_catalog_entrances_follow_real_apartments_not_house_size(api):
+    client, engine, _ = api
+    install_catalog(engine)
+    house = client.get("/api/v1/registration", headers=headers(104)).json()["companies"][0][
+        "houses"
+    ][0]
+    assert house["entrances"] == [
+        {"number": 1, "first_apartment": 7, "last_apartment": 7, "apartments_count": 1},
+        {"number": 2, "first_apartment": 19, "last_apartment": 19, "apartments_count": 1},
+    ]
+
+
+def test_wrong_entrance_is_rejected_without_creating_a_request_or_link(api):
+    client, engine, _ = api
+    install_catalog(engine)
+    client.app.state.settings.onboarding_test_mode = True
+    for entrance in (2, 999, 0, -1):
+        response = client.post(
+            "/api/v1/registration", headers=headers(104), json=BODY | {"entrance": entrance}
+        )
+        assert response.status_code == 422, response.text
+    with Session(engine) as session:
+        assert session.scalar(select(func.count()).select_from(RegistrationRequest)) == 0
+        assert session.scalar(select(UserApartment).where(UserApartment.user_id == 4)) is None
+    response = client.post(
+        "/api/v1/registration",
+        headers=headers(104),
+        json=BODY | {"entrance": 2, "apartment_number": 19},
+    )
+    assert response.status_code == 200, response.text
+    apartment = client.get("/api/v1/me", headers=headers(104)).json()["apartments"][0]
+    assert apartment["entrance"] == 2 and apartment["number"] == 19
+
+
+def test_additional_apartment_also_checks_entrance(api):
+    client, engine, _ = api
+    install_catalog(engine)
+    response = client.post(
+        "/api/v1/registration",
+        headers=headers(102),
+        json=BODY | {"additional": True, "entrance": 2},
+    )
+    assert response.status_code == 422
+    assert len(client.get("/api/v1/me", headers=headers(102)).json()["apartments"]) == 1
+
+
 def test_bot_submission_is_seen_by_mini_app(api):
     client, engine, _ = api
     install_catalog(engine)

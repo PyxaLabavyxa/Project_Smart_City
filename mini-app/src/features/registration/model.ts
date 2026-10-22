@@ -1,4 +1,4 @@
-import { array, number, record, string } from "@/shared/api/parse";
+import { array, number, record, string } from "../../shared/api/parse.ts";
 
 export function parseRegistration(value: unknown) {
   const data = record(value);
@@ -10,7 +10,13 @@ export function parseRegistration(value: unknown) {
       const company = record(value);
       return { id: number(company.id), name: string(company.name), houses: array(company.houses, value => {
         const house = record(value);
-        return { id: number(house.id), address: string(house.address), floors: number(house.floors), apartmentsCount: number(house.apartments_count) };
+        return {
+          id: number(house.id), address: string(house.address), floors: number(house.floors), apartmentsCount: number(house.apartments_count),
+          entrances: array(house.entrances, value => {
+            const entrance = record(value);
+            return { number: number(entrance.number), firstApartment: number(entrance.first_apartment), lastApartment: number(entrance.last_apartment), apartmentsCount: number(entrance.apartments_count) };
+          }),
+        };
       }) };
     }),
   };

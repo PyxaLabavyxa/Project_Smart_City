@@ -12,6 +12,7 @@ class RegistrationInput(BaseModel):
     company_id: int = Field(gt=0)
     house_id: int = Field(gt=0)
     apartment_number: int = Field(gt=0)
+    entrance: int | None = Field(default=None, gt=0)
     additional: bool = False
 
 

@@ -1,5 +1,13 @@
 import logging
 
+from maxapi import F, Router
+from maxapi.context import MemoryContext
+from maxapi.types import CallbackButton, MessageCallback, MessageCreated
+from maxapi.types.errors import Error
+from maxapi.utils.inline_keyboard import InlineKeyboardBuilder
+from sqlalchemy import select
+from sqlalchemy.exc import SQLAlchemyError
+
 from app.config_data.config import read_environment
 from app.database.models import User
 from app.database.requests import create_user_if_exist
@@ -13,14 +21,6 @@ from app.services.registration import (
     registration_state,
     submit_registration,
 )
-from maxapi import F, Router
-from maxapi.context import MemoryContext
-from maxapi.types import CallbackButton, MessageCallback, MessageCreated
-from maxapi.types.errors import Error
-from maxapi.utils.inline_keyboard import InlineKeyboardBuilder
-from sqlalchemy import select
-from sqlalchemy.exc import SQLAlchemyError
-
 from chatbot.keyboards.inline import inl_menu, mini_app_button
 from chatbot.lexicon.lexicon import LEXICON
 from chatbot.states.states import FSMRegistration
@@ -33,7 +33,9 @@ async def clear_keep_prompt(context):
     data = await context.get_data()
     await context.clear()
     if data.get("registration_message_id"):
-        await context.update_data(registration_message_id=data["registration_message_id"])
+        await context.update_data(
+            registration_message_id=data["registration_message_id"]
+        )
 
 
 async def show_prompt(event, context, text, attachments=None):
@@ -46,10 +48,14 @@ async def show_prompt(event, context, text, attachments=None):
             )
             if not isinstance(result, Error):
                 return
-        except Exception as error:
-            logger.warning("Registration prompt could not be edited: %s", type(error).__name__)
+        except Exception as error:  # noqa: BLE001 -- A missing prompt must not discard registration data.
+            logger.warning(
+                "Registration prompt could not be edited: %s", type(error).__name__
+            )
     sent = await event.message.answer(text, attachments=attachments or [])
-    body = getattr(sent, "body", None) or getattr(getattr(sent, "message", None), "body", None)
+    body = getattr(sent, "body", None) or getattr(
+        getattr(sent, "message", None), "body", None
+    )
     if body is not None and isinstance(getattr(body, "mid", None), str):
         await context.update_data(registration_message_id=body.mid)
 
@@ -76,7 +82,9 @@ def test_mode():
 def keyboard(*rows):
     builder = InlineKeyboardBuilder()
     for row in rows:
-        builder.row(*(CallbackButton(text=text, payload=payload) for text, payload in row))
+        builder.row(
+            *(CallbackButton(text=text, payload=payload) for text, payload in row)
+        )
     builder.row(mini_app_button())
     return builder.as_markup()
 
@@ -86,8 +94,10 @@ def welcome_prompt(state):
         return LEXICON["bot_start"], inl_menu()
     if state["status"] == "pending":
         return (
-            "Ваша заявка передана в УК. После принятия квартира появится "
-            "здесь и в мини-приложении.",
+            (
+                "Ваша заявка передана в УК. После принятия квартира появится "
+                "здесь и в мини-приложении."
+            ),
             keyboard([("Проверить статус", "reg:start")]),
         )
     text = WELCOME
@@ -129,9 +139,44 @@ async def company_prompt(event, context):
         "🏢 Выберите управляющую компанию:",
         attachments=[
             keyboard(
-                *[[(company["name"], f"reg:company:{company['id']}")] for company in companies]
+                *[
+                    [(company["name"], f"reg:company:{company['id']}")]
+                    for company in companies
+                ]
             )
         ],
+    )
+
+
+async def registration_house(data):
+    async with session_factory() as session:
+        companies = await catalog(session)
+    company = next((c for c in companies if c["id"] == data.get("company_id")), None)
+    house = (
+        next((h for h in company["houses"] if h["id"] == data.get("house_id")), None)
+        if company
+        else None
+    )
+    if house is None:
+        raise ValueError("Выберите УК и дом заново: нажмите /start")
+    return house
+
+
+async def entrance_prompt(event, context, house):
+    data = await context.get_data()
+    rows = [
+        [(f"Подъезд {e['number']}", f"reg:entrance:{house['id']}:{e['number']}")]
+        for e in house["entrances"]
+    ]
+    rows.append([("Выбрать другой дом", f"reg:company:{data['company_id']}")])
+    await context.set_state(FSMRegistration.entrance)
+    await show_prompt(
+        event,
+        context,
+        f"📍 {house['address']}\n\n🚪 Выберите ваш подъезд:"
+        if house["entrances"]
+        else "В этом доме пока нет квартир для привязки. Обратитесь в свою УК.",
+        attachments=[keyboard(*rows)],
     )
 
 
@@ -168,7 +213,9 @@ async def registration_callback(event: MessageCallback, context: MemoryContext):
             )
         elif action == "reg:name:edit":
             await context.set_state(FSMRegistration.name)
-            await show_prompt(event, context, "✍️ Напишите ваши фамилию, имя и отчество:")
+            await show_prompt(
+                event, context, "✍️ Напишите ваши фамилию, имя и отчество:"
+            )
         elif action == "reg:name:keep":
             await clear_keep_prompt(context)
             await context.update_data(full_name=normalize_name(state["name"]))
@@ -179,16 +226,26 @@ async def registration_callback(event: MessageCallback, context: MemoryContext):
             if not data.get("full_name"):
                 raise ValueError("Начните заявку заново: нажмите /start")
             async with session_factory() as session:
-                company = next((c for c in await catalog(session) if c["id"] == company_id), None)
+                company = next(
+                    (c for c in await catalog(session) if c["id"] == company_id), None
+                )
             if company is None:
                 raise ValueError("УК не найдена. Нажмите /start")
-            await context.update_data(company_id=company_id)
+            await context.update_data(
+                company_id=company_id, house_id=None, entrance=None
+            )
+            await context.set_state(None)
             await show_prompt(
                 event,
                 context,
                 "📍 Выберите адрес проживания — " + company["name"] + ":",
                 attachments=[
-                    keyboard(*[[(h["address"], f"reg:house:{h['id']}")] for h in company["houses"]])
+                    keyboard(
+                        *[
+                            [(h["address"], f"reg:house:{h['id']}")]
+                            for h in company["houses"]
+                        ]
+                    )
                 ],
             )
         elif action.startswith("reg:house:"):
@@ -196,7 +253,11 @@ async def registration_callback(event: MessageCallback, context: MemoryContext):
             data = await context.get_data()
             async with session_factory() as session:
                 company = next(
-                    (c for c in await catalog(session) if c["id"] == data.get("company_id")),
+                    (
+                        c
+                        for c in await catalog(session)
+                        if c["id"] == data.get("company_id")
+                    ),
                     None,
                 )
             house = (
@@ -206,13 +267,29 @@ async def registration_callback(event: MessageCallback, context: MemoryContext):
             )
             if house is None:
                 raise ValueError("Выберите УК заново: нажмите /start")
-            await context.update_data(house_id=house_id)
+            await context.update_data(house_id=house_id, entrance=None)
+            await entrance_prompt(event, context, house)
+        elif action.startswith("reg:entrance:"):
+            _, _, raw_house, raw_entrance = action.split(":")
+            data = await context.get_data()
+            house = await registration_house(data)
+            entrance = next(
+                (e for e in house["entrances"] if e["number"] == int(raw_entrance)),
+                None,
+            )
+            if house["id"] != int(raw_house) or entrance is None:
+                await entrance_prompt(event, context, house)
+                return
+            await context.update_data(entrance=entrance["number"])
             await context.set_state(FSMRegistration.apartment)
             await show_prompt(
                 event,
                 context,
-                f"{house['address']} · {house['floors']} этажей\n"
-                f"Введите номер квартиры (1–{house['apartments_count']}):",
+                f"📍 {house['address']} · подъезд {entrance['number']}\n\n"
+                f"Введите номер квартиры ({entrance['first_apartment']}–{entrance['last_apartment']}):",
+                attachments=[
+                    keyboard([("Изменить подъезд", f"reg:house:{house['id']}")])
+                ],
             )
     except ValueError as error:
         await event.message.answer(str(error))
@@ -257,8 +334,15 @@ async def registration_apartment(event: MessageCreated, context: MemoryContext):
                 raw = (event.message.body.text or "").strip()
                 if not raw.isascii() or not raw.isdigit() or len(raw) > 6:
                     raise ValueError("Введите номер квартиры цифрами")
-                if not all(key in data for key in ("full_name", "company_id", "house_id")):
+                if not all(
+                    key in data for key in ("full_name", "company_id", "house_id")
+                ):
                     raise ValueError("Начните заявку заново: нажмите /start")
+                if data.get("entrance") is None:
+                    await entrance_prompt(
+                        event, context, await registration_house(data)
+                    )
+                    return
                 state = await submit_registration(
                     session,
                     user.id,
@@ -266,6 +350,7 @@ async def registration_apartment(event: MessageCreated, context: MemoryContext):
                     company_id=data["company_id"],
                     house_id=data["house_id"],
                     apartment_number=int(raw),
+                    entrance=data["entrance"],
                     source="bot",
                     auto_approve=test_mode(),
                 )
@@ -276,8 +361,31 @@ async def registration_apartment(event: MessageCreated, context: MemoryContext):
             await show_prompt(event, context, text, attachments=[buttons])
             await context.clear()
     except ValueError as error:
-        await event.message.answer(str(error))
+        await show_prompt(
+            event,
+            context,
+            str(error),
+            attachments=[
+                keyboard([("Изменить подъезд", f"reg:house:{data['house_id']}")])
+            ]
+            if data.get("house_id")
+            else None,
+        )
     except SQLAlchemyError:
         await event.message.answer(
             "Не удалось обратиться к базе данных. Повторите действие через несколько секунд."
+        )
+
+
+@router.message_created(FSMRegistration.entrance)
+async def registration_entrance(event: MessageCreated, context: MemoryContext):
+    try:
+        await entrance_prompt(
+            event, context, await registration_house(await context.get_data())
+        )
+    except ValueError as error:
+        await show_prompt(event, context, str(error))
+    except SQLAlchemyError:
+        await show_prompt(
+            event, context, "Не удалось загрузить подъезды. Попробуйте ещё раз."
         )

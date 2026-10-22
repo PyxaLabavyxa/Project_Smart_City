@@ -83,6 +83,18 @@ def test_materials_are_valid_and_match_documented_application_routes():
             current["properties"] = {
                 key: current["properties"][key] for key in schema["properties"]
             }
+        if name == "WorkResponse":
+            # Intentional contract extension: an unknown work end is null, never a fake date.
+            # All other deployed fields and the dated-work format remain unchanged.
+            original = schema["properties"]["ends_at"]
+            assert current["properties"]["ends_at"] == {
+                "anyOf": [
+                    {key: value for key, value in original.items() if key != "title"},
+                    {"type": "null"},
+                ],
+                "title": original["title"],
+            }
+            current["properties"]["ends_at"] = original
         assert current == schema
     assert contract == create_app(Settings(_env_file=None, database_url=None)).openapi()
     assert config["team"] == read_json(config["test_data"])["team"] == "Облачный Код"

@@ -21,4 +21,5 @@ class FSMViewingReports(StatesGroup):
 
 class FSMRegistration(StatesGroup):
     name = State()
+    entrance = State()
     apartment = State()

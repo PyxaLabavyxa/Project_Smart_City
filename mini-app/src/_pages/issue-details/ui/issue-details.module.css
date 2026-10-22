@@ -78,6 +78,5 @@
 .marker { width:calc(29 * var(--u)); height:calc(29 * var(--u)); font-size:calc(15 * var(--u)); }
 .current { display:none; }
 .workflowDetails { margin-top:calc(14 * var(--u)); color:var(--color-muted); font-size:calc(14 * var(--u)); }
-.workflowDetails summary { cursor:pointer; min-height:32px; }
 .chatAction { position:fixed; z-index:24; left:50%; bottom:calc(83 * var(--u) + 16px + env(safe-area-inset-bottom)); transform:translateX(-50%); width:calc(404 * var(--u)); max-width:calc(100% - 24px); justify-content:center; min-height:calc(49 * var(--u)); margin:0; padding:calc(9 * var(--u)); background:var(--color-surface); border:1px solid var(--color-action); border-radius:calc(14 * var(--u)); color:var(--color-ink); font-size:calc(18 * var(--u)); font-weight:400; }
 .workflowDetails:has(+ .chatAction) { margin-bottom:calc(49 * var(--u) + 16px); }

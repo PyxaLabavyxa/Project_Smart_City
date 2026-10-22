@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Literal
 
+from app.services.planned_works import WorkSchedule
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
@@ -32,9 +33,12 @@ class AnnouncementInput(BaseModel):
     )
     resident_ids: list[int] = Field(default_factory=list, max_length=100)
     audience: Literal["houses", "residents"] = "houses"
+    work: WorkSchedule | None = None
 
     @model_validator(mode="after")
     def valid_audience(self):
+        if self.work and (self.topic != "works" or self.audience != "houses"):
+            raise ValueError("Запланированные работы публикуются для домов с темой «Работы»")
         if len(set(self.channels)) != len(self.channels):
             raise ValueError("Каналы не должны повторяться")
         if len(set(self.resident_ids)) != len(self.resident_ids) or any(
@@ -117,6 +121,10 @@ class AnnouncementOutput(BaseModel):
     private_deliveries: list[PrivateAnnouncementDeliveryOutput]
     excluded_count: int
     audience: str
+    work: WorkSchedule | None = None
+    message_body: str = ""
+    message_topic: str = ""
+    work_completed_at: datetime | None = None
 
 
 class AnnouncementPage(BaseModel):

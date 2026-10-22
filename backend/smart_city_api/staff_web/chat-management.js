@@ -1,6 +1,7 @@
 "use strict";
 
-const chatTopics = { outage: "Отключение", works: "Работы", meeting: "Собрание", other: "Другое" };
+const chatTopics = { outage: "⚠️ Отключение коммунальных услуг", works: "🔧 Ремонт и обслуживание дома", meeting: "👥 Собрание жителей", other: "ℹ️ Информация для жителей" };
+function announcementTopic(topic, work) { return work ? "🔧 Запланированные работы" : chatTopics[topic]; }
 const deliveryLabels = { draft: "Черновик", pending: "В очереди", sending: "Отправляется", sent: "Отправлено", failed: "Не отправлено", uncertain: "Нужно проверить чат", cancelled: "Отменено" };
 let maxChatRows = [], maxChatRequest = 0, announcementRequest = 0, maxChatBusy = false;
 let announcementPage = 1, announcementTotal = 0, announcementBusy = false;
@@ -22,7 +23,23 @@ function announcementSummary(item) {
   if (item.status === "draft") return "Черновик";
   const counts = {};
   for (const d of [...item.deliveries, ...(item.private_deliveries || [])]) counts[d.status] = (counts[d.status] || 0) + 1;
-  return Object.entries(counts).map(([key,n]) => `${deliveryLabels[key] || key}: ${n}`).join(" · ");
+  return (item.work_completed_at ? "Работа завершена · " : item.work ? "Работа опубликована · " : "") + (Object.entries(counts).map(([key,n]) => `${deliveryLabels[key] || key}: ${n}`).join(" · ") || "Нет личных получателей");
+}
+function plannedWorkMode() { return $("announcement-kind").value === "work"; }
+function workSchedule() {
+  return plannedWorkMode() ? {
+    starts_at: $("work-start").value ? `${$("work-start").value}:00+03:00` : null,
+    ends_at: !$("work-end-unknown").checked && $("work-end").value ? `${$("work-end").value}:00+03:00` : null,
+    location: $("work-location").value.trim(),
+  } : null;
+}
+function workLocalTime(value) { const date = new Date(value); return value && Number.isFinite(date.getTime()) ? new Date(date.getTime() + 3 * 3600000).toISOString().slice(0,16) : ""; }
+function workDate(value) { const [d,t] = workLocalTime(value).split("T"); return `${d.split("-").reverse().join(".")} ${t}`; }
+function workPreviewText(text, work) {
+  if (!work) return text;
+  const start = work.starts_at ? workDate(work.starts_at) : "Начало";
+  const period = $("work-end-unknown").checked ? `📅 Начало: ${start} (МСК)\nСрок окончания уточняется` : `📅 ${start} — ${work.ends_at ? workDate(work.ends_at) : "Окончание"} (МСК)`;
+  return `${period}\n📍 ${work.location || "Место работ"}\n\n${text}`;
 }
 function audienceMode() { return document.querySelector('input[name="announcement-audience"]:checked')?.value || "selected"; }
 function selectedAnnouncementHouses() {
@@ -32,13 +49,26 @@ function announcementBody() {
   const people = audienceMode() === "residents";
   return { topic: $("announcement-topic").value, title: $("announcement-title").value.trim(), text: $("announcement-text").value.trim(), house_ids: selectedAnnouncementHouses(), version: editingAnnouncement?.version || 1,
     channels: [!people && $("channel-groups").checked ? "groups" : null, $("channel-private").checked ? "private" : null].filter(Boolean),
-    audience: people ? "residents" : "houses", resident_ids: people ? [...selectedResidentIds].sort((a,b) => a-b) : [] };
+    audience: people ? "residents" : "houses", resident_ids: people ? [...selectedResidentIds].sort((a,b) => a-b) : [], work: workSchedule() };
 }
 function announcementIsDirty() {
   const body = announcementBody();
   return (body.title || body.text || body.house_ids.length) && JSON.stringify(body) !== announcementSaved;
 }
 function updateAnnouncementPreview() {
+  const planned = plannedWorkMode();
+  const residentRadio = document.querySelector('input[name="announcement-audience"][value="residents"]');
+  residentRadio.disabled = planned;
+  if (planned && audienceMode() === "residents") document.querySelector('input[name="announcement-audience"][value="selected"]').checked = true;
+  $("planned-work-fields").hidden = !planned;
+  for (const id of ["work-start", "work-end-unknown", "work-location"]) $(id).disabled = !planned;
+  const unknownEnd = $("work-end-unknown").checked;
+  $("work-end").disabled = !planned || unknownEnd;
+  $("work-end").required = planned && !unknownEnd;
+  $("work-end-help").hidden = !planned || !unknownEnd;
+  $("announcement-topic").disabled = planned;
+  if (planned) $("announcement-topic").value = "works";
+  $("work-end").setCustomValidity(planned && !unknownEnd && $("work-start").value && $("work-end").value && $("work-end").value <= $("work-start").value ? "Окончание работ должно быть позже начала" : "");
   const people = audienceMode() === "residents";
   $("channel-groups").disabled = people;
   if (people) { $("channel-groups").checked = false; $("channel-private").checked = true; }
@@ -46,7 +76,8 @@ function updateAnnouncementPreview() {
   $("house-audience-controls").hidden = people;
   $("resident-audience-controls").hidden = !people;
   $("announcement-live-title").textContent = $("announcement-title").value || "Заголовок объявления";
-  $("announcement-live-text").textContent = $("announcement-text").value || "Текст появится здесь, когда вы начнёте писать.";
+  $("announcement-live-topic").textContent = announcementTopic($("announcement-topic").value, planned);
+  $("announcement-live-text").textContent = workPreviewText($("announcement-text").value || "Текст появится здесь, когда вы начнёте писать.", workSchedule());
   $("announcement-count").textContent = `${$("announcement-text").value.length} / 3000`;
   $("announcement-preview-label").textContent = $("channel-private").checked && !$("channel-groups").checked ? "В личном диалоге с ботом" : $("channel-private").checked ? "Текст объявления" : "В домовом чате";
   $("announcement-recipient-count").textContent = people ? `Выбрано жителей: ${selectedResidentIds.size}. Точную доставку проверим перед отправкой.` : `Выбрано домов: ${selectedAnnouncementHouses().length}. Точный список получателей появится в предпросмотре.`;
@@ -112,7 +143,7 @@ async function loadAnnouncements() {
     const data = await api(`/announcements?page=${announcementPage}`);
     if (request !== announcementRequest || profile !== state.profile) return;
     announcementTotal = data.total;
-    $("announcement-history").innerHTML = data.items.length ? data.items.map(item => `<button class="announcement-history-item" data-announcement="${item.id}"><strong>${esc(item.title)}</strong><small>${esc(chatTopics[item.topic])} · ${esc(date(item.created_at, true))}</small><small>${esc(announcementSummary(item))}</small></button>`).join("") : '<p class="form-help">Пока нет объявлений. Начните с черновика — он не отправляется жителям.</p>';
+    $("announcement-history").innerHTML = data.items.length ? data.items.map(item => `<button class="announcement-history-item" data-announcement="${item.id}"><strong>${esc(item.title)}</strong><small>${esc(item.work ? "Запланированная работа" : chatTopics[item.topic])} · ${esc(date(item.created_at, true))}</small><small>${esc(announcementSummary(item))}</small></button>`).join("") : '<p class="form-help">Пока нет объявлений. Начните с черновика — он не отправляется жителям.</p>';
     $("announcement-prev").disabled = announcementPage <= 1;
     $("announcement-next").disabled = announcementPage * 20 >= announcementTotal;
     $("announcement-page").textContent = data.total ? `${(announcementPage - 1) * 20 + 1}–${Math.min(announcementPage * 20, data.total)} из ${data.total}` : "Нет объявлений";
@@ -177,6 +208,10 @@ $("check-chat-connection").addEventListener("click", async () => {
 });
 $("announcement-form").addEventListener("input", updateAnnouncementPreview);
 $("announcement-form").addEventListener("change", updateAnnouncementPreview);
+$("announcement-kind").addEventListener("change", () => {
+  if (plannedWorkMode()) { $("channel-private").checked = true; $("channel-groups").checked = false; }
+  updateAnnouncementPreview(); renderAnnouncementHouses();
+});
 $("announcement-select-all").addEventListener("click", () => renderAnnouncementHouses(maxChatRows.filter(c => chatState(c)[0] === "ready").map(c => c.house_id)));
 $("announcement-select-visible").addEventListener("click", () => renderAnnouncementHouses([...new Set([...selectedHouseIds, ...visibleHouses().map(c => c.house_id)])]));
 $("announcement-clear-houses").addEventListener("click", () => renderAnnouncementHouses([]));
@@ -189,12 +224,14 @@ $("announcement-residents").addEventListener("change", event => { if (!event.tar
 $("selected-announcement-residents").addEventListener("click", event => { const button = event.target.closest("button[data-remove-resident]"); if (button) { selectedResidentIds.delete(Number(button.dataset.removeResident)); renderResidents(); } });
 function canPublishAnnouncement(item) {
   if (!item || item.status !== "draft") return false;
-  return item.deliveries.every(d => chatState(maxChatRows.find(c => c.house_id === d.house_id))[0] === "ready") && (item.deliveries.length + (item.private_deliveries || []).filter(d => d.available).length > 0);
+  return item.deliveries.every(d => chatState(maxChatRows.find(c => c.house_id === d.house_id))[0] === "ready") && (item.work || item.deliveries.length + (item.private_deliveries || []).filter(d => d.available).length > 0);
 }
 function busyAnnouncement(busy) {
   announcementBusy = busy; $("announcement-fields").disabled = busy;
-  for (const id of ["new-announcement", "send-announcement", "retry-announcement", "close-announcement", "edit-announcement"]) $(id).disabled = busy;
+  for (const id of ["new-announcement", "send-announcement", "retry-announcement", "complete-work", "close-announcement", "edit-announcement"]) $(id).disabled = busy;
   $("send-announcement").disabled = busy || !canPublishAnnouncement(previewAnnouncement);
+  $("complete-work").disabled = busy || !previewAnnouncement?.work || new Date(previewAnnouncement.work.starts_at).getTime() >= Date.now();
+  $("complete-work").title = previewAnnouncement?.work && new Date(previewAnnouncement.work.starts_at).getTime() >= Date.now() ? "Будет доступно после начала работ" : "";
 }
 async function saveAnnouncement() {
   if (!$("announcement-form").reportValidity()) return null;
@@ -230,20 +267,35 @@ function showAnnouncement(item) {
   previewAnnouncement = item;
   $("announcement-dialog-title").textContent = item.status === "draft" ? "Проверьте объявление" : "Результат отправки";
   $("announcement-final-title").textContent = item.title;
-  $("announcement-final-text").textContent = item.text;
+  $("announcement-final-topic").textContent = item.message_topic || announcementTopic(item.topic, item.work);
+  $("announcement-final-text").textContent = item.message_body || item.text;
   const personal = item.private_deliveries || [], draft = item.status === "draft";
   const privateCount = personal.filter(d => !draft || d.available).length;
   const groups = item.deliveries.map(d => `<div class="announcement-recipient"><strong>${esc(d.address)}</strong><span class="chat-state" data-state="${d.status === "sent" ? "ready" : ["failed","uncertain"].includes(d.status) ? d.status : "pending"}">${esc(draft ? chatState(maxChatRows.find(c => c.house_id === d.house_id))[1] : deliveryLabels[d.status])}</span>${d.chat_title ? `<small>${esc(d.chat_title)}</small>` : ""}${d.error ? `<p class="chat-row-error">${esc(d.error)}</p>` : ""}</div>`).join("");
   const people = personal.map(d => `<div class="announcement-recipient"><strong>${esc(d.name)}${d.max_user_id ? ` · MAX ID ${d.max_user_id}` : ""}</strong><small>${esc(d.address)}</small><span class="chat-state" data-state="${d.status === "sent" ? "ready" : ["failed","uncertain"].includes(d.status) ? d.status : "pending"}">${esc(draft ? d.available ? "Получит личное сообщение" : "Не будет отправлено" : deliveryLabels[d.status])}</span>${d.error ? `<p class="chat-row-error">${esc(d.error)}</p>` : ""}</div>`).join("");
   $("announcement-deliveries").innerHTML = (groups ? `<h4 class="recipient-channel-heading">Домовые чаты · ${item.deliveries.length}</h4>${groups}` : "") + (people ? `<h4 class="recipient-channel-heading">Личные сообщения · ${privateCount}</h4>${people}` : "") + (item.excluded_count ? `<p class="notice">Не включено жителей: ${item.excluded_count}. Они ещё не открыли бота или отключили объявления.</p>` : "");
   $("send-announcement").hidden = !draft;
-  $("send-announcement").textContent = `Отправить · ${item.deliveries.length + privateCount}`;
+  $("send-announcement").textContent = item.work ? `Опубликовать работу · ${item.house_ids.length} дом(а)` : `Отправить · ${item.deliveries.length + privateCount}`;
   $("edit-announcement").hidden = !draft;
   $("retry-announcement").hidden = ![...item.deliveries,...personal].some(d => d.status === "failed");
+  $("complete-work").hidden = draft || !item.work || !!item.work.ends_at || !!item.work_completed_at;
+  $("complete-work").disabled = announcementBusy || new Date(item.work?.starts_at).getTime() >= Date.now();
+  $("complete-work").title = new Date(item.work?.starts_at).getTime() >= Date.now() ? "Будет доступно после начала работ" : "";
   const ready = canPublishAnnouncement(item);
   $("send-announcement").disabled = !ready || announcementBusy;
   $("announcement-preview-help").textContent = draft ? (ready ? `Домовых чатов: ${item.deliveries.length}. Личных сообщений: ${privateCount}. Это точный список отправки; текст и получателей после начала изменить нельзя.` : "Проверьте подключение выбранных групп и наличие доступных личных получателей. Если изменился состав жителей, сохраните черновик заново.") : "Успешные сообщения не дублируются. Если результат неизвестен, сначала проверьте соответствующий чат или личный диалог — автоматического повтора не будет.";
   showError("announcement-preview-error", "");
+  if (item.work) {
+    const note = document.createElement("p"); note.className = "notice";
+    const period = item.work.ends_at ? `${workDate(item.work.starts_at)} — ${workDate(item.work.ends_at)} (МСК).` : `Начало: ${workDate(item.work.starts_at)} (МСК). Срок окончания уточняется.`;
+    note.textContent = item.work_completed_at ? `Работа завершена ${workDate(item.work_completed_at)} (МСК) и скрыта с главной жителей.` : `${draft ? "Работа появится" : "Работа опубликована"} в мини-приложении: ${item.house_ids.length} дом(а). ${period}`;
+    $("announcement-deliveries").prepend(note);
+    $("announcement-preview-help").textContent = item.work_completed_at
+      ? "Исходное уведомление сохранено в истории. Ожидающие отправки отменены; новая рассылка о завершении не создавалась."
+      : draft
+      ? "Публикация добавит работу в календарь выбранных домов и сразу поставит уведомления в очередь. Личные получатели перепроверяются при публикации. Если никто не открыл бота или все отключили объявления, работа всё равно появится в приложении. После публикации изменить её нельзя."
+      : "Работа доступна жителям в мини-приложении независимо от доставки уведомлений. Можно повторить только отправки с явной ошибкой — успешные и неизвестные результаты не дублируются.";
+  }
   if (!$("announcement-dialog").open) $("announcement-dialog").showModal();
 }
 function resetAnnouncement() {
@@ -268,6 +320,11 @@ $("announcement-history").addEventListener("click", async event => {
       if (announcementIsDirty() && !await confirmAction({ title: "Загрузить черновик?", description: "Он заменит несохранённые изменения в текущем объявлении.", confirmLabel: "Загрузить", destructive: true })) return;
       if (!state.profile) return;
       editingAnnouncement = item;
+      $("announcement-kind").value = item.work ? "work" : "announcement";
+      $("work-start").value = workLocalTime(item.work?.starts_at);
+      $("work-end").value = workLocalTime(item.work?.ends_at);
+      $("work-end-unknown").checked = !!item.work && !item.work.ends_at;
+      $("work-location").value = item.work?.location || "";
       $("announcement-topic").value = item.topic; $("announcement-title").value = item.title; $("announcement-text").value = item.text;
       selectedResidentIds = new Set(item.resident_ids || []);
       for (const r of item.private_deliveries || []) residentDirectory.set(r.user_id, { name: r.name });
@@ -293,13 +350,25 @@ async function publishAnnouncement(retry) {
     const result = await api(`/announcements/${item.id}/${retry ? "retry" : "send"}`, { method: "POST", ...(!retry ? { body: JSON.stringify({ version: item.version }) } : {}) });
     if (!retry && editingAnnouncement?.id === item.id) resetAnnouncement();
     showAnnouncement(result);
-    toast(retry ? "Неотправленные объявления возвращены в очередь" : "Объявление поставлено в очередь отправки");
+    toast(retry ? "Неотправленные объявления возвращены в очередь" : item.work ? "Работа опубликована в мини-приложении, уведомления поставлены в очередь" : "Объявление поставлено в очередь отправки");
     await loadAnnouncements();
   } catch (error) { showError("announcement-preview-error", error.message); }
   finally { busyAnnouncement(false); }
 }
 $("send-announcement").addEventListener("click", () => void publishAnnouncement(false));
 $("retry-announcement").addEventListener("click", () => void publishAnnouncement(true));
+$("complete-work").addEventListener("click", async () => {
+  if (!previewAnnouncement || announcementBusy) return;
+  const item = previewAnnouncement;
+  if (!await confirmAction({ title: "Завершить работу?", description: "Карточка исчезнет из работ на главной жителей. Новая рассылка отправляться не будет.", confirmLabel: "Завершить работу" })) return;
+  if (announcementBusy || previewAnnouncement !== item || !state.profile) return;
+  busyAnnouncement(true);
+  try {
+    const result = await api(`/announcements/${item.id}/complete-work`, { method: "POST", body: JSON.stringify({ version: item.version }) });
+    showAnnouncement(result); toast("Работа завершена"); await loadAnnouncements();
+  } catch (error) { showError("announcement-preview-error", error.message); }
+  finally { busyAnnouncement(false); }
+});
 $("announcement-prev").addEventListener("click", () => { if (announcementPage > 1) { announcementPage--; void loadAnnouncements(); } });
 $("announcement-next").addEventListener("click", () => { if (announcementPage * 20 < announcementTotal) { announcementPage++; void loadAnnouncements(); } });
 window.addEventListener("beforeunload", event => { if (announcementIsDirty()) { event.preventDefault(); event.returnValue = ""; } });

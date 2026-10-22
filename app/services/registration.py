@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from app.database.models import (
     Apartment,
@@ -61,6 +61,30 @@ async def catalog(session):
             .order_by(ManagementCompany.id, House.id)
         )
     ).all()
+    entrances = {}
+    house_ids = {house.id for _, house in rows}
+    if house_ids:
+        apartments = await session.execute(
+            select(
+                Apartment.house_id,
+                Apartment.entrance,
+                func.min(Apartment.number),
+                func.max(Apartment.number),
+                func.count(Apartment.id),
+            )
+            .where(Apartment.house_id.in_(house_ids))
+            .group_by(Apartment.house_id, Apartment.entrance)
+            .order_by(Apartment.house_id, Apartment.entrance)
+        )
+        for house_id, number, first, last, count in apartments:
+            entrances.setdefault(house_id, []).append(
+                {
+                    "number": number,
+                    "first_apartment": first,
+                    "last_apartment": last,
+                    "apartments_count": count,
+                }
+            )
     companies = {}
     for company, house in rows:
         entry = companies.setdefault(
@@ -71,6 +95,7 @@ async def catalog(session):
                 "id": house.id,
                 "address": house.address,
                 "floors": house.floors_count,
+                "entrances": entrances.get(house.id, []),
                 "apartments_count": house.entrances_count
                 * house.floors_count
                 * house.apartments_per_floor,
@@ -90,8 +115,11 @@ async def submit_registration(
     source,
     auto_approve=False,
     additional=False,
+    entrance=None,
 ):
-    user = await session.scalar(select(User).where(User.id == user_id).with_for_update())
+    user = await session.scalar(
+        select(User).where(User.id == user_id).with_for_update()
+    )
     state = await registration_state(session, user_id)
     if not additional and (state["complete"] or state["status"] == "pending"):
         return state
@@ -106,6 +134,10 @@ async def submit_registration(
     )
     if apartment is None:
         raise ValueError("Такой квартиры в выбранном доме нет. Проверьте номер")
+    if entrance is not None and apartment.entrance != entrance:
+        raise ValueError(
+            "Квартира не относится к выбранному подъезду. Проверьте подъезд и номер квартиры"
+        )
     linked = await session.scalar(
         select(UserApartment.id).where(
             UserApartment.user_id == user_id, UserApartment.apartment_id == apartment.id
@@ -149,7 +181,9 @@ async def submit_registration(
 async def decide_registration(session, application, *, approve, staff_id):
     if application.status != "pending":
         raise ValueError("Заявка уже рассмотрена")
-    await session.scalar(select(User.id).where(User.id == application.user_id).with_for_update())
+    await session.scalar(
+        select(User.id).where(User.id == application.user_id).with_for_update()
+    )
     if approve:
         linked = await session.scalar(
             select(UserApartment.id).where(
@@ -159,7 +193,9 @@ async def decide_registration(session, application, *, approve, staff_id):
         )
         if linked is None:
             session.add(
-                UserApartment(user_id=application.user_id, apartment_id=application.apartment_id)
+                UserApartment(
+                    user_id=application.user_id, apartment_id=application.apartment_id
+                )
             )
     application.status = "approved" if approve else "rejected"
     application.decided_at = datetime.now(UTC)

@@ -85,7 +85,8 @@ def test_private_draft_freezes_deduplicated_eligible_recipients(staff_api):
     assert not asyncio.run(process_private_announcement(bot, sessions))
     bot.send_message.assert_awaited_once_with(
         user_id=101,
-        text=BODY["title"] + "\n\n" + BODY["text"] + "\n\nУправляющая компания",
+        text="🔔 Уведомление от УК\n🔧 Ремонт и обслуживание дома\n\n"
+        + BODY["title"] + "\n\n" + BODY["text"] + "\n\nУправляющая компания",
         notify=True,
     )
 

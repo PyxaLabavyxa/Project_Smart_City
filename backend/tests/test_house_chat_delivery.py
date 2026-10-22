@@ -79,7 +79,8 @@ def test_only_explicit_announcements_are_delivered(staff_api):
     assert bot.send_message.await_count == 1
     assert (
         bot.send_message.call_args.kwargs["text"]
-        == BODY["title"] + "\n\n" + BODY["text"] + "\n\nУправляющая компания"
+        == "🔔 Уведомление от УК\n🔧 Ремонт и обслуживание дома\n\n"
+        + BODY["title"] + "\n\n" + BODY["text"] + "\n\nУправляющая компания"
     )
     with Session(engine) as s:
         assert s.scalar(select(AnnouncementDelivery)).status == "sent"

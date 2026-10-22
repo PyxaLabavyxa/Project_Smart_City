@@ -2,13 +2,14 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
-from app.database.models import Base, RegistrationRequest, User
-from app.database.registration_demo import seed_registration_demo
-from app.services.registration import catalog, submit_registration
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
+from app.database.models import Base, RegistrationRequest, User
+from app.database.registration_demo import seed_registration_demo
+from app.services.registration import catalog, submit_registration
 from chatbot.handlers import registration as handlers
+from chatbot.states.states import FSMRegistration
 from chatbot.test_report_flow import DraftContext
 
 
@@ -33,11 +34,14 @@ class RegistrationTests(unittest.IsolatedAsyncioTestCase):
 
     def event(self, payload="reg:start", text=""):
         return SimpleNamespace(
-            callback=SimpleNamespace(payload=payload, user=SimpleNamespace(user_id=100)),
+            callback=SimpleNamespace(
+                payload=payload, user=SimpleNamespace(user_id=100)
+            ),
             from_user=SimpleNamespace(user_id=100),
             bot=SimpleNamespace(edit_message=AsyncMock()),
             message=SimpleNamespace(
-                body=SimpleNamespace(text=text, mid="registration-prompt"), answer=AsyncMock()
+                body=SimpleNamespace(text=text, mid="registration-prompt"),
+                answer=AsyncMock(),
             ),
         )
 
@@ -45,27 +49,38 @@ class RegistrationTests(unittest.IsolatedAsyncioTestCase):
         context = DraftContext()
         for payload in ("reg:start", "reg:name:edit"):
             await handlers.registration_callback(self.event(payload), context)
-        await handlers.registration_name(self.event(text="Петров Иван Сергеевич"), context)
+        await handlers.registration_name(
+            self.event(text="Петров Иван Сергеевич"), context
+        )
         self.assertEqual(context.data["full_name"], "Петров Иван Сергеевич")
         await handlers.registration_callback(self.event("reg:company:1"), context)
         await handlers.registration_callback(self.event("reg:house:1"), context)
+        self.assertEqual(context.state, FSMRegistration.entrance)
+        await handlers.registration_callback(self.event("reg:entrance:1:1"), context)
         invalid = self.event(text="99999")
         await handlers.registration_apartment(invalid, context)
-        self.assertIn("Такой квартиры", invalid.message.answer.call_args.args[0])
+        self.assertIn(
+            "Такой квартиры", invalid.bot.edit_message.call_args.kwargs["text"]
+        )
         submitted = self.event(text="12")
         await handlers.registration_apartment(submitted, context)
         submitted.bot.edit_message.assert_awaited_once()
         self.assertEqual(
-            submitted.bot.edit_message.call_args.kwargs["message_id"], "registration-prompt"
+            submitted.bot.edit_message.call_args.kwargs["message_id"],
+            "registration-prompt",
         )
-        self.assertIn("Добро пожаловать", submitted.bot.edit_message.call_args.kwargs["text"])
+        self.assertIn(
+            "Добро пожаловать", submitted.bot.edit_message.call_args.kwargs["text"]
+        )
         self.assertIn("Главное меню", submitted.message.answer.call_args.args[0])
         self.assertEqual(context.data, {})
         text, _ = await handlers.initial_prompt(100, "Имя MAX")
         self.assertNotIn("не назначены", text)
         async with self.sessions() as session:
             self.assertEqual(
-                await session.scalar(select(func.count()).select_from(RegistrationRequest)),
+                await session.scalar(
+                    select(func.count()).select_from(RegistrationRequest)
+                ),
                 1,
             )
             user = await session.scalar(select(User).where(User.max_user_id == 100))
@@ -89,8 +104,75 @@ class RegistrationTests(unittest.IsolatedAsyncioTestCase):
         await handlers.registration_apartment(self.event(text="20"), context)
         async with self.sessions() as session:
             self.assertEqual(
-                await session.scalar(select(func.count()).select_from(RegistrationRequest)),
+                await session.scalar(
+                    select(func.count()).select_from(RegistrationRequest)
+                ),
                 1,
             )
             user = await session.scalar(select(User).where(User.max_user_id == 100))
             self.assertEqual(user.name, "Новое имя")
+
+    async def test_wrong_entrance_keeps_the_form_and_does_not_submit(self):
+        context = DraftContext(
+            full_name="Иван Петров",
+            company_id=1,
+            registration_message_id="registration-prompt",
+        )
+        await handlers.registration_callback(self.event("reg:house:1"), context)
+        await handlers.registration_callback(self.event("reg:entrance:1:2"), context)
+        wrong = self.event(text="12")
+        await handlers.registration_apartment(wrong, context)
+        self.assertIn(
+            "не относится к выбранному подъезду",
+            wrong.bot.edit_message.call_args.kwargs["text"],
+        )
+        self.assertEqual(context.state, FSMRegistration.apartment)
+        wrong.message.answer.assert_not_awaited()
+        async with self.sessions() as session:
+            self.assertEqual(
+                await session.scalar(
+                    select(func.count()).select_from(RegistrationRequest)
+                ),
+                0,
+            )
+        await handlers.registration_apartment(self.event(text="40"), context)
+        async with self.sessions() as session:
+            request = await session.scalar(select(RegistrationRequest))
+            from app.database.models import Apartment
+
+            apartment = await session.get(Apartment, request.apartment_id)
+            self.assertEqual((apartment.entrance, apartment.number), (2, 40))
+
+    async def test_changed_house_rejects_old_entrance_buttons(self):
+        context = DraftContext(
+            full_name="Иван Петров",
+            company_id=1,
+            registration_message_id="registration-prompt",
+        )
+        for payload in (
+            "reg:house:1",
+            "reg:entrance:1:2",
+            "reg:house:2",
+            "reg:entrance:1:2",
+        ):
+            await handlers.registration_callback(self.event(payload), context)
+        self.assertEqual(context.data["house_id"], 2)
+        self.assertIsNone(context.data["entrance"])
+        self.assertEqual(context.state, FSMRegistration.entrance)
+
+    async def test_old_bot_draft_requires_entrance_before_submission(self):
+        context = DraftContext(
+            full_name="Иван Петров",
+            company_id=1,
+            house_id=1,
+            registration_message_id="registration-prompt",
+        )
+        await handlers.registration_apartment(self.event(text="12"), context)
+        self.assertEqual(context.state, FSMRegistration.entrance)
+        async with self.sessions() as session:
+            self.assertEqual(
+                await session.scalar(
+                    select(func.count()).select_from(RegistrationRequest)
+                ),
+                0,
+            )

@@ -61,6 +61,7 @@ class Announcement(Base):
     resident_ids: Mapped[list[int]] = mapped_column(JSON, default=list, server_default="[]")
     audience: Mapped[str] = mapped_column(String(20), default="houses", server_default="houses")
     excluded_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    work: Mapped[dict | None] = mapped_column(JSON(none_as_null=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     __table_args__ = (
@@ -361,8 +362,14 @@ class HouseWork(Base):
     house_id: Mapped[int] = mapped_column(ForeignKey("houses.id"), index=True)
     title: Mapped[str] = mapped_column(String(300))
     starts_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
-    ends_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    ends_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     location: Mapped[str] = mapped_column(String(300))
+    announcement_id: Mapped[int | None] = mapped_column(
+        ForeignKey("announcements.id", ondelete="SET NULL"), nullable=True
+    )
+    __table_args__ = (
+        UniqueConstraint("announcement_id", "house_id", name="uq_work_announcement_house"),
+    )
 
 
 class MessageNotification(Base):

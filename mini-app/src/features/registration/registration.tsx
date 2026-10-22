@@ -44,6 +44,7 @@ function RegistrationForm({ initial, onComplete, refresh, additional, onApproved
   const [name, setName] = useState(initial.name);
   const [companyId, setCompany] = useState(initial.companies[0]?.id ?? 0);
   const [houseId, setHouse] = useState(0);
+  const [entranceNumber, setEntrance] = useState(0);
   const [apartment, setApartment] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -51,14 +52,15 @@ function RegistrationForm({ initial, onComplete, refresh, additional, onApproved
   const [approved, setApproved] = useState(false);
   const company = initial.companies.find(c => c.id === companyId);
   const house = company?.houses.find(h => h.id === houseId);
+  const entrance = house?.entrances.find(e => e.number === entranceNumber);
   const pending = (!additional && initial.status === "pending") || (submitted && !approved);
 
   async function submit() {
-    if (busy || !house) return;
+    if (busy || !house || !entrance) return;
     setBusy(true); setError("");
     try {
       const result = record(await api(endpoints.registration, { body: {
-        full_name: name.trim(), company_id: companyId, house_id: houseId, apartment_number: Number(apartment), additional,
+        full_name: name.trim(), company_id: companyId, house_id: houseId, entrance: entrance.number, apartment_number: Number(apartment), additional,
       } }));
       const accepted = result.application_status === "approved" || (!additional && result.complete === true);
       setApproved(accepted); setSubmitted(true);
@@ -89,21 +91,31 @@ function RegistrationForm({ initial, onComplete, refresh, additional, onApproved
       </form>}
       {step === 2 && <form onSubmit={event => { event.preventDefault(); void submit(); }}>
         <label htmlFor="registration-company">Управляющая компания</label>
-        <select id="registration-company" value={companyId} disabled={busy} onChange={event => { setCompany(Number(event.target.value)); setHouse(0); setApartment(""); }}>
+        <select id="registration-company" value={companyId} disabled={busy} onChange={event => { setCompany(Number(event.target.value)); setHouse(0); setEntrance(0); setApartment(""); setError(""); }}>
           {initial.companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
         {!initial.companies.length ? <p>Зарегистрированных УК пока нет. Обратитесь в свою УК или <button type="button" onClick={refresh}>проверьте позже</button>.</p> : <>
           <label htmlFor="registration-house">Адрес проживания</label>
-          <select id="registration-house" required value={houseId || ""} disabled={busy} onChange={event => { setHouse(Number(event.target.value)); setApartment(""); }}>
+          <select id="registration-house" required value={houseId || ""} disabled={busy} onChange={event => { setHouse(Number(event.target.value)); setEntrance(0); setApartment(""); setError(""); }}>
             <option value="" disabled>Выберите дом</option>
             {company?.houses.map(h => <option key={h.id} value={h.id}>{h.address}</option>)}
           </select>
-          {house && <><p className={styles.hint}>{house.floors} этажей · квартиры 1–{house.apartmentsCount}</p>
-            <label htmlFor="registration-apartment">Номер квартиры</label><input id="registration-apartment" type="number" inputMode="numeric" min={1} max={house.apartmentsCount} step={1} value={apartment} onChange={event => setApartment(event.target.value)} disabled={busy} required />
+          {house && <><p className={styles.hint}>{house.floors} этажей</p>
+            {house.entrances.length ? <>
+              <label htmlFor="registration-entrance">Подъезд</label>
+              <select id="registration-entrance" required value={entranceNumber || ""} disabled={busy} onChange={event => { setEntrance(Number(event.target.value)); setApartment(""); setError(""); }}>
+                <option value="" disabled>Выберите подъезд</option>
+                {house.entrances.map(e => <option key={e.number} value={e.number}>Подъезд {e.number}</option>)}
+              </select>
+              {entrance && <>
+                <p className={styles.hint}>Подъезд {entrance.number} · квартиры {entrance.firstApartment}–{entrance.lastApartment}</p>
+                <label htmlFor="registration-apartment">Номер квартиры</label><input id="registration-apartment" type="number" inputMode="numeric" min={entrance.firstApartment} max={entrance.lastApartment} step={1} value={apartment} onChange={event => { setApartment(event.target.value); setError(""); }} disabled={busy} required />
+              </>}
+            </> : <p role="status">В этом доме пока нет квартир для привязки. Обратитесь в свою УК.</p>}
           </>}
           <p className={styles.hint}>Заявка от: {name}</p><p className={styles.hint}>Одну квартиру могут добавить несколько членов семьи.</p>
           {error && <p role="alert" className={styles.error}>{error}</p>}
-          <button className={styles.primary} disabled={busy || !house || !apartment}>{busy ? "Отправляем заявку…" : "Отправить заявку"}</button>
+          <button className={styles.primary} disabled={busy || !house || !entrance || !apartment}>{busy ? "Отправляем заявку…" : "Отправить заявку"}</button>
         </>}
         <button className={styles.secondary} type="button" disabled={busy} onClick={() => setStep(1)}>Изменить ФИО</button>
       </form>}

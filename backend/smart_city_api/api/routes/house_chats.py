@@ -78,3 +78,10 @@ async def send(announcement_id: int, data: VersionInput, session: Session, emplo
 @router.post("/announcements/{announcement_id}/retry", response_model=AnnouncementOutput)
 async def retry(announcement_id: int, session: Session, employee: Staff):
     return await service.retry_failed(session, employee.id, announcement_id)
+
+
+@router.post("/announcements/{announcement_id}/complete-work", response_model=AnnouncementOutput)
+async def complete_work(
+    announcement_id: int, data: VersionInput, session: Session, employee: Staff
+):
+    return await service.complete_work(session, employee.id, announcement_id, data.version)

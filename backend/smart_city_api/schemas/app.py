@@ -142,7 +142,9 @@ class CameraResponse(BaseModel):
     name: str
     status: Literal["online", "maintenance", "unavailable"]
     note: str
-    source_type: Literal["snapshot", "mjpeg", "hls", "rtsp", "rtmp", "onvif", "http_video"] = "snapshot"
+    source_type: Literal["snapshot", "mjpeg", "hls", "rtsp", "rtmp", "onvif", "http_video"] = (
+        "snapshot"
+    )
     live_available: bool = False
     mine: bool = False
     visibility: Literal["private", "public"] = "public"
@@ -160,5 +162,6 @@ class WorkResponse(BaseModel):
     id: int
     title: str
     starts_at: datetime
-    ends_at: datetime
+    ends_at: datetime | None
     location: str
+    description: str = ""

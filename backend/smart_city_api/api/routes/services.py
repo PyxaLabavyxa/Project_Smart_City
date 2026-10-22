@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 
-from app.database.models import ApartmentMessage, ChatPhoto, HouseWork
+from app.database.models import Announcement, ApartmentMessage, ChatPhoto, HouseWork
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import FileResponse, StreamingResponse
 from sqlalchemy import or_, select
@@ -182,13 +182,29 @@ async def camera_live(camera_id: int, request: Request, session: Session, user: 
 async def works(house_id: int, session: Session, user: Resident):
     await require_house(session, user.id, house_id)
     rows = (
-        await session.scalars(
-            select(HouseWork)
+        await session.execute(
+            select(HouseWork, Announcement.text)
+            .outerjoin(Announcement, Announcement.id == HouseWork.announcement_id)
             .where(
                 HouseWork.house_id == house_id,
+                or_(HouseWork.ends_at.is_(None), HouseWork.ends_at > datetime.now(UTC)),
             )
-            .order_by(HouseWork.starts_at.desc())
+            .order_by(HouseWork.starts_at, HouseWork.id)
             .limit(100)
         )
     ).all()
-    return [WorkResponse.model_validate(row, from_attributes=True) for row in rows]
+    return [
+        WorkResponse(
+            id=row.id,
+            title=row.title,
+            starts_at=row.starts_at.replace(tzinfo=UTC)
+            if row.starts_at.tzinfo is None
+            else row.starts_at,
+            ends_at=(row.ends_at.replace(tzinfo=UTC) if row.ends_at.tzinfo is None else row.ends_at)
+            if row.ends_at is not None
+            else None,
+            location=row.location,
+            description=description or "",
+        )
+        for row, description in rows
+    ]
