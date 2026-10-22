@@ -66,7 +66,7 @@ function Invitation({ houseId }: { houseId: string }) {
   }
 
   return <SectionPage title="Пригласить соседей" description="Пусть весь дом будет на связи">
-    {!state.data ? <RequestState {...state} /> : <div className={styles.content}>
+    {!state.data ? <RequestState {...state} page /> : <div className={styles.content}>
       <div className={styles.intro}><div><h2>Соседи, вы с нами?</h2><p>Покажите QR-код или отправьте ссылку в чат. Ваш дом уже будет выбран при регистрации.</p></div><Zhorik pose="wave" className={styles.mascot} /></div>
       <section className={styles.invitation} aria-labelledby="invite-address">
         <p className={styles.address} id="invite-address"><Icon name="pin" size={19} />{state.data.address}</p>

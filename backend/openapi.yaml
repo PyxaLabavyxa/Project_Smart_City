@@ -93,6 +93,33 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
       security:
       - MAXLaunchData: []
+  /api/v1/me/onboarding:
+    post:
+      tags:
+      - resident
+      summary: Save Onboarding
+      operationId: save_onboarding_api_v1_me_onboarding_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OnboardingInput'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OnboardingOutput'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - MAXLaunchData: []
   /api/v1/houses/{house_id}/contacts:
     get:
       tags:
@@ -4066,6 +4093,32 @@ components:
       - issue_statuses
       - announcements
       title: NotificationPreferences
+    OnboardingInput:
+      properties:
+        status:
+          type: string
+          enum:
+          - completed
+          - skipped
+          title: Status
+      additionalProperties: false
+      type: object
+      required:
+      - status
+      title: OnboardingInput
+    OnboardingOutput:
+      properties:
+        status:
+          type: string
+          enum:
+          - not_started
+          - completed
+          - skipped
+          title: Status
+      type: object
+      required:
+      - status
+      title: OnboardingOutput
     PhotoOutput:
       properties:
         id:
@@ -4216,6 +4269,14 @@ components:
         name:
           type: string
           title: Name
+        onboarding_status:
+          type: string
+          enum:
+          - not_started
+          - completed
+          - skipped
+          title: Onboarding Status
+          default: not_started
         apartments:
           items:
             $ref: '#/components/schemas/ApartmentResponse'

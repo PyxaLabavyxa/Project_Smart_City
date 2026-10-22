@@ -39,7 +39,7 @@
 .notification strong { display:block; font-size:16px; line-height:1.35; }
 .notification small { display:block; margin-top:5px; color:var(--color-muted); font-size:13px; line-height:1.45; }
 .notification input { appearance:none; flex-shrink:0; width:48px; height:28px; margin:8px 0; padding:3px; border:1px solid var(--color-muted); border-radius:20px; background:var(--color-line); cursor:pointer; }
-.notification input::before { content:""; display:block; width:20px; height:20px; border-radius:50%; background:var(--color-surface); box-shadow:0 1px 3px #0003; transition:transform 140ms ease-out; }
+.notification input::before { content:""; display:block; width:20px; height:20px; border-radius:50%; background:var(--color-surface); box-shadow:0 1px 3px #0003; transition:transform 140ms var(--ease-out); }
 .notification input:checked { background:var(--color-action); border-color:var(--color-action); }
 .notification input:checked::before { background:var(--color-on-action); transform:translateX(20px); }
 .notification input:disabled { opacity:.55; cursor:wait; }

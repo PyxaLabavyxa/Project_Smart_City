@@ -13,7 +13,7 @@
 .workflow .feedback { color:var(--color-teal); font-size:13px; }
 .deleteArea { margin-top:10px; text-align:center; }
 .deleteButton { display:flex; width:100%; align-items:center; justify-content:center; gap:8px; min-height:calc(49 * var(--u)); padding:calc(9 * var(--u)); border:1px solid #c43838; border-radius:calc(14 * var(--u)); background:var(--color-surface); color:#b32d2d; font:inherit; font-size:calc(18 * var(--u)); font-weight:400; cursor:pointer; }
-.deleteButton:active { transform:scale(.98); }
+
 .deleteButton:focus-visible { outline:2px solid currentColor; outline-offset:3px; }
 .deleteButton:disabled { opacity:.6; cursor:wait; }
 .deleteArea > p { margin:0; color:var(--color-muted); font-size:12px; line-height:1.5; }

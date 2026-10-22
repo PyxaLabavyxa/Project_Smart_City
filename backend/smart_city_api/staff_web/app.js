@@ -442,6 +442,7 @@ $("cameras-section").addEventListener("click", event => {
   cameraMenu.innerHTML = `<button data-decision="view">${icon("camera")}Смотреть камеру</button>${control.dataset.status === "pending" ? `<button data-decision="approved">${icon("check")}Одобрить</button><button data-decision="rejected">${icon("close")}Отклонить</button>` : ""}<button data-decision="delete" class="camera-delete">${icon("trash")}Удалить камеру</button>`;
   const rect = control.getBoundingClientRect();
   const height = 12 + cameraMenu.querySelectorAll("button").length * 46;
+  cameraMenu.dataset.side = rect.bottom + height + 8 > innerHeight ? "above" : "below";
   const width = Math.min(cameraView === "grid" ? rect.width : 208, innerWidth - 16);
   cameraMenu.style.width = `${width}px`;
   cameraMenu.style.left = `${Math.max(8, Math.min(rect.left, innerWidth - width - 8))}px`;

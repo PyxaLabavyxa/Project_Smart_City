@@ -79,6 +79,7 @@ class IssuePage(BaseModel):
 class Profile(BaseModel):
     id: int
     name: str
+    onboarding_status: Literal["not_started", "completed", "skipped"] = "not_started"
     apartments: list[ApartmentResponse]
     houses: list[HouseResponse]
 

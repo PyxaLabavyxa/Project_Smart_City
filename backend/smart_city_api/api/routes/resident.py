@@ -1,12 +1,12 @@
 import asyncio
 from typing import Annotated
 
-from app.database.models import Apartment, House, Issue, IssuePhoto
+from app.database.models import Apartment, House, Issue, IssuePhoto, User
 from app.paths import project_path
 from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import FileResponse
 from pydantic import ValidationError
-from sqlalchemy import select
+from sqlalchemy import case, select, update
 from starlette.datastructures import UploadFile
 
 from smart_city_api.api.dependencies import Resident, Session
@@ -19,6 +19,7 @@ from smart_city_api.schemas.issue_chat import (
     IssueMessagePage,
 )
 from smart_city_api.schemas.notifications import NotificationPreferences
+from smart_city_api.schemas.onboarding import OnboardingInput, OnboardingOutput
 from smart_city_api.schemas.resident import ApartmentPage, ApartmentResponse, HouseResponse
 from smart_city_api.services import chat_photos
 from smart_city_api.services.access import own_apartment_ids, require_house
@@ -37,6 +38,23 @@ from smart_city_api.services.presence import update_presence
 router = APIRouter(prefix="/api/v1", tags=["resident"])
 Limit = Annotated[int, Query(ge=1, le=100)]
 Cursor = Annotated[int, Query(ge=0)]
+
+
+@router.post("/me/onboarding", response_model=OnboardingOutput)
+async def save_onboarding(data: OnboardingInput, session: Session, user: Resident):
+    # A late skip from another device must never undo a completed guide.
+    status = await session.scalar(
+        update(User)
+        .where(User.id == user.id)
+        .values(
+            onboarding_status=case(
+                (User.onboarding_status == "completed", "completed"), else_=data.status
+            )
+        )
+        .returning(User.onboarding_status)
+    )
+    await session.commit()
+    return {"status": status}
 
 
 @router.get("/houses/{house_id}/contacts", response_model=ContactsOutput)
@@ -83,6 +101,7 @@ async def me(request: Request, session: Session, user: Resident):
     return Profile(
         id=user.id,
         name=user.name,
+        onboarding_status=user.onboarding_status,
         apartments=[ApartmentResponse.model_validate(a, from_attributes=True) for a in apartments],
         houses=[HouseResponse.model_validate(h, from_attributes=True) for h in houses],
     )

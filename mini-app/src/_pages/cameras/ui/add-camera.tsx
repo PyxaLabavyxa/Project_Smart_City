@@ -34,7 +34,7 @@ export function CameraSettingsPage({ id }: { id: string }) {
   }, [api, id, house.id]);
   const state = useRemote(load);
   if (state.data) return <CameraForm key={`${id}:${state.data.version}`} initial={state.data} />;
-  return <SectionPage title="Настройки камеры" backHref={`/cameras/${id}`} backLabel="К камере"><RequestState {...state} /></SectionPage>;
+  return <SectionPage title="Настройки камеры" backHref={`/cameras/${id}`} backLabel="К камере"><RequestState {...state} page /></SectionPage>;
 }
 
 function CameraForm({ initial }: { initial?: CameraSettings }) {

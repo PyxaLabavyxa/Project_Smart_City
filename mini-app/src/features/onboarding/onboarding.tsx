@@ -1,5 +1,5 @@
 "use client";
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { Zhorik } from "@/shared/ui/zhorik";
 import { nextTourIndex } from "./tour-navigation";
@@ -8,28 +8,17 @@ import { Icon } from "@/shared/ui/icon";
 import { tourSteps as steps } from "./steps";
 import { tourLayout, type TourRect } from "./tour-layout";
 import styles from "./onboarding.module.css";
-import { prepareTour } from "./prepare";
-import { useIssues } from "@/entities/issue";
-import { useMessages } from "@/entities/message";
-import { useUtilityAccount } from "@/entities/utilities";
+import { prepareTourImages } from "./prepare";
 
-const Context = createContext<{ start: () => void; activeTarget: string | null; preparing: boolean }>({ start: () => {}, activeTarget: null, preparing: false });
-export const useOnboarding = () => useContext(Context);
 type Position = { spot: TourRect; card: { left: number; top: number } };
 
-export function OnboardingProvider({ userId, children, deferAutomatic = false }: { userId: number; children: ReactNode; deferAutomatic?: boolean }) {
+export function OnboardingTour({ onStateChange, onFinish }: { onStateChange: (target: string | null, preparing: boolean) => void; onFinish: (result: "completed" | "skipped") => Promise<void> }) {
   const router = useRouter();
   const pathname = usePathname();
-  const initialPath = useRef(pathname);
   const [step, setStep] = useState<number | null>(null);
   const [excluded, setExcluded] = useState<string[]>([]);
   const [preparation, setPreparation] = useState<{ percent: number; error?: string } | null>({ percent: 0 });
   const preparationRun = useRef<AbortController | null>(null);
-  const prepared = useRef(false);
-  const guideAfterPreparation = useRef(true);
-  const issues = useIssues();
-  const messages = useMessages();
-  const utilities = useUtilityAccount();
   const [destination, setDestination] = useState("/");
   const [position, setPosition] = useState<Position | null>(null);
   const cameraPath = useRef("/cameras");
@@ -38,68 +27,28 @@ export function OnboardingProvider({ userId, children, deferAutomatic = false }:
   const heading = useRef<HTMLHeadingElement>(null);
   const returnTo = useRef("/");
   const isOpen = step !== null || preparation !== null;
-  const storageKey = `dompulse:onboarding:registration:v2:${userId}`;
-  const prepare = useCallback(async (showGuide: boolean) => {
-    guideAfterPreparation.current = showGuide;
-    if (!preparationRun.current) returnTo.current = window.location.pathname + window.location.search;
-    preparationRun.current?.abort();
-    const controller = new AbortController();
-    preparationRun.current = controller;
-    setStep(null);
-    setExcluded([]);
-    setPosition(null);
-    setPreparation({ percent: 0 });
-    try {
-      await prepareGuideImages(controller.signal);
-      cameraPath.current = await prepareTour(router, controller.signal, percent => setPreparation({ percent }), showGuide ? "/" : returnTo.current);
-      await finishPreparation(controller.signal);
-      if (controller.signal.aborted) return;
-      prepared.current = true;
-      preparationRun.current = null;
-      setPreparation(null);
-      if (showGuide) {
-        setDestination("/");
-        setStep(0);
-        try { localStorage.setItem(storageKey, "done"); } catch {}
-      }
-    } catch (error) {
-      if (!controller.signal.aborted) setPreparation(previous => ({ percent: previous?.percent ?? 0, error: error instanceof Error ? error.message : "Не удалось подготовить разделы" }));
-    }
-  }, [router, storageKey]);
-  const start = useCallback(() => {
-    if (!prepared.current) { void prepare(true); return; }
+  const prepare = useCallback(() => {
     returnTo.current = window.location.pathname + window.location.search;
-    setPosition(null);
-    setDestination("/");
-    setExcluded([]);
-    setStep(0);
-    router.replace("/", { scroll: false });
-  }, [prepare, router]);
-  useEffect(() => () => preparationRun.current?.abort(), []);
-  const finish = useCallback(() => {
     preparationRun.current?.abort();
-    preparationRun.current = null;
-    setPreparation(null);
-    try { localStorage.setItem(storageKey, "done"); } catch {}
-    setStep(null);
-    setPosition(null);
-    router.replace(returnTo.current, { scroll: true });
-  }, [router, storageKey]);
-  useEffect(() => {
-    // A house invitation must finish at its requested section, including after registration.
-    // The resident can still start the guide manually from More.
-    let showGuide = !deferAutomatic && initialPath.current !== "/invite";
-    try { showGuide = showGuide && localStorage.getItem(storageKey) !== "done"; } catch {}
-    const timer = window.setInterval(() => {
-      if (!document.querySelector("#main")) return;
-      // The initial issue may still be resolving its house. Starting the tour
-      // now would navigate away before the house switch captures the return URL.
-      if (document.querySelector('#main .request-state[aria-busy="true"]')) return;
-      window.clearInterval(timer);
-      void prepare(showGuide);
-    }, 60);
-    return () => window.clearInterval(timer);
-  }, [storageKey, prepare, deferAutomatic]);
+    const controller = new AbortController(); preparationRun.current = controller;
+    return prepareTourImages(steps.map(step => step.pose), controller.signal, percent => setPreparation(previous => previous?.percent === percent && !previous.error ? previous : { percent })).then(() => {
+      if (controller.signal.aborted) return;
+      preparationRun.current = null;
+      setPreparation(null); setDestination("/"); setStep(0);
+      router.replace("/", { scroll: false });
+    }, () => {
+      if (!controller.signal.aborted) {
+        controller.abort();
+        setPreparation(previous => ({ percent: previous?.percent ?? 0, error: "Не удалось загрузить картинки Жорика. Повторите попытку." }));
+      }
+    });
+  }, [router]);
+  useEffect(() => { void prepare(); return () => preparationRun.current?.abort(); }, [prepare]);
+  const finish = useCallback((result: "completed" | "skipped" = "skipped") => {
+    preparationRun.current?.abort(); preparationRun.current = null;
+    setPreparation(null); setStep(null); setPosition(null);
+    void onFinish(result); router.replace(returnTo.current, { scroll: true });
+  }, [router, onFinish]);
   useEffect(() => {
     const element = dialog.current;
     if (!isOpen || !element) return;
@@ -148,7 +97,7 @@ export function OnboardingProvider({ userId, children, deferAutomatic = false }:
         const unavailable = [...excluded, steps[step].target];
         setExcluded(unavailable);
         const next = nextTourIndex(steps, step, 1, unavailable);
-        if (next === null) finish(); else move(next);
+        if (next === null) finish("completed"); else move(next);
         return;
       }
       const visible = window.visualViewport;
@@ -247,43 +196,24 @@ export function OnboardingProvider({ userId, children, deferAutomatic = false }:
   const nextStep = step === null ? null : nextTourIndex(steps, step, 1, excluded);
   const ready = position !== null && pathname === destination;
   useEffect(() => { if (ready) heading.current?.focus({ preventScroll: true }); }, [ready, step]);
-  return <Context value={{ start, activeTarget: current?.target ?? null, preparing: preparation !== null }}><span hidden data-app-loading={issues.loading || messages.loading || utilities.loading} />{children}{isOpen && <dialog ref={dialog} className={styles.overlay} aria-labelledby={preparation ? "preparation-title" : "tour-title"} aria-describedby={preparation ? undefined : "tour-description"} onCancel={event => { event.preventDefault(); finish(); }}>
+  useEffect(() => { onStateChange(current?.target ?? null, preparation !== null); }, [current, preparation, onStateChange]);
+  return isOpen ? <dialog ref={dialog} className={styles.overlay} data-motion="none" aria-labelledby={preparation ? "preparation-title" : "tour-title"} aria-describedby={preparation ? undefined : "tour-description"} onCancel={event => { event.preventDefault(); finish(); }}>
     {preparation ? <StartupScreen percent={preparation.percent} error={preparation.error}
       complete={preparation.percent === 100 && !preparation.error}
       status={preparation.percent === 100 ? "Всё готово" : `Загрузка · ${Math.round(preparation.percent)}%`}
-      actions={preparation.error ? <><button type="button" onClick={() => void prepare(guideAfterPreparation.current)}>Попробовать снова</button><button type="button" onClick={finish}>Открыть приложение без подготовки</button></> : undefined}
+      actions={preparation.error ? <><button type="button" onClick={() => { setPreparation({ percent: 0 }); void prepare(); }}>Попробовать снова</button><button type="button" onClick={() => finish()}>Открыть приложение без подготовки</button></> : undefined}
     /> : current && <>
     {position ? <div aria-hidden="true" className={styles.spot} data-tour-spot={current.target} style={position.spot} /> : <div className={styles.shade} />}
     <div key={current.target} className={styles.panel} data-ready={ready} data-guide={current.guide} style={position?.card}>
       <Zhorik pose={current.pose} mirrored={current.side === "right" && current.pose === "point"} className={`${styles.guide} ${current.side === "right" ? styles.guideRight : ""}`} />
     <section ref={card} className={styles.card}>
-      <div className={styles.top}><span>Подсказка {visibleIndex + 1} из {visibleSteps.length}</span><button type="button" onClick={finish} aria-label="Закрыть обучение" title="Пропустить обучение"><Icon name="close" size={17} /></button></div>
+      <div className={styles.top}><span>Подсказка {visibleIndex + 1} из {visibleSteps.length}</span><button type="button" onClick={() => finish()} aria-label="Закрыть обучение" title="Пропустить обучение"><Icon name="close" size={17} /></button></div>
       <div className={styles.segments} role="progressbar" aria-valuemin={1} aria-valuemax={visibleSteps.length} aria-valuenow={visibleIndex + 1} aria-label={`Шаг ${visibleIndex + 1} из ${visibleSteps.length}`}>{visibleSteps.map((item, index) => <span key={item.target} data-filled={index <= visibleIndex || undefined} />)}</div>
       <h2 id="tour-title" tabIndex={-1} ref={heading}>{current.title}</h2>
       <p id="tour-description">{current.text}</p>
-      <footer><button type="button" className={styles.back} onClick={finish}>Пропустить</button><div>{previousStep !== null && <button type="button" className={styles.back} onClick={() => move(previousStep!)} aria-label="Предыдущая подсказка"><Icon name="arrow" size={16} style={{ transform: "rotate(180deg)" }} /></button>}<button type="button" disabled={!ready} className={styles.next} onClick={() => nextStep === null ? finish() : move(nextStep)}>{nextStep === null ? "Готово" : "Далее"}<Icon name="arrow" size={15} /></button></div></footer>
+      <footer><button type="button" className={styles.back} onClick={() => finish()}>Пропустить</button><div>{previousStep !== null && <button type="button" className={styles.back} onClick={() => move(previousStep!)} aria-label="Предыдущая подсказка"><Icon name="arrow" size={16} style={{ transform: "rotate(180deg)" }} /></button>}<button type="button" disabled={!ready} className={styles.next} onClick={() => nextStep === null ? finish("completed") : move(nextStep)}>{nextStep === null ? "Готово" : "Далее"}<Icon name="arrow" size={15} /></button></div></footer>
     </section>
     </div>
     </>}
-  </dialog>}</Context>;
-}
-
-function finishPreparation(signal: AbortSignal) {
-  signal.throwIfAborted();
-  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return Promise.resolve();
-  return new Promise<void>((resolve, reject) => {
-    const abort = () => { window.clearTimeout(timer); reject(new DOMException("Подготовка отменена", "AbortError")); };
-    const timer = window.setTimeout(() => { signal.removeEventListener("abort", abort); resolve(); }, 500);
-    signal.addEventListener("abort", abort, { once: true });
-  });
-}
-
-async function prepareGuideImages(signal: AbortSignal) {
-  await Promise.all(["point", "rest", "open", "peek", "hanging"].map(async name => {
-    signal.throwIfAborted();
-    const image = new window.Image();
-    image.src = `/images/zhorik/${name}.png`;
-    try { await image.decode(); } catch { throw new Error("Не удалось загрузить иллюстрации обучения. Повторите попытку."); }
-    signal.throwIfAborted();
-  }));
+  </dialog> : null;
 }

@@ -1,12 +1,13 @@
 "use client";
 import Image from "next/image";
+import { elevationArtwork } from "@/shared/ui/artwork-assets";
 import { floorCount, type House, type HouseLocation } from "../model/house";
 import styles from "./house-elevation.module.css";
 
 export function HouseElevation({ house, selected, onSelect, problemPlaces = [] }: { house: House; selected: HouseLocation; onSelect: (place: HouseLocation) => void; problemPlaces?: readonly HouseLocation[] }) {
   return <div className={styles.viewport} role="region" aria-label="Схема дома: подъезды и этажи">
     <div className={styles.landscape} aria-hidden="true">
-      <Image src="/images/zhorik/house-landscape.png" alt="" fill sizes="440px" unoptimized loading="eager" />
+      <Image src={elevationArtwork.landscape} alt="" fill sizes="440px" unoptimized loading="eager" />
     </div>
     <div className={styles.building}>
       <div className={styles.crown} aria-hidden="true" />
@@ -16,7 +17,7 @@ export function HouseElevation({ house, selected, onSelect, problemPlaces = [] }
         return <button key={floor} className={styles.floor} type="button" data-ground={floor === 1 || undefined} title={`Подъезд ${selected.entrance} · этаж ${floor} · ${count} кв.`} aria-label={`Подъезд ${selected.entrance}, этаж ${floor}${problem ? ", есть обращение" : ""}`} aria-pressed={selected.floor === floor} onClick={() => onSelect({ houseId: house.id, entrance: selected.entrance, floor, zone: "corridor" })}>
           <span className={styles.windows} aria-hidden="true">
             {Array.from({ length: Math.min(6, Math.max(2, count)) }, (_, index) => <i key={index}>
-              {floor === house.floors && index === 0 && <Image className={styles.mascot} src="/images/zhorik/peek.png" alt="" width={40} height={40} unoptimized loading="eager" />}
+              {floor === house.floors && index === 0 && <Image className={styles.mascot} src={elevationArtwork.peek} alt="" width={40} height={40} unoptimized loading="eager" />}
             </i>)}
           </span>
           {floor === 1 && <span className={styles.door} aria-hidden="true"><i /><small>{selected.entrance}</small></span>}

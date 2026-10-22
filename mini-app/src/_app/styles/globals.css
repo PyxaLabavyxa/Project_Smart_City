@@ -16,19 +16,18 @@ button { cursor: pointer; }
 button:disabled { opacity: .55; cursor: not-allowed; }
 [aria-disabled="true"] { opacity: .55; cursor: not-allowed; }
 body:has(dialog[open]) { overflow: hidden; }
+[hidden] { display:none!important; }
 dialog { overscroll-behavior: contain; }
 :root { --ease-out:cubic-bezier(.23,1,.32,1); --motion-press:120ms; --motion-panel:160ms; --motion-dialog:200ms; }
 @media(prefers-reduced-motion:no-preference) {
   :root:not([data-motion-input="keyboard"]) button:not(:disabled) { transition:scale var(--motion-press) var(--ease-out),background-color 150ms ease,border-color 150ms ease; }
   :root:not([data-motion-input="keyboard"]) button:active:not(:disabled):not([aria-disabled="true"]) { scale:.98; }
-  :root:not([data-motion-input="keyboard"]) dialog[open], :root:not([data-motion-input="keyboard"]) dialog[open]::backdrop { animation:dialog-appear var(--motion-dialog) var(--ease-out); }
   :root:not([data-motion-input="keyboard"]) [data-motion-panel] { transition:opacity var(--motion-panel) var(--ease-out); }
   @starting-style { :root:not([data-motion-input="keyboard"]) [data-motion-panel] { opacity:0; } }
   :root:not([data-motion-input="keyboard"]) ::picker(select) { transition:opacity var(--motion-panel) var(--ease-out); }
   @starting-style { :root:not([data-motion-input="keyboard"]) ::picker(select) { opacity:0; } }
 }
 :root[data-motion-input="keyboard"] dialog[open] { animation:none; }
-@keyframes dialog-appear { from { opacity:0; } to { opacity:1; } }
 :where(input:not([type="radio"]):not([type="checkbox"])), select, textarea {
   min-width: 0; max-width: 100%; min-height: var(--control-height);
   padding: 12px 14px; border: 1px solid var(--color-line); border-radius: var(--radius-input);
@@ -88,4 +87,40 @@ select:not([multiple]):disabled { opacity:.55; cursor:not-allowed; }
   select:not([multiple]) option:disabled { color:var(--color-muted); cursor:not-allowed; }
   select:not([multiple]) option::checkmark { order:1; margin-inline-start:auto; color:var(--color-action); }
   @media(hover:hover) { select:not([multiple]) option:hover:not(:disabled) { background:var(--color-soft); } }
+}
+.onboarding-sync-error { display:block; width:100%; padding:12px; border:0; background:var(--color-soft); color:var(--color-ink); font:inherit; font-size:14px; }
+@supports (transition-behavior:allow-discrete) {
+  @media(prefers-reduced-motion:no-preference) {
+    :root:not([data-motion-input="keyboard"]) dialog:not([data-motion="none"]) {
+      opacity:0; transform:translateY(8px) scale(.98);
+      transition:opacity 150ms var(--ease-out),transform 150ms var(--ease-out),display 150ms allow-discrete,overlay 150ms allow-discrete;
+    }
+    :root:not([data-motion-input="keyboard"]) dialog:not([data-motion="none"])[open] {
+      opacity:1; transform:none; transition-duration:200ms;
+    }
+    :root:not([data-motion-input="keyboard"]) dialog[data-motion="sheet"] { transform:translateY(8px); }
+    :root:not([data-motion-input="keyboard"]) dialog[data-motion="sheet"][open] { transform:none; }
+    :root:not([data-motion-input="keyboard"]) dialog:not([data-motion="none"])::backdrop {
+      opacity:0; transition:opacity 150ms var(--ease-out),display 150ms allow-discrete,overlay 150ms allow-discrete;
+    }
+    :root:not([data-motion-input="keyboard"]) dialog:not([data-motion="none"])[open]::backdrop { opacity:1; transition-duration:200ms; }
+    :root:not([data-motion-input="keyboard"]) [data-motion-panel] { opacity:1; transform:none; transition:opacity 160ms var(--ease-out),transform 160ms var(--ease-out),display 160ms allow-discrete; }
+    :root:not([data-motion-input="keyboard"]) [data-motion-panel][hidden] { opacity:0; transform:translateY(-4px); }
+    @starting-style {
+      :root:not([data-motion-input="keyboard"]) dialog:not([data-motion="none"])[open] { opacity:0; transform:translateY(8px) scale(.98); }
+      :root:not([data-motion-input="keyboard"]) dialog[data-motion="sheet"][open] { transform:translateY(8px); }
+      :root:not([data-motion-input="keyboard"]) dialog:not([data-motion="none"])[open]::backdrop { opacity:0; }
+      :root:not([data-motion-input="keyboard"]) [data-motion-panel]:not([hidden]) { opacity:0; transform:translateY(-4px); }
+    }
+  }
+}
+
+dialog:not([open]) { pointer-events:none; }
+
+@supports(appearance:base-select) and (transition-behavior:allow-discrete) {
+  @media(prefers-reduced-motion:no-preference) {
+    :root:not([data-motion-input="keyboard"]) select::picker(select) { opacity:0; transition:opacity 160ms var(--ease-out),display 160ms allow-discrete,overlay 160ms allow-discrete; }
+    :root:not([data-motion-input="keyboard"]) select:open::picker(select) { opacity:1; }
+    @starting-style { :root:not([data-motion-input="keyboard"]) select:open::picker(select) { opacity:0; } }
+  }
 }

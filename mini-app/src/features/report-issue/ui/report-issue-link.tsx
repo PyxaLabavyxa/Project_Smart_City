@@ -4,7 +4,7 @@ import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { useHouseSelection, type HouseLocation } from "@/entities/house";
 import { useIssues } from "@/entities/issue";
-import { useOnboarding } from "@/features/onboarding/onboarding";
+import { useOnboarding } from "@/features/onboarding/onboarding-context";
 import { BrandWordmark } from "@/shared/ui/brand-mark";
 import { Icon } from "@/shared/ui/icon";
 import { ReportLocationPicker } from "./report-location-picker";
@@ -34,7 +34,7 @@ export function ReportIssueLink() {
       setPlace({ houseId: house.id, entrance: selected.entrance, floor: selected.floor, zone: "corridor" });
       if (!dialog.current?.open) dialog.current?.showModal();
     }}><Icon name="plus" />Создать обращение</button>
-    {portal && createPortal(<dialog ref={dialog} className={styles.sheet} data-tour-preview={activeTarget === "issue-location" || undefined} aria-labelledby="create-issue-title" onClick={event => {
+    {portal && createPortal(<dialog data-motion="sheet" ref={dialog} className={styles.sheet} data-tour-preview={activeTarget === "issue-location" || undefined} aria-labelledby="create-issue-title" onClick={event => {
       if (event.target !== event.currentTarget) return;
       const r = event.currentTarget.getBoundingClientRect();
       if (event.clientX < r.left || event.clientX > r.right || event.clientY < r.top || event.clientY > r.bottom) dialog.current?.close();

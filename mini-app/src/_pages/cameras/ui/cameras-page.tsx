@@ -12,7 +12,7 @@ import styles from "./cameras.module.css";
 import { CameraPreview } from "./camera-preview";
 import { Icon } from "@/shared/ui/icon";
 import { RefreshButton } from "@/shared/ui/refresh-button";
-import { useOnboarding } from "@/features/onboarding/onboarding";
+import { useOnboarding } from "@/features/onboarding/onboarding-context";
 import { cameraVisibilityLabel, filterCameras, type CameraFilters } from "../model/camera";
 
 const emptyFilters: CameraFilters = { type: "all", entrance: "", floor: "", zone: "" };
@@ -46,7 +46,7 @@ function LoadedCamerasPage() {
       </div>
       <button type="button" className={styles.resetFilters} onClick={() => setFilters(emptyFilters)}>Сбросить фильтры</button>
     </fieldset>
-    <RequestState {...state} loading={state.loading && !state.data} />
+    <RequestState {...state} loading={state.loading && !state.data} page />
     <ul className={styles.list} aria-label="Камеры дома" aria-busy={state.loading}>{cameras.map(camera => <li key={camera.id}>
       <Link data-tour="camera-card" href={`/cameras/${camera.id}`} className={styles.camera}>
         <CameraPreview camera={camera} compact />
@@ -70,7 +70,7 @@ function LoadedCameraDetailsPage({ id }: { id: string }) {
   const { updateDraft } = useIssues();
   const camera = state.data?.find(item => item.id === id);
   return <SectionPage title={camera?.name ?? "Камера"} description={`${house.address.replace(/^г\.\s*Казань,?\s*ул\.\s*/, "")}${camera?.note ? ` · ${camera.note}` : ""}`} backHref="/cameras" backLabel="Все камеры">
-    <RequestState {...state} loading={state.loading && !state.data} />
+    <RequestState {...state} loading={state.loading && !state.data} page />
     {camera && <><aside className={styles.accessNotice} aria-label="Доступ к камере"><strong>{cameraVisibilityLabel(camera)}</strong>{camera.place && <p>{formatLocation(camera.place)}</p>}{camera.visibility === "private" && <p>Эта камера доступна только вам.</p>}{camera.moderationStatus === "pending" && <p>Заявка отправлена в УК. Пока камера видна только вам. После одобрения её смогут смотреть жители дома.</p>}{camera.moderationStatus === "rejected" && <p>Камеру видите только вы. Причина отклонения: {camera.moderationReason}</p>}</aside><div className={styles.detail}><CameraPreview key={camera.id} camera={camera} /><aside className={styles.about}><Link data-tour="camera-report" href={`/issues/new?from=camera&camera=${encodeURIComponent(camera.id)}`} onNavigate={() => {
       const context = cameraIssueContext(camera, house);
       if (context) {

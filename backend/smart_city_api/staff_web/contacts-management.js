@@ -195,6 +195,7 @@ contactHousePicker.addEventListener("beforetoggle", event => {
   const rect = $("contact-house-trigger").getBoundingClientRect();
   const below = innerHeight - rect.bottom - 14;
   const above = below < 160 && rect.top > below;
+  contactHousePicker.dataset.side = above ? "above" : "below";
   const height = Math.min(360, above ? rect.top - 14 : below);
   contactHousePicker.style.width = `${Math.min(rect.width, innerWidth - 16)}px`;
   contactHousePicker.style.left = `${Math.max(8, Math.min(rect.left, innerWidth - rect.width - 8))}px`;

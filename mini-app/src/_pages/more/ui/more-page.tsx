@@ -5,7 +5,7 @@ import { BrandWordmark } from "@/shared/ui/brand-mark";
 import { Zhorik } from "@/shared/ui/zhorik";
 import { Icon } from "@/shared/ui/icon";
 import { useHouseSelection } from "@/entities/house";
-import { useOnboarding } from "@/features/onboarding/onboarding";
+import { useOnboarding } from "@/features/onboarding/onboarding-context";
 import styles from "./more-page.module.css";
 const items = [
  { href:"/settings", icon:"settings", title:"Настройки", description:"Тема и уведомления" },

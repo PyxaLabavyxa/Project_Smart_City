@@ -3,10 +3,11 @@ import type { Metadata, Viewport } from "next";
 import { ApplicationShell } from "@/widgets/application-shell";
 import "@/shared/styles";
 import "../styles/globals.css";
+import { appIcon } from "@/shared/ui/artwork-assets";
 
 export const metadata: Metadata = {
   title: "Домовед",
-  icons: { icon: "/images/brand/app-icon.png", apple: "/images/brand/app-icon.png" },
+  icons: { icon: appIcon.src, apple: "/images/brand/app-icon.png" },
   description: "Ваш дом, обращения и связь с соседями.",
 };
 

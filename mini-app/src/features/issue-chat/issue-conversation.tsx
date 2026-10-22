@@ -7,7 +7,7 @@ import { useApi } from "@/shared/api/context";
 import { array, number, record } from "@/shared/api/parse";
 import { Icon } from "@/shared/ui/icon";
 import { RefreshButton } from "@/shared/ui/refresh-button";
-import { useOnboarding } from "@/features/onboarding/onboarding";
+import { useOnboarding } from "@/features/onboarding/onboarding-context";
 import { mergeMessages, parseChatMessage, type IssueChatMessage } from "./model";
 import styles from "@/shared/ui/chat-screen.module.css";
 import { useIssues } from "@/entities/issue";

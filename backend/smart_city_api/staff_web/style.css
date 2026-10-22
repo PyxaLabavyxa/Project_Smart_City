@@ -319,9 +319,45 @@ body:has(dialog[open]){overflow:hidden}
 @media(max-width:360px){.confirmation-dialog{padding:20px}.confirmation-actions{flex-direction:column-reverse}}
 :root{--ease-out:cubic-bezier(.23,1,.32,1)}
 @media(prefers-reduced-motion:no-preference){
-  :root:not([data-motion-input="keyboard"]) .confirmation-dialog[open],:root:not([data-motion-input="keyboard"]) .confirmation-dialog[open]::backdrop{animation:confirmation-appear 200ms var(--ease-out)}
   :root:not([data-motion-input="keyboard"]) button:not(:disabled){transition:scale 120ms var(--ease-out),background-color 160ms ease,border-color 160ms ease,color 160ms ease}
   :root:not([data-motion-input="keyboard"]) button:active:not(:disabled){scale:.98}
 }
-@keyframes confirmation-appear{from{opacity:0}to{opacity:1}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+:root{--motion-exit:150ms}
+@media(prefers-reduced-motion:no-preference){
+  :root:not([data-motion-input="keyboard"]) #workspace>.main>.content:not([hidden]){opacity:1;transition:opacity 160ms var(--ease-out)}
+  @starting-style{:root:not([data-motion-input="keyboard"]) #workspace>.main>.content:not([hidden]){opacity:0}}
+}
+@supports(transition-behavior:allow-discrete){
+  @media(prefers-reduced-motion:no-preference){
+    :root:not([data-motion-input="keyboard"]) dialog{opacity:0;transform:translateY(8px) scale(.98);transition:opacity 150ms var(--ease-out),transform 150ms var(--ease-out),display 150ms allow-discrete,overlay 150ms allow-discrete}
+    :root:not([data-motion-input="keyboard"]) dialog[open]{opacity:1;transform:none;transition-duration:200ms}
+    :root:not([data-motion-input="keyboard"]) #issue-dialog{transform:translateX(12px)}
+    :root:not([data-motion-input="keyboard"]) #issue-dialog[open]{transform:none}
+    :root:not([data-motion-input="keyboard"]) dialog::backdrop{opacity:0;transition:opacity 150ms var(--ease-out),display 150ms allow-discrete,overlay 150ms allow-discrete}
+    :root:not([data-motion-input="keyboard"]) dialog[open]::backdrop{opacity:1;transition-duration:200ms}
+    :root:not([data-motion-input="keyboard"]) [popover]{opacity:0;transform:scale(.98);transform-origin:top left;transition:opacity 160ms var(--ease-out),transform 160ms var(--ease-out),display 160ms allow-discrete,overlay 160ms allow-discrete}
+    :root:not([data-motion-input="keyboard"]) [popover][data-side="above"]{transform-origin:bottom left}
+    :root:not([data-motion-input="keyboard"]) [popover]:popover-open{opacity:1;transform:none}
+    :root:not([data-motion-input="keyboard"]) .toast{opacity:1;transform:translateX(-50%);transition:opacity 160ms var(--ease-out),transform 160ms var(--ease-out),display 160ms allow-discrete}
+    :root:not([data-motion-input="keyboard"]) .toast[hidden]{opacity:0;transform:translateX(-50%) translateY(5px)}
+    @starting-style{
+      :root:not([data-motion-input="keyboard"]) dialog[open]{opacity:0;transform:translateY(8px) scale(.98)}
+      :root:not([data-motion-input="keyboard"]) #issue-dialog[open]{transform:translateX(12px)}
+      :root:not([data-motion-input="keyboard"]) dialog[open]::backdrop{opacity:0}
+      :root:not([data-motion-input="keyboard"]) [popover]:popover-open{opacity:0;transform:scale(.98)}
+      :root:not([data-motion-input="keyboard"]) .toast:not([hidden]){opacity:0;transform:translateX(-50%) translateY(5px)}
+    }
+  }
+}
+
+
+dialog:not([open]),[popover]:not(:popover-open){pointer-events:none}
+
+@supports(appearance:base-select) and (transition-behavior:allow-discrete){
+  @media(prefers-reduced-motion:no-preference){
+    :root:not([data-motion-input="keyboard"]) select::picker(select){opacity:0;transition:opacity 160ms var(--ease-out),display 160ms allow-discrete,overlay 160ms allow-discrete}
+    :root:not([data-motion-input="keyboard"]) select:open::picker(select){opacity:1}
+    @starting-style{:root:not([data-motion-input="keyboard"]) select:open::picker(select){opacity:0}}
+  }
+}

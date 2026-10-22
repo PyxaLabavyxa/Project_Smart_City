@@ -111,11 +111,20 @@ class User(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     max_user_id: Mapped[int] = mapped_column(BigInteger, unique=True)
     name: Mapped[str] = mapped_column(String(200))
+    onboarding_status: Mapped[str] = mapped_column(
+        String(16), default="not_started", server_default="not_started"
+    )
     bot_dialog_started: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
     notify_personal_messages: Mapped[bool] = mapped_column(Boolean, default=True, server_default=true())
     notify_issue_messages: Mapped[bool] = mapped_column(Boolean, default=True, server_default=true())
     notify_issue_statuses: Mapped[bool] = mapped_column(Boolean, default=True, server_default=true())
     notify_announcements: Mapped[bool] = mapped_column(Boolean, default=True, server_default=true())
+    __table_args__ = (
+        CheckConstraint(
+            "onboarding_status IN ('not_started', 'completed', 'skipped')",
+            name="ck_user_onboarding_status",
+        ),
+    )
 
     apartment_links: Mapped[list["UserApartment"]] = relationship(
         "UserApartment",
