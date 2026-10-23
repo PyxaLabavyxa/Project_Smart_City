@@ -8,15 +8,15 @@
   <title>Кабинет сотрудника · Домовед</title>
   <link rel="icon" href="/staff/assets/domoved-symbol.png" type="image/png">
   <link rel="preload" href="/staff/assets/onest-regular.ttf" as="font" type="font/ttf" crossorigin>
-  <link rel="stylesheet" href="/staff/style.css?v=20261023-mobile-header-2">
+  <link rel="stylesheet" href="/staff/style.css?v=20261023-staff-priority-1">
   <link rel="stylesheet" href="/staff/camera-management.css?v=20261022-camera-contacts-3">
   <link rel="stylesheet" href="/staff/contacts-management.css?v=20261022-contact-patch-1">
   <script src="/staff/confirmation.js?v=20261021-motion-4" defer></script>
-  <script src="/staff/app.js?v=20261023-mobile-header-2" defer></script>
+  <script src="/staff/app.js?v=20261023-staff-priority-1" defer></script>
   <link rel="stylesheet" href="/staff/notification-inbox.css?v=20261022-4">
   <script src="/staff/notification-inbox.js?v=20261022-2" defer></script>
   <link rel="stylesheet" href="/staff/staff-report.css?v=20261022-motion-1">
-  <script src="/staff/staff-report.js?v=20261022-2" defer></script>
+  <script src="/staff/staff-report.js?v=20261023-priority-1" defer></script>
   <script src="/staff/contacts-management.js?v=20261022-motion-1" defer></script>
   <script src="/staff/camera-management.js?v=20261022-camera-contacts-3" defer></script>
   <link rel="stylesheet" href="/staff/chat-management.css?v=20261022-works-3">
@@ -244,7 +244,7 @@
           <fieldset id="report-scope" class="report-segments"><legend class="sr-only">Место обращения</legend><label><input type="radio" name="report-scope" value="apartment"><span>Квартира</span></label><label><input type="radio" name="report-scope" value="entrance" checked><span>Подъезд</span></label><label><input type="radio" name="report-scope" value="courtyard"><span>Двор</span></label></fieldset>
           <div class="report-grid report-location-grid"><label id="report-zone-field" for="report-zone">Место<select id="report-zone"></select></label><label id="report-location-apartment-field" for="report-location-apartment" hidden>Квартира<select id="report-location-apartment" disabled></select></label><label for="report-entrance">Подъезд<select id="report-entrance"></select></label><label for="report-floor">Этаж<select id="report-floor"></select></label></div>
         </div></fieldset>
-        <fieldset class="report-section camera-form-section"><legend><span data-icon="inbox" aria-hidden="true"></span>Обращение</legend><div class="report-section-fields"><label for="report-category">Категория<select id="report-category" required></select></label><label for="report-title">Заголовок<input id="report-title" maxlength="300" required placeholder="Кратко опишите проблему"></label><label for="report-description">Описание<textarea id="report-description" maxlength="2000" rows="4" required placeholder="Что произошло и что нужно проверить"></textarea><span id="report-description-count" class="form-help">0 / 2000</span></label></div></fieldset>
+        <fieldset class="report-section camera-form-section"><legend><span data-icon="inbox" aria-hidden="true"></span>Обращение</legend><div class="report-section-fields"><div class="report-grid"><label for="report-category">Категория<select id="report-category" required></select></label><label for="report-priority">Приоритет<select id="report-priority" required><option value="1">Высокий</option><option value="2" selected>Средний</option><option value="3">Низкий</option></select></label></div><p class="form-help">Высокий — опасность или авария. Средний — неисправность. Низкий — улучшения и небольшие неудобства.</p><label for="report-title">Заголовок<input id="report-title" maxlength="300" required placeholder="Кратко опишите проблему"></label><label for="report-description">Описание<textarea id="report-description" maxlength="2000" rows="4" required placeholder="Что произошло и что нужно проверить"></textarea><span id="report-description-count" class="form-help">0 / 2000</span></label></div></fieldset>
       </fieldset>
       <p id="report-form-status" class="report-form-status" role="status"></p><p id="report-form-error" class="error" role="alert" hidden></p>
       <footer class="report-footer"><button id="cancel-staff-report" type="button" class="secondary">Отмена</button><button id="submit-staff-report" type="submit" class="primary">Создать обращение</button></footer>

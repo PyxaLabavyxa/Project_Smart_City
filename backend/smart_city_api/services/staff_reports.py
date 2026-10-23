@@ -85,7 +85,11 @@ async def report_residents(session, staff_id, house_id, query, page):
 
 async def create_staff_issue(session, staff_id, data: StaffCreateIssue):
     house = await report_house(session, staff_id, data.house_id)
-    fingerprint = hashlib.sha256(data.model_dump_json(exclude={"request_id"}).encode()).hexdigest()
+    # Preserve retry hashes made before staff intake supported explicit priority.
+    excluded = (
+        {"request_id", "priority"} if data.priority == IssuePriority.MEDIUM else {"request_id"}
+    )
+    fingerprint = hashlib.sha256(data.model_dump_json(exclude=excluded).encode()).hexdigest()
     prior_query = select(Issue).where(
         Issue.created_by_staff_id == staff_id, Issue.staff_request_id == str(data.request_id)
     )
@@ -150,7 +154,7 @@ async def create_staff_issue(session, staff_id, data: StaffCreateIssue):
         title=data.title,
         description=data.description,
         category=data.category,
-        priority=IssuePriority.MEDIUM,
+        priority=data.priority,
         status=IssueStatus.NEW,
         **data.place.model_dump(),
     )

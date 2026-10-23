@@ -3325,6 +3325,64 @@
         }
       }
     },
+    "/api/v1/staff/issues/{issue_id}/priority": {
+      "post": {
+        "tags": [
+          "Staff"
+        ],
+        "summary": "Update Priority",
+        "description": "Изменить приоритет в назначенном доме, сохранив остальные данные обращения.",
+        "operationId": "update_priority_api_v1_staff_issues__issue_id__priority_post",
+        "security": [
+          {
+            "StaffSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "issue_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Issue Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PriorityInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PriorityOutput"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/staff/issues/{issue_id}/reject": {
       "post": {
         "tags": [
@@ -7162,6 +7220,40 @@
         ],
         "title": "PresenceInput"
       },
+      "PriorityInput": {
+        "properties": {
+          "priority": {
+            "$ref": "#/components/schemas/IssuePriority"
+          },
+          "expected_priority": {
+            "$ref": "#/components/schemas/IssuePriority"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "priority",
+          "expected_priority"
+        ],
+        "title": "PriorityInput"
+      },
+      "PriorityOutput": {
+        "properties": {
+          "priority": {
+            "$ref": "#/components/schemas/IssuePriority"
+          },
+          "changed": {
+            "type": "boolean",
+            "title": "Changed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "priority",
+          "changed"
+        ],
+        "title": "PriorityOutput"
+      },
       "PrivateAnnouncementDeliveryOutput": {
         "properties": {
           "user_id": {
@@ -7946,6 +8038,10 @@
             "type": "string",
             "format": "uuid",
             "title": "Request Id"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/IssuePriority",
+            "default": 2
           },
           "house_id": {
             "type": "integer",

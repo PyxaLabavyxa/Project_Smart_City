@@ -30,6 +30,8 @@ from smart_city_api.schemas.staff import (
     MessageInput,
     MessageOutput,
     PhotoOutput,
+    PriorityInput,
+    PriorityOutput,
     RejectInput,
     StaffIssuePage,
     StatusInput,
@@ -56,6 +58,33 @@ async def accessible_issue(
     if issue is None:
         raise HTTPException(404, "Обращение не найдено или недоступно")
     return issue
+
+
+async def update_priority(
+    session: AsyncSession, staff_id: int, issue_id: int, body: PriorityInput
+) -> PriorityOutput:
+    issue = await accessible_issue(session, staff_id, issue_id, lock=True)
+    if issue.priority == body.priority:
+        return PriorityOutput(priority=issue.priority, changed=False)
+    if issue.priority != body.expected_priority:
+        raise HTTPException(409, "Приоритет уже изменён другим сотрудником. Обновите обращение")
+    changed = await session.execute(
+        update(Issue)
+        .where(
+            Issue.id == issue.id,
+            Issue.house_id.in_(house_scope(staff_id)),
+            Issue.priority == body.expected_priority,
+            Issue.rejected_at.is_(None),
+            Issue.deleted_at.is_(None),
+        )
+        .values(priority=body.priority)
+    )
+    if changed.rowcount != 1:
+        await session.rollback()
+        raise HTTPException(409, "Обращение уже изменено. Обновите карточку")
+    # Priority is dispatcher metadata: do not add a status event or notify the resident.
+    await session.commit()
+    return PriorityOutput(priority=body.priority, changed=True)
 
 
 def row_query():

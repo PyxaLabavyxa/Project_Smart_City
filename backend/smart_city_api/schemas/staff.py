@@ -55,6 +55,25 @@ class RejectInput(BaseModel):
     request_id: UUID
 
 
+def validate_priority(value):
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise ValueError("Приоритет должен быть целым числом 1, 2 или 3")
+    return value
+
+
+class PriorityInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    priority: IssuePriority
+    expected_priority: IssuePriority
+
+    _validate = field_validator("priority", "expected_priority", mode="before")(validate_priority)
+
+
+class PriorityOutput(BaseModel):
+    priority: IssuePriority
+    changed: bool
+
+
 class MessageInput(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
     text: str = Field(min_length=1, max_length=1500)
@@ -133,6 +152,8 @@ class ActionOutput(BaseModel):
 
 
 class StaffCreateIssue(CreateIssue):
+    priority: IssuePriority = IssuePriority.MEDIUM
+    _validate_priority = field_validator("priority", mode="before")(validate_priority)
     house_id: int = Field(gt=0)
     resident_id: int | None = Field(default=None, gt=0)
     reporter_name: str | None = Field(default=None, min_length=1, max_length=200)

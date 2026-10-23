@@ -212,6 +212,7 @@ function renderConversation(detail) {
   $("delivery-summary").textContent = pending ? `Уведомлений в очереди: ${pending}. Бот доставит их автоматически. Прочитанные в чате сообщения не дублируются.` : "Ответы и уточнения сохраняются в чате обращения.";
   $("history").innerHTML = detail.history.length ? detail.history.map((event) => `<li>${badge(event.status)}<time>${esc(date(event.created_at))}</time></li>`).join("") : `<li>${badge(detail.status)}<span class="muted">История изменений пока пуста</span></li>`;
   $("live-status").innerHTML = badge(detail.status);
+  if (state.detail && detail.priority !== state.detail.priority) showError("priority-error", "Приоритет изменил другой сотрудник. Обновите обращение кнопкой вверху.");
   if (state.detail && detail.status !== state.detail.status) showError("detail-error", "Статус изменил другой сотрудник. Нажмите «Обновить обращение» вверху, чтобы загрузить изменения.");
 }
 async function openDetail(id) {
@@ -226,8 +227,9 @@ async function openDetail(id) {
     const place = [detail.address, detail.entrance && `подъезд ${detail.entrance}`, detail.floor != null && `этаж ${detail.floor}`, detail.apartment != null && `кв. ${detail.apartment}`, detail.zone && (zones[detail.zone] || detail.zone)].filter(Boolean).join(" · ");
     $("detail-content").innerHTML = `<div class="detail-main">
       <div id="live-status">${badge(detail.status)}</div><h2 id="detail-title">${esc(detail.title)}</h2><p class="detail-place">${esc(place)}</p>
-      <div class="detail-meta"><span>${esc(detail.author)}</span><span>·</span><time>${esc(date(detail.created_at))}</time><span class="priority p${detail.priority}">${esc(priorities[detail.priority])} приоритет</span></div>
+      <div class="detail-meta"><span>${esc(detail.author)}</span><span>·</span><time>${esc(date(detail.created_at))}</time><span id="detail-priority-badge" class="priority p${detail.priority}">${esc(priorities[detail.priority])} приоритет</span></div>
       <section class="section"><h3>Что произошло</h3><p class="description">${esc(detail.description)}</p>${detail.photos.length ? `<div class="photos">${detail.photos.map((photo, index) => `<button class="photo-thumb" data-photo="${photo.id}" aria-label="Открыть фото ${index + 1}"><img src="${esc(photo.url)}" alt="Фото ${index + 1}" loading="lazy"></button>`).join("")}</div><p class="form-help">Нажмите на фото, чтобы рассмотреть его</p>` : '<p class="form-help">Житель не прикрепил фотографии</p>'}</section>
+      <section class="section"><h3>Приоритет обращения</h3><form id="priority-form" class="status-form"><label class="sr-only" for="priority-select">Приоритет обращения</label><select id="priority-select">${Object.entries(priorities).map(([value, label]) => `<option value="${value}"${Number(value) === detail.priority ? " selected" : ""}>${label}</option>`).join("")}</select><button class="primary" type="submit">Сохранить приоритет</button></form><p class="form-help">Высокий — опасность или авария. Средний — неисправность. Низкий — улучшения и небольшие неудобства.</p><p id="priority-error" class="error detail-error" role="alert" hidden></p></section>
       <section class="section"><h3>Статус обращения</h3><form id="status-form" class="status-form"><label class="sr-only" for="status-select">Новый статус</label><select id="status-select">${Object.entries(statuses).map(([value, label]) => `<option value="${value}"${value === detail.status ? " selected" : ""}>${label}</option>`).join("")}</select><button class="primary" type="submit">Сохранить статус</button></form><p class="form-help">Автор получит уведомление в боте. Отмечайте обращение решённым после устранения проблемы.</p><p id="detail-error" class="error detail-error" role="alert" hidden></p><div id="delivery-summary" class="delivery-summary"></div></section>
       <section class="section"><h3>Чат с жителем</h3><div id="conversation" class="conversation" aria-live="polite"></div><form id="message-form" class="message-form"><label for="message-text">Сообщение жителю</label><textarea id="message-text" maxlength="1500" placeholder="Здравствуйте! Подскажите, пожалуйста, где именно находится неисправность?"></textarea><label class="chat-photo-label">${icon("photo")}<span>Прикрепить фотографии</span><input id="message-photos" class="sr-only" type="file" accept="image/jpeg,image/png,image/webp" aria-describedby="chat-photo-hint" multiple></label><small id="chat-photo-hint">До 10 фото · JPG, PNG, WebP · до 10 МБ каждое</small><div class="composer-footer"><span id="message-count">0 / 1500</span><button class="primary" type="submit">${icon("send")} Отправить в чат</button></div></form><p id="message-error" class="error detail-error" role="alert" hidden></p><p class="form-help">Сообщение появится в чате обращения. Если житель не читает чат, бот уведомит его. Ответ жителя появится здесь автоматически. Показаны последние 200 сообщений.</p></section>
       <section class="section"><h3>История статусов</h3><ol id="history" class="timeline"></ol></section>
@@ -248,6 +250,7 @@ async function openDetail(id) {
       $("status-form").nextElementSibling.textContent = "История статусов сохраняется в обращении.";
       $("reject-form").querySelector(".form-help").textContent = "Обращение исчезнет из списка. Причина сохранится в истории.";
     }
+    $("priority-form").addEventListener("submit", savePriority);
     $("status-form").addEventListener("submit", saveStatus);
     $("reject-form").addEventListener("submit", rejectIssue);
     $("message-form").addEventListener("submit", sendMessage);
@@ -260,6 +263,22 @@ function setBusy(value) {
   state.busy = value;
   $("detail-content").querySelectorAll("form button, form select, form textarea, form input").forEach((node) => { node.disabled = value; });
   $("refresh-detail").disabled = value;
+}
+async function savePriority(event) {
+  event.preventDefault(); if (state.busy || !state.detail) return;
+  const detail = state.detail, priority = Number($("priority-select").value);
+  if (priority === detail.priority) { toast("Этот приоритет уже установлен"); return; }
+  setBusy(true); showError("priority-error", "");
+  try {
+    const result = await api(`/issues/${detail.id}/priority`, { method: "POST", body: JSON.stringify({ priority, expected_priority: detail.priority }) });
+    detail.priority = result.priority;
+    $("priority-select").value = String(result.priority);
+    const badge = $("detail-priority-badge"); badge.className = `priority p${result.priority}`;
+    badge.textContent = `${priorities[result.priority]} приоритет`;
+    toast(result.changed ? "Приоритет сохранён" : "Этот приоритет уже установлен");
+    await loadList();
+  } catch (error) { if ($("priority-error")) showError("priority-error", error.message); }
+  finally { setBusy(false); }
 }
 async function saveStatus(event) {
   event.preventDefault(); if (state.busy || !state.detail) return;

@@ -182,7 +182,7 @@ $("staff-report-form").addEventListener("submit", async event => {
     house_id: Number($("report-house").value), resident_id: manual ? null : reportPerson.id,
     reporter_name: manual ? $("report-person-name").value.trim() : null,
     reporter_phone: phone || null, reporter_apartment_id: Number($("report-person-apartment").value) || null,
-    title: $("report-title").value.trim(), description: $("report-description").value.trim(), category: $("report-category").value,
+    title: $("report-title").value.trim(), description: $("report-description").value.trim(), category: $("report-category").value, priority: Number($("report-priority").value),
     place: { zone: scope === "apartment" ? "apartment" : $("report-zone").value, entrance: scope === "courtyard" ? null : Number($("report-entrance").value), floor: scope === "courtyard" ? null : Number($("report-floor").value), apartment_id: scope === "apartment" ? Number($("report-location-apartment").value) : null },
   };
   const key = JSON.stringify(payload), generation = reportGeneration;

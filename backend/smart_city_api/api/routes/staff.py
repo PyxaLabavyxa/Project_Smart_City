@@ -48,6 +48,8 @@ from smart_city_api.schemas.staff import (
     IssueDetail,
     LoginInput,
     MessageInput,
+    PriorityInput,
+    PriorityOutput,
     ProfileOutput,
     RejectInput,
     ReportResidentPage,
@@ -285,6 +287,12 @@ async def create_staff_issue(data: StaffCreateIssue, session: Session, employee:
 @router.post("/issues/{issue_id}/status", response_model=ActionOutput)
 async def update_status(issue_id: int, body: StatusInput, session: Session, employee: Staff):
     return await service.perform_action(session, employee, issue_id, body)
+
+
+@router.post("/issues/{issue_id}/priority", response_model=PriorityOutput)
+async def update_priority(issue_id: int, body: PriorityInput, session: Session, employee: Staff):
+    """Изменить приоритет в назначенном доме, сохранив остальные данные обращения."""
+    return await service.update_priority(session, employee.id, issue_id, body)
 
 
 @router.post("/issues/{issue_id}/reject", response_model=ActionOutput)
