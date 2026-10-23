@@ -89,6 +89,11 @@ export function resolveLocation(house: House, place: HouseLocation | undefined):
   return validLocation(house, place) ? place : undefined;
 }
 
+export function residentFloorLocation(house: House): HouseLocation {
+  const resident = findApartment(house, house.residentApartment);
+  return { houseId: house.id, entrance: resident?.entrance ?? 1, floor: resident?.floor ?? 1, zone: "corridor" };
+}
+
 export function fallbackLocation(house: House, place: HouseLocation): HouseLocation {
   return resolveLocation(house, place) ?? { houseId: house.id, entrance: Math.max(1, Math.min(house.entrances, place.entrance)), floor: Math.max(1, Math.min(house.floors, place.floor)), zone: "corridor" };
 }
