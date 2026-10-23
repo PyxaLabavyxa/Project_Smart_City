@@ -14,7 +14,6 @@ from chatbot.max_client import MaxBot
 from chatbot.handlers import user_handlers, other_handlers, staff_messages, registration
 from chatbot.handlers import house_chats
 from chatbot.middlewares.private_dialog import PrivateDialogMiddleware, router as private_dialog_router
-from chatbot.keyboards.main_menu import set_main_menu
 from app.ai.client import create_ai_client, create_report_model
 from chatbot.middlewares.ai import AIMiddleware
 from chatbot.middlewares.photos import PhotoMiddleware

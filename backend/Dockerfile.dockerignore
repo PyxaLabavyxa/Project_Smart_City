@@ -13,6 +13,7 @@
 **/.ruff_cache
 data
 certs
+design/
 mini-app
 chatbot
 !mini-app/
