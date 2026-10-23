@@ -14,6 +14,11 @@ import { RequestState } from "@/shared/ui/navigation/request-state";
 import { IssueChatPage } from "@/features/issue-chat/issue-chat-page";
 import { ChatScreen } from "@/shared/ui/chat-screen";
 export function IssueDetailsRoute({ id, view = "details" }: { id: string; view?: "details" | "chat" }) {
+  const { house } = useHouseSelection();
+  const { issues, createdIssueId, dismissCreationNotice } = useIssues();
+  const created = view === "details" && createdIssueId === id
+    ? issues.find(issue => issue.id === id && issue.place?.houseId === house.id) : undefined;
+  if (created) return <IssueCreated issue={created} onOpen={() => { dismissCreationNotice(); window.scrollTo({ top: 0, behavior: "instant" }); }} />;
   return <IssueDetailsLoader key={`${id}:${view}`} id={id} view={view} />;
 }
 

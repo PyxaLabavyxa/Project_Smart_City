@@ -1,0 +1,27 @@
+.mark {
+  --success-size: min(128px, calc(128 * var(--u)));
+  position:relative; display:grid; place-items:center; flex-shrink:0;
+  width:var(--success-size); height:var(--success-size); font-size:var(--success-size);
+  color:var(--color-success); pointer-events:none; isolation:isolate;
+}
+.disc { position:absolute; inset:12%; border-radius:50%; background:var(--color-success-bg); }
+.halo { position:absolute; inset:0; border:1px solid color-mix(in srgb,var(--color-success) 16%,transparent); border-radius:50%; opacity:.6; }
+.tick { position:relative; width:48%; height:48%; }
+.particle { position:absolute; left:50%; top:50%; width:.042em; height:.042em; border-radius:50%; background:currentColor; opacity:0; }
+.particle:nth-of-type(3n) { width:.03em; height:.075em; border-radius:2px; }
+.particle:nth-of-type(even) { background:color-mix(in srgb,var(--color-success) 55%,var(--color-success-bg)); }
+@media(prefers-reduced-motion:no-preference) {
+  .disc { animation:confirm-pop 260ms var(--ease-out) both; }
+  .tick { animation:confirm-tick 200ms var(--ease-out) 90ms both; }
+  .halo { animation:confirm-halo 680ms var(--ease-out) 60ms both; }
+  /* One short decorative burst; it never delays navigation or blocks controls. */
+  .particle { animation:confirm-particle 760ms var(--ease-out) var(--delay) both; }
+}
+@keyframes confirm-pop { from { opacity:0; transform:scale(.94); } 65% { opacity:1; transform:scale(1.04); } to { opacity:1; transform:scale(1); } }
+@keyframes confirm-tick { from { opacity:0; transform:translateY(3px) scale(.94); clip-path:inset(0 100% 0 0); } to { opacity:1; transform:none; clip-path:inset(0); } }
+@keyframes confirm-halo { from { opacity:0; transform:scale(.94); } 25% { opacity:.8; } to { opacity:.6; transform:none; } }
+@keyframes confirm-particle {
+  from { opacity:0; transform:translate(-50%,-50%) scale(.95); }
+  16% { opacity:.9; }
+  to { opacity:0; transform:translate(calc(-50% + var(--x)),calc(-50% + var(--y))) rotate(var(--rotation)) scale(.95); }
+}
