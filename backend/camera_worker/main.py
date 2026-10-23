@@ -5,9 +5,9 @@ import base64
 import hashlib
 import io
 import os
-from contextlib import asynccontextmanager
+from contextlib import aclosing, asynccontextmanager
 from datetime import UTC, datetime
-from urllib.parse import quote, urlsplit, urlunsplit
+from urllib.parse import parse_qsl, quote, urlencode, urlsplit, urlunsplit
 from xml.etree.ElementTree import ParseError
 from xml.sax.saxutils import escape
 
@@ -157,6 +157,27 @@ def input_url(source):
     return urlunsplit(url)
 
 
+def connection_sources(source):
+    yield source
+    if source.source_type != "rtmp" or not source.username:
+        return
+    url = urlsplit(source.source_url)
+    if {key for key, _ in parse_qsl(url.query)} & {"user", "pass"}:
+        return
+    # Keep native RTMP authentication first. MediaMTX and similar servers use
+    # query credentials instead; retry only if no video was produced.
+    query = urlencode({"user": source.username, "pass": source.password.get_secret_value()})
+    query_url = urlunsplit(url._replace(query=url.query + ("&" if url.query else "") + query))
+    yield CameraSource(
+        **{
+            **source.private_dict(),
+            "source_url": query_url,
+            "username": "",
+            "password": "",
+        }
+    )
+
+
 def ffmpeg_args(source, live=False):
     args = [
         "ffmpeg",
@@ -175,6 +196,10 @@ def ffmpeg_args(source, live=False):
         args += ["-rw_timeout", "8000000"]
     if urlsplit(source.source_url).scheme in ("https", "rtsps", "rtmps"):
         args += ["-tls_verify", "1", "-ca_file", "/etc/ssl/certs/ca-certificates.crt"]
+    if source.source_type == "hls":
+        # prepare() already identified the playlist, even when its server uses
+        # an opaque URL and application/octet-stream.
+        args += ["-f", "hls"]
     args += [
         "-i",
         input_url(source),
@@ -211,6 +236,22 @@ async def decoder(source, live=False):
         if process.returncode is None:
             process.kill()
         await process.wait()
+
+
+async def video_chunks(source, live=False):
+    for connection in connection_sources(source):
+        emitted = False
+        async with decoder(connection, live) as process:
+            while chunk := await process.stdout.read(65536):
+                emitted = True
+                yield chunk
+            await process.wait()
+            if process.returncode == 0 and emitted:
+                return
+            if emitted:
+                # Never concatenate a failed partial JPEG/stream with a retry.
+                raise ValueError("Video decoding failed")
+    raise ValueError("No video frame")
 
 
 async def snapshot(source):
@@ -272,23 +313,15 @@ async def frame(source: CameraSource):
                 if source.source_type == "snapshot":
                     data = await snapshot(source)
                 else:
-                    async with decoder(source) as process:
-                        data = await process.stdout.read(MAX_IMAGE + 1)
-                        # read(n) may return a partial frame. Bound the complete output.
-                        while len(data) <= MAX_IMAGE:
-                            chunk = await process.stdout.read(min(65536, MAX_IMAGE + 1 - len(data)))
-                            if not chunk:
-                                break
-                            data += chunk
-                        if len(data) > MAX_IMAGE:
-                            raise ValueError("Frame too large")
-                        await process.wait()
-                        if (
-                            process.returncode
-                            or not data.startswith(b"\xff\xd8")
-                            or not data.endswith(b"\xff\xd9")
-                        ):
-                            raise ValueError("No video frame")
+                    data = bytearray()
+                    async with aclosing(video_chunks(source)) as chunks:
+                        async for chunk in chunks:
+                            data.extend(chunk)
+                            if len(data) > MAX_IMAGE:
+                                raise ValueError("Frame too large")
+                    if not data.startswith(b"\xff\xd8") or not data.endswith(b"\xff\xd9"):
+                        raise ValueError("No video frame")
+                    data = bytes(data)
             return Response(
                 data,
                 media_type="image/jpeg",
@@ -337,10 +370,10 @@ async def live(source: CameraSource):
 
     async def chunks():
         try:
-            async with asyncio.timeout(45), decoder(source, live=True) as process:
-                while chunk := await process.stdout.read(65536):
+            async with asyncio.timeout(45), aclosing(video_chunks(source, live=True)) as video:
+                async for chunk in video:
                     yield chunk
-        except (OSError, TimeoutError):
+        except (OSError, TimeoutError, ValueError):
             return
         finally:
             await lease.__aexit__(None, None, None)
