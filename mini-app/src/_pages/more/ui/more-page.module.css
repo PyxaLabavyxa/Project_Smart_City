@@ -1,4 +1,5 @@
 .content { max-width:760px; margin-inline:auto; }
+.desktopContact { display:none; }
 .menu { list-style:none; margin:0; padding:0; display:grid; gap:0; background:var(--color-surface); border-radius:calc(16 * var(--u)); overflow:hidden; }
 .menu li { min-width:0; }
 .menu li + li { border-top:1px solid var(--color-line); }
@@ -104,4 +105,20 @@
   .companyCard { padding:24px; }
   .infoCard { padding-inline:24px; }
   .infoRow { min-height:68px; }
+}
+@media(min-width:768px) {
+  .page { display:flex; flex-direction:column; min-height:calc(100dvh - 136px); }
+  .page > div { display:flex; flex:1; flex-direction:column; }
+  .content { display:flex; flex:1; flex-direction:column; width:100%; }
+  .menu > li,.menu > li + li { border:0; border-bottom:1px solid var(--color-line); }
+  .menu > li:nth-child(odd) { border-right:1px solid var(--color-line); }
+  .menu > li:nth-last-child(-n+2) { border-bottom:0; }
+  .menu .desktopContact { display:list-item; }
+  .menu :is(a,button) { height:100%; min-height:124px; padding:24px; }
+  .contactLink { display:none; }
+  .footer { display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; min-height:180px; margin-top:auto; padding:32px 0 0; gap:24px; }
+  .footer > .mascot { justify-self:end; }
+  .footer > div { text-align:center; }
+  .footer > div > span { width:260px; }
+  .footer p { margin-top:0; font-size:18px; }
 }

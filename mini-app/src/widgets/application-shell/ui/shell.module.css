@@ -52,8 +52,7 @@
   .brand { left:24px; width:168px; height:auto; overflow:visible; }
   .brand > span { display:block; width:100%; }
   .brand .railIcon { display:none; }
-  .header { margin-inline:40px; }
-  .main { margin-inline:40px; }
+  .header,.app[data-immersive] > .header,.main { width:calc(100% - 80px); max-width:1040px; margin-inline:auto; }
   .nav { padding-inline:16px; gap:6px; }
   .nav a { flex-direction:row; justify-content:flex-start; gap:14px; min-height:54px; padding:14px 16px; font-size:16px; }
 }

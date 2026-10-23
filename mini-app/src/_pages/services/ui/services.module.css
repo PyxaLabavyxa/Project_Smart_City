@@ -42,3 +42,12 @@
 .documents button > svg:last-child { color:var(--color-primary); }
 .zonesDisclosure { order:5; font-size:14px; color:var(--color-muted); }
 .zonesDisclosure summary { cursor:pointer; min-height:36px; }
+@media(min-width:1100px) {
+  .columns { max-width:880px; margin-inline:0; gap:24px; }
+  .house { padding:24px; }
+  .address { padding:20px 24px; }
+  .address strong { font-size:22px; }
+  .address small { font-size:16px; }
+  .facts dt { font-size:17px; gap:18px; }
+  .facts dd { font-size:18px; }
+}

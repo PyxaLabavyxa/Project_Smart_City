@@ -120,9 +120,9 @@
   .houseIllustration { width:360px; height:260px; right:28px; }
   .healthCard { grid-column:1; grid-row:2; }
   .overview { grid-column:2; grid-row:2; }
-  .issues { grid-column:1; grid-row:3; }
-  .homeHouse { grid-column:2; grid-row:3 / span 2; }
-  .schedule { grid-column:1; grid-row:4; }
+  .dashboard > .issues { grid-column:1; grid-row:3; }
+  .dashboard > .homeHouse { grid-column:2; grid-row:3 / span 2; }
+  .dashboard > .schedule { grid-column:1; grid-row:4; }
 }
 @media(min-width:768px) and (max-width:899px) {
   .healthCard,.overview { grid-column:1 / -1; }

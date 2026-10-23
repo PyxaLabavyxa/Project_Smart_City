@@ -117,7 +117,7 @@ function CameraForm({ initial }: { initial?: CameraSettings }) {
         <label>Название<input name="camera-name" value={name} onChange={event => setName(event.target.value)} maxLength={200} placeholder="Камера у входа" aria-invalid={!!errors.name} aria-describedby={errors.name ? "camera-name-error" : undefined} />{fieldError("name")}</label>
         <label><span className={styles.fieldLabel}>Описание <span className={styles.hint}>(необязательно)</span></span><textarea name="camera-note" value={note} onChange={event => setNote(event.target.value)} maxLength={1000} rows={2} placeholder="Что видно в кадре" /></label>
       </fieldset>
-      <fieldset disabled={saving}>
+      <fieldset disabled={saving} className={styles.cameraConnection}>
         <legend><Icon name="settings" size={20} />Подключение</legend>
         <label>Ссылка на камеру<input name="camera-source" type="url" inputMode="url" value={source} onChange={event => { setSource(event.target.value); setSourceType("auto"); }} maxLength={2000} placeholder="Вставьте ссылку на камеру" aria-invalid={probeStatus === "invalid"} aria-describedby="camera-probe" /></label>
         <div id="camera-probe" className={styles.connectionCheck} data-status={probeStatus} role="status" aria-live="polite">
@@ -149,7 +149,7 @@ function CameraForm({ initial }: { initial?: CameraSettings }) {
           <p className={styles.hint}>Сохранённые данные подключения зашифрованы и не передаются другим жителям.</p>
         </details>
       </fieldset>
-      {!initial && <fieldset disabled={saving} tabIndex={-1} aria-invalid={!!errors.place} aria-describedby={errors.place ? "camera-place-error" : undefined}>
+      {!initial && <fieldset disabled={saving} className={styles.cameraLocation} tabIndex={-1} aria-invalid={!!errors.place} aria-describedby={errors.place ? "camera-place-error" : undefined}>
         <legend>Где расположена камера?</legend>
         <LocationSelector value={place} onChange={setPlace} />{fieldError("place")}
       </fieldset>}

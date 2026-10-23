@@ -14,8 +14,11 @@
 .search svg { width:calc(20 * var(--u)); flex-shrink:0; }
 .filterTrigger { composes:filterTrigger from "@/shared/styles/controls.module.css"; }
 .filters { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin:12px 0; padding:14px; border-radius:14px; background:var(--color-surface); }
-.filters label { display:grid; gap:6px; min-width:0; color:var(--color-muted); font-size:13px; }
-.filters input,.filters select { width:100%; padding:8px; }
+.filters label { display:grid; grid-template-rows:auto 48px; gap:6px; min-width:0; color:var(--color-muted); font-size:13px; }
+.filters label:nth-child(-n+3) { grid-column:1/-1; }
+.filters select { width:100%; min-width:0; height:48px; min-height:48px; padding:11px 12px; font-size:16px; line-height:24px; white-space:nowrap; text-overflow:ellipsis; }
+.filters select::picker(select) { width:anchor-size(width); min-width:0; max-width:calc(100vw - 32px); }
+.filters select option { white-space:normal; }
 .filters button { min-height:44px; border:0; border-radius:10px; background:var(--color-soft); color:var(--color-primary); }
 .summary { position:absolute; width:1px; height:1px; clip-path:inset(50%); overflow:hidden; }
 .empty { padding:24px 18px; background:var(--color-surface); border-radius:16px; text-align:center; }
@@ -37,8 +40,9 @@
   .create { position:static; transform:none; width:auto; max-width:none; flex-shrink:0; }
   .create > button { min-height:48px; padding:12px 20px; border-radius:var(--radius-button); font-size:16px; box-shadow:none; }
   .tabs { flex:none; width:300px; }
-  .filters { grid-template-columns:repeat(3,minmax(0,1fr)); padding:20px; gap:16px; }
-  .filterActions { display:flex; justify-content:flex-end; }
+  .filters { padding:20px; gap:16px; }
+  .filters label:nth-child(-n+3) { grid-column:auto; }
+  .filterActions { display:flex; grid-column:auto; align-self:end; justify-content:flex-end; }
   .filterActions button { padding-inline:20px; }
 }
-@media(min-width:1200px) { .filters { grid-template-columns:repeat(5,minmax(0,1fr)); } }
+@media(min-width:1100px) { .filters { grid-template-columns:repeat(3,minmax(0,1fr)); } }

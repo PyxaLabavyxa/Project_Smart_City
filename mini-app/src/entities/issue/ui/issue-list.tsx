@@ -3,8 +3,8 @@ import { type IssueRecord } from "../model/issue";
 import { IssueStatus } from "./issue-status";
 import { IssueCategoryIcon } from "./issue-category-icon";
 import styles from "./issue-list.module.css";
-export function IssueList({ issues, wide = false }: { issues: readonly IssueRecord[]; wide?: boolean }) {
-  return (      <ul className={styles.list} aria-label="Обращения" data-wide={wide || undefined}>
+export function IssueList({ issues, wide = false, compact = false }: { issues: readonly IssueRecord[]; wide?: boolean; compact?: boolean }) {
+  return (      <ul className={styles.list} aria-label="Обращения" data-wide={wide || undefined} data-compact={compact || undefined}>
         {issues.map(issue => (
           <li key={issue.id}>
             <Link href={`/issues/${issue.id}`} className={styles.issue} aria-label={issue.title}>

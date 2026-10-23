@@ -33,9 +33,9 @@ function LoadedCamerasPage() {
   const cameras = filterCameras(state.data ?? [], filters);
   const updateLocationFilter = (name: "entrance" | "floor" | "zone", value: string) => setFilters(previous => changeLocationFilter(previous, name, value));
   return <SectionPage title="Камеры" description="Личные и общедоступные камеры" backHref="/" backLabel="На главную">
-    <p className={styles.address}><Icon name="pin" size={20} />{house.address}</p>
+    <div className={styles.pageTools}><p className={styles.address}><Icon name="pin" size={20} />{house.address}</p>
     <div className={styles.toolbar}><Link href="/cameras/new" className={styles.addButton}><Icon name="plus" size={18} />Добавить</Link><button type="button" className={styles.filterToggle} aria-expanded={filtersOpen} aria-controls="camera-filters" onClick={() => setFiltersOpen(open => !open)}><Icon name="settings" size={20} /><span>Фильтры</span>{filterCount > 0 && <span className={styles.filterCount}>{filterCount}</span>}</button><RefreshButton className={styles.refreshList} loading={state.loading} onRefresh={state.reload} iconSize={20} aria-label="Обновить список камер" /></div>
-    <fieldset id="camera-filters" className={styles.filters} hidden={!filtersOpen} data-motion-panel>
+    </div><fieldset id="camera-filters" className={styles.filters} hidden={!filtersOpen} data-motion-panel>
       <legend>Фильтры камер</legend>
       <div className={styles.locationFilters}>
         <label className={styles.cameraType}>Тип камер<select value={filters.type} onChange={event => {
@@ -53,7 +53,7 @@ function LoadedCamerasPage() {
     <ul className={styles.list} aria-label="Камеры дома" aria-busy={state.loading}>{cameras.map(camera => <li key={camera.id}>
       <Link data-tour="camera-card" href={`/cameras/${camera.id}`} className={styles.camera}>
         <CameraPreview camera={camera} compact />
-        <div className={styles.cardBody}><div><h2>{camera.name}</h2><p>{camera.place ? formatLocation(camera.place) : camera.note}</p><p className={styles.accessLabel}>{camera.mine ? "Моя · " : ""}{cameraVisibilityLabel(camera)}</p></div><Icon name="arrow" size={19} /></div>
+        <div className={styles.cardBody}><div><h2 title={camera.name}>{camera.name}</h2><p>{camera.place ? formatLocation(camera.place) : camera.note}</p><p className={styles.accessLabel}>{camera.mine ? "Моя · " : ""}{cameraVisibilityLabel(camera)}</p></div><Icon name="arrow" size={19} /></div>
       </Link>
     </li>)}</ul>
     {!state.loading && !state.error && !cameras.length && <p>Камер по выбранным условиям нет. Измените фильтры или добавьте свою камеру.</p>}
@@ -74,7 +74,7 @@ function LoadedCameraDetailsPage({ id }: { id: string }) {
   const camera = state.data?.find(item => item.id === id);
   return <SectionPage title={camera?.name ?? "Камера"} description={`${house.address.replace(/^г\.\s*Казань,?\s*ул\.\s*/, "")}${camera?.note ? ` · ${camera.note}` : ""}`} backHref="/cameras" backLabel="Все камеры">
     <RequestState {...state} loading={state.loading && !state.data} page />
-    {camera && <><aside className={styles.accessNotice} aria-label="Доступ к камере"><strong>{cameraVisibilityLabel(camera)}</strong>{camera.place && <p>{formatLocation(camera.place)}</p>}{camera.visibility === "private" && <p>Эта камера доступна только вам.</p>}{camera.moderationStatus === "pending" && <p>Заявка отправлена в УК. Пока камера видна только вам. После одобрения её смогут смотреть жители дома.</p>}{camera.moderationStatus === "rejected" && <p>Камеру видите только вы. Причина отклонения: {camera.moderationReason}</p>}</aside><div className={styles.detail}><CameraPreview key={camera.id} camera={camera} /><aside className={styles.about}><Link data-tour="camera-report" href={`/issues/new?from=camera&camera=${encodeURIComponent(camera.id)}`} onNavigate={() => {
+    {camera && <><aside className={styles.accessNotice} aria-label="Доступ к камере"><strong>{cameraVisibilityLabel(camera)}</strong>{camera.place && <p>{formatLocation(camera.place)}</p>}{camera.visibility === "private" && <p>Эта камера доступна только вам.</p>}{camera.moderationStatus === "pending" && <p>Заявка отправлена в УК. Пока камера видна только вам. После одобрения её смогут смотреть жители дома.</p>}{camera.moderationStatus === "rejected" && <p>Камеру видите только вы. Причина отклонения: {camera.moderationReason}</p>}</aside><div className={styles.detail}><CameraPreview key={camera.id} camera={camera} actions={<div className={styles.about}><Link data-tour="camera-report" href={`/issues/new?from=camera&camera=${encodeURIComponent(camera.id)}`} onNavigate={() => {
       const context = cameraIssueContext(camera, house);
       if (context) {
         select(context.place);
@@ -82,7 +82,7 @@ function LoadedCameraDetailsPage({ id }: { id: string }) {
       } else {
         updateDraft({ category: "", step: 0 });
       }
-    }}><Icon name="messages" />Сообщить о проблеме</Link>{camera.mine && <Link className={styles.cameraSettings} href={`/cameras/${camera.id}/settings`}><Icon name="settings" size={18} />Настройки камеры</Link>}</aside></div></>}
+    }}><Icon name="messages" />Сообщить о проблеме</Link>{camera.mine && <Link className={styles.cameraSettings} href={`/cameras/${camera.id}/settings`}><Icon name="settings" size={18} />Настройки камеры</Link>}</div>} /></div></>}
     {!state.loading && !state.error && !camera && <p>Камера не найдена.</p>}
   </SectionPage>;
 }

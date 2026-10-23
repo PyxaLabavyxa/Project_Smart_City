@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useRef, useState, useMemo, type ReactNode } from "react";
 import type { Camera } from "../model/camera";
 import type { CameraFrame, CameraGateway } from "../model/camera-gateway";
 import { createCameraGateway } from "../model/api";
@@ -9,7 +9,7 @@ import { CameraStatus } from "./camera-status";
 import { Icon } from "@/shared/ui/icon";
 import { RefreshButton } from "@/shared/ui/refresh-button";
 type PreviewState = { kind: "loading" } | { kind: "error"; message: string } | { kind: "ready"; frame: CameraFrame };
-export function CameraPreview({ camera, gateway: providedGateway, compact = false }: { camera: Camera; gateway?: CameraGateway; compact?: boolean }) {
+export function CameraPreview({ camera, gateway: providedGateway, compact = false, actions }: { camera: Camera; gateway?: CameraGateway; compact?: boolean; actions?: ReactNode }) {
   const api = useApi();
   const gateway = useMemo(() => providedGateway ?? createCameraGateway(api), [providedGateway, api]);
   const [attempt, setAttempt] = useState(0);
@@ -107,9 +107,10 @@ export function CameraPreview({ camera, gateway: providedGateway, compact = fals
     </div>{state.kind === "error" && playbackControl}</div>}
     {overlayBadge && <span className={styles.overlayStatus}>{badge}</span>}
     {!overlayBadge && state.kind !== "ready" && !live && <div className={styles.previewAvailability}>{badge}</div>}
-    {!compact && (!camera.liveAvailable || liveError) && <div className={styles.previewFooter}>
+    {!compact && (!camera.liveAvailable || liveError || actions) && <div className={styles.previewFooter}>
       {liveError && <p role="alert" className={styles.error}>Не удалось открыть эфир. Проверьте подключение камеры и повторите попытку.</p>}
       {!camera.liveAvailable && <RefreshButton className={styles.retry} onRefresh={retry} loading={refreshing || state.kind === "loading"} iconSize={17}>{state.kind === "error" ? "Повторить подключение" : "Обновить кадр"}</RefreshButton>}
+      {actions}
     </div>}
   </section>;
 }

@@ -30,9 +30,39 @@ test('courtyard has outdoor subcategories without lift, entrance or heating', ()
 test('entrance categories work upstairs; private apartments exclude common property', () => {
   const upstairs = { ...place('corridor'), floor: 12 };
   assert(categoriesForPlace(upstairs).some(item => item.value === 'Подъезд'));
-  assert(values('stairs').includes('Лифт'));
+  assert(!values('stairs').includes('Лифт'));
   assert(!values('corridor').includes('Двор'));
   assert.deepEqual(values('apartment'), ['Водоснабжение', 'Отопление', 'Электричество', 'Безопасность', 'Другое']);
+});
+
+test('each place has a specific category set rather than the full entrance scope', () => {
+  const common = ['Электричество', 'Подъезд', 'Мусор', 'Водоснабжение', 'Отопление', 'Безопасность', 'Другое'];
+  const outdoor = ['Двор', 'Мусор', 'Электричество', 'Водоснабжение', 'Безопасность', 'Другое'];
+  const expected = {
+    corridor: common,
+    stairs: common,
+    entrance: common,
+    elevator: ['Лифт', 'Электричество', 'Мусор', 'Безопасность', 'Другое'],
+    technical: ['Лифт', ...common],
+    house: outdoor,
+    courtyard: outdoor,
+    parking: outdoor,
+    apartment: ['Водоснабжение', 'Отопление', 'Электричество', 'Безопасность', 'Другое'],
+  };
+  for (const [zone, allowed] of Object.entries(expected)) {
+    assert.deepEqual(values(zone), allowed, zone);
+  }
+});
+
+test('moving to a different place within the entrance clears an incompatible draft category', () => {
+  const draft = { ...emptyDraft(place('corridor')), category: 'Водоснабжение', title: 'Заголовок', description: 'Описание', photos: [{ id: 'photo' }] };
+  const elevator = updateIssueDraft(draft, { place: place('elevator') });
+  assert.equal(elevator.category, '');
+  assert.equal(elevator.title, draft.title);
+  assert.equal(elevator.description, draft.description);
+  assert.equal(elevator.photos, draft.photos);
+  assert.equal(updateIssueDraft({ ...draft, category: 'Электричество' }, { place: place('elevator') }).category, 'Электричество');
+  assert.equal(updateIssueDraft({ ...draft, category: 'Лифт' }, { place: place('stairs') }).category, '');
 });
 
 test('new drafts start with scope selection; explicit places keep their next step', () => {
@@ -44,6 +74,15 @@ test('new drafts start with scope selection; explicit places keep their next ste
     assert.equal(emptyDraft(place(zone)).step, -1);
     assert.equal(initialReportStep(place(zone)), 0);
   }
+});
+
+test('legacy general-house links create a courtyard issue that can be selected in filters', () => {
+  assert.equal(emptyDraft(place('house')).place.zone, 'courtyard');
+  const draft = { ...emptyDraft(place('corridor')), title: 'Заголовок', category: 'Водоснабжение' };
+  const moved = updateIssueDraft(draft, { place: { ...place('house'), floor: 9, entrance: 2 } });
+  assert.deepEqual(moved.place, place('courtyard'));
+  assert.equal(moved.title, draft.title);
+  assert.equal(moved.category, 'Водоснабжение');
 });
 
 test('changing scope clears incompatible subcategories and keeps text and attachments', () => {

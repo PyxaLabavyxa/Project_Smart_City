@@ -12,5 +12,6 @@
   :global(:root:not([data-motion-input="keyboard"])) a.button:active:not([aria-disabled="true"]) { scale:.98; }
 }
 .badge { display: inline-flex; align-items: center; gap: 6px; width: fit-content; max-width: 100%; padding: 5px 8px; border-radius: var(--radius-sm); font-size: var(--font-meta); font-weight: 600; line-height: 1.3; }
-.filterTrigger { display:flex; align-items:center; justify-content:center; gap:calc(7 * var(--u)); width:calc(116 * var(--u)); min-height:calc(50 * var(--u)); border:1px solid var(--color-line); border-radius:var(--radius-button); color:var(--color-ink); background:var(--color-surface); font-size:calc(14 * var(--u)); box-shadow:0 2px 6px rgb(12 54 74 / 4%); }
+.filterTrigger { display:flex; flex-shrink:0; align-items:center; justify-content:center; gap:calc(7 * var(--u)); width:max-content; min-width:calc(116 * var(--u)); min-height:max(44px,calc(50 * var(--u))); padding:0 calc(12 * var(--u)); border:1px solid var(--color-line); border-radius:var(--radius-button); color:var(--color-ink); background:var(--color-surface); font-size:max(13px,calc(14 * var(--u))); white-space:nowrap; box-shadow:0 2px 6px rgb(12 54 74 / 4%); }
+.filterTrigger svg { flex-shrink:0; }
 

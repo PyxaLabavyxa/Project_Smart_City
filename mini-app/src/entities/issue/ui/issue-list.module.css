@@ -31,3 +31,14 @@
   .list[data-wide] .state { min-width:150px; align-items:flex-end; }
   .list[data-wide] .issue h2 { font-size:19px; }
 }
+@media(min-width:1100px) {
+  .list[data-compact] { padding:0; border-radius:0; background:transparent; }
+  .list[data-compact] .issue { grid-template-columns:36px minmax(0,1fr) 12px; gap:10px; min-height:0; padding-block:16px; }
+  .list[data-compact] .categoryIcon { width:36px; height:36px; border-radius:9px; }
+  .list[data-compact] .categoryIcon svg { width:22px; height:22px; }
+  .list[data-compact] .body { display:block; }
+  .list[data-compact] .issue h2 { font-size:14px; line-height:1.4; }
+  .list[data-compact] .location { margin-top:5px; font-size:12px; line-height:1.4; }
+  .list[data-compact] .state { flex-direction:row; align-items:center; flex-wrap:wrap; gap:8px; margin-top:8px; }
+  .list[data-compact] .state time { font-size:11px; }
+}

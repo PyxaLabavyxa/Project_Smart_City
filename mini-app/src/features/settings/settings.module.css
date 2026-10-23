@@ -51,3 +51,15 @@
 @media(max-width:360px) { .themes { gap:7px; } .theme { gap:10px; padding:6px 5px 10px; border-radius:14px; } .preview { padding:9px 5px; } .themeTitle { font-size:12px; } .sectionLink { gap:10px; padding:14px 12px; } .sectionText strong { font-size:16px; } .notifications { padding:0 12px; } }
 
 .content > .note:first-child { margin-top:0; }
+@media(min-width:1100px) {
+  .content,.sections { max-width:880px; margin-inline:0; }
+  .sectionLink { padding:20px; }
+  .sectionText strong { font-size:18px; }
+  .sectionText small { font-size:14px; }
+  .themes { max-width:760px; gap:16px; }
+  .theme { padding:14px; gap:14px; }
+  .preview { aspect-ratio:4/3; padding:16px 12px; }
+  .themeTitle { font-size:16px; }
+  .note { max-width:65ch; font-size:15px; line-height:1.6; }
+  .notifications { padding-inline:24px; }
+}

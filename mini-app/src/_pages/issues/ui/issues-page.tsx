@@ -1,7 +1,7 @@
 "use client";
 import { useSearchParams } from "next/navigation";
 import { IssueList, useIssues, filterIssues, initialIssueFilters, selectIssueTab } from "@/entities/issue";
-import { issueFiltersFromSearch, issueFiltersSearch, type IssueFilters as Filters } from "@/entities/issue/model/issue-filters";
+import { issueFiltersFromSearch, issueFiltersSearch, normalizeIssueFilters, type IssueFilters as Filters } from "@/entities/issue/model/issue-filters";
 import { useHouseSelection } from "@/entities/house";
 import { ReportIssueLink } from "@/features/report-issue";
 import { IssueFilters } from "./issue-filters";
@@ -19,9 +19,9 @@ export function IssuesPage() {
   const { issues, loading, error, reload } = useIssues();
   const { house } = useHouseSelection();
   const params = useSearchParams();
-  const filters = issueFiltersFromSearch(params, house.id);
+  const filters = normalizeIssueFilters(issueFiltersFromSearch(params, house.id), house);
   function setFilters(update: Filters | ((current: Filters) => Filters)) {
-    const next = typeof update === "function" ? update(filters) : update;
+    const next = normalizeIssueFilters(typeof update === "function" ? update(filters) : update, house);
     window.history.replaceState(null, "", `/issues?${issueFiltersSearch(next, house.id)}`);
   }
   const visible = filterIssues(issues, filters);
@@ -46,7 +46,7 @@ export function IssuesPage() {
       <RefreshButton className={styles.refresh} onRefresh={reload} loading={loading} iconSize={21} aria-label="Обновить обращения" title="Обновить обращения" />
     </div>
 
-    <IssueFilters filters={filters} categories={issues.map(issue => issue.category)} onChange={setFilters} onReset={resetFilters} /></div>
+    <IssueFilters filters={filters} onChange={setFilters} onReset={resetFilters} /></div>
     <RequestState loading={false} error={error} reload={reload} />
     <div className={styles.summary} role="status"><span>Найдено: <b>{visible.length}</b> из {issues.length}</span></div>
     {visible.length ? <IssueList issues={visible} wide /> : <div className={styles.empty}>
