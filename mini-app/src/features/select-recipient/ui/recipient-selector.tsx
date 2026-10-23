@@ -10,6 +10,7 @@ import styles from "./recipient-selector.module.css";
 import { ChatScreen } from "@/shared/ui/chat-screen";
 import chatStyles from "@/shared/ui/chat-screen.module.css";
 import { RequestState } from "@/shared/ui/navigation/request-state";
+import { HouseGroupChat } from "./house-group-chat";
 
 export function RecipientSelector({ openSelected = false }: { openSelected?: boolean }) {
   const { house, selected, select } = useHouseSelection();
@@ -45,14 +46,13 @@ export function RecipientSelector({ openSelected = false }: { openSelected?: boo
       <div data-tour="message-panel" className={styles.inbox}>
         <RequestState loading={loading} error={error} reload={reload} />
         <label className={styles.field}>Поиск по перепискам<input type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Квартира или сообщение" /></label>
-        <ul className={styles.threadList} aria-label="Переписки с соседями">{conversations.map(thread => {
+        <ul className={styles.threadList} aria-label="Домовой чат и переписки с соседями"><HouseGroupChat key={house.id} houseId={house.id} />{conversations.map(thread => {
           const exists = !!findApartment(house, thread.apartment);
           return <li key={thread.apartment}><button className={styles.threadButton} onClick={() => choose(thread.apartment)}>
             <span className={styles.avatar}>{thread.apartment}</span><span className={styles.threadText}><strong>Квартира {thread.apartment}</strong><small>{(drafts[thread.apartment]?.trim() || photoDrafts[thread.apartment]?.length) ? `Черновик: ${drafts[thread.apartment]?.trim() || `Фото · ${photoDrafts[thread.apartment].length}`}` : `${thread.direction === "outgoing" ? "Вы: " : "Сосед: "}${thread.text}`}</small>{!exists && <small>Нет в текущей структуре</small>}</span>
             {thread.createdAt && <time dateTime={thread.createdAt}>{new Date(thread.createdAt).toLocaleDateString("ru-RU", { timeZone: "Europe/Moscow", day: "2-digit", month: "2-digit" })}</time>}
           </button></li>;
-        })}</ul>
-        {!conversations.length && <div className={styles.empty}><p>{query ? "Переписки не найдены" : "Переписок пока нет"}</p>{query ? <button className={styles.chip} onClick={() => setQuery("")}>Сбросить поиск</button> : <button className={styles.chip} onClick={openPicker}>Написать соседу</button>}</div>}
+        })}{!conversations.length && <li className={styles.empty}><p>{query ? "Переписки не найдены" : "Личных переписок пока нет"}</p>{query ? <button className={styles.chip} onClick={() => setQuery("")}>Сбросить поиск</button> : <button className={styles.chip} onClick={openPicker}>Написать соседу</button>}</li>}</ul>
 
       </div>
     </ChatScreen>

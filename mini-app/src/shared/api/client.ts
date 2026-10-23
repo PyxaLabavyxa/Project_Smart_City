@@ -86,6 +86,7 @@ export const endpoints = {
   preview: (camera: string) => `/cameras/${encodeURIComponent(camera)}/preview`,
   works: (house: string) => `/houses/${encodeURIComponent(house)}/works`,
   contacts: (house: string) => `/houses/${encodeURIComponent(house)}/contacts`,
+  houseChat: (house: string) => `/houses/${encodeURIComponent(house)}/chat`,
 };
 
 export function maxLaunchData(): string {

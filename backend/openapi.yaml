@@ -409,6 +409,34 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/houses/{house_id}/chat:
+    get:
+      tags:
+      - resident
+      summary: House Chat
+      operationId: house_chat_api_v1_houses__house_id__chat_get
+      security:
+      - MAXLaunchData: []
+      parameters:
+      - name: house_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: House Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResidentChatOutput'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /api/v1/me/notifications:
     get:
       tags:
@@ -2459,6 +2487,36 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/staff/max-chats/{house_id}/link:
+    put:
+      tags:
+      - Staff chats
+      summary: Save Link
+      operationId: save_link_api_v1_staff_max_chats__house_id__link_put
+      security:
+      - StaffSession: []
+      parameters:
+      - name: house_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: House Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatLinkInput'
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /api/v1/staff/announcements:
     get:
       tags:
@@ -3391,6 +3449,26 @@ components:
       - tariff
       - amount
       title: Charge
+    ChatLinkInput:
+      properties:
+        chat_id:
+          type: integer
+          title: Chat Id
+        revision:
+          type: integer
+          minimum: 1.0
+          title: Revision
+        join_url:
+          anyOf:
+          - type: string
+            maxLength: 1024
+          - type: 'null'
+          title: Join Url
+      type: object
+      required:
+      - chat_id
+      - revision
+      title: ChatLinkInput
     ChatOutput:
       properties:
         house_id:
@@ -3426,6 +3504,20 @@ components:
             format: date-time
           - type: 'null'
           title: Checked At
+        revision:
+          type: integer
+          title: Revision
+          default: 0
+        join_url:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Join Url
+        custom_join_url:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Custom Join Url
       type: object
       required:
       - house_id
@@ -4970,6 +5062,29 @@ components:
       - items
       - total
       title: ReportResidentPage
+    ResidentChatOutput:
+      properties:
+        status:
+          type: string
+          enum:
+          - available
+          - not_connected
+          - link_missing
+          - unavailable
+          title: Status
+        title:
+          type: string
+          title: Title
+          default: Общий чат дома
+        join_url:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Join Url
+      type: object
+      required:
+      - status
+      title: ResidentChatOutput
     ResidentChoice:
       properties:
         id:

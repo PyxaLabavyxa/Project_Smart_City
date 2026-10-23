@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Literal
 
+from app.services.house_chats import normalize_chat_link
 from app.services.planned_works import WorkSchedule
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -15,6 +16,31 @@ class ChatOutput(BaseModel):
     menu_status: str = "none"
     error: str = ""
     checked_at: datetime | None = None
+    revision: int = 0
+    join_url: str | None = None
+    custom_join_url: str | None = None
+
+
+class ChatLinkInput(BaseModel):
+    chat_id: int
+    revision: int = Field(ge=1)
+    join_url: str | None = Field(default=None, max_length=1024)
+
+    @field_validator("join_url")
+    @classmethod
+    def valid_link(cls, value):
+        if value is None or not value.strip():
+            return None
+        link = normalize_chat_link(value)
+        if not link:
+            raise ValueError("Укажите ссылку на группу вида https://max.ru/join/… без параметров")
+        return link
+
+
+class ResidentChatOutput(BaseModel):
+    status: Literal["available", "not_connected", "link_missing", "unavailable"]
+    title: str = "Общий чат дома"
+    join_url: str | None = None
 
 
 class ConnectionCode(BaseModel):

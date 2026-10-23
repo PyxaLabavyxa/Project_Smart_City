@@ -8,6 +8,7 @@ from smart_city_api.schemas.house_chats import (
     AnnouncementInput,
     AnnouncementOutput,
     AnnouncementPage,
+    ChatLinkInput,
     ChatOutput,
     ConnectionCode,
     ResidentPage,
@@ -46,6 +47,11 @@ async def disconnect(house_id: int, session: Session, employee: Staff):
 @router.post("/max-chats/{house_id}/menu", status_code=204)
 async def menu(house_id: int, session: Session, employee: Staff):
     await service.restore_menu(session, employee.id, house_id)
+
+
+@router.put("/max-chats/{house_id}/link", status_code=204)
+async def save_link(house_id: int, data: ChatLinkInput, session: Session, employee: Staff):
+    await service.save_chat_link(session, employee.id, house_id, data)
 
 
 @router.get("/announcements", response_model=AnnouncementPage)

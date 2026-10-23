@@ -2,13 +2,14 @@ import logging
 import re
 from datetime import UTC, datetime
 
-from app.database.models import HouseChat
-from app.database.session import session_factory
-from app.services.house_chats import ConnectionError, confirm_connection
 from maxapi import F, Router
 from maxapi.types import BotRemoved, MessageCallback, MessageCreated
 from maxapi.types.errors import Error
 from sqlalchemy import select
+
+from app.database.models import HouseChat
+from app.database.session import session_factory
+from app.services.house_chats import ConnectionError, confirm_connection
 
 router = Router()
 logger = logging.getLogger(__name__)
@@ -44,7 +45,8 @@ async def group_message(event: MessageCreated):
             return
         async with session_factory() as session:
             await confirm_connection(
-                session, match[1], chat_id, chat.title or "Домовой чат", user_id
+                session, match[1], chat_id, chat.title or "Домовой чат", user_id,
+                link=getattr(chat, "link", None),
             )
     except ConnectionError as error:
         await event.message.answer(str(error))

@@ -1,3 +1,4 @@
+.chat-link-form{display:grid;gap:16px;margin-top:20px}.chat-link-form label{display:grid;gap:8px;font-weight:600}.chat-link-form input{width:100%;font-weight:400}.chat-link-form .form-help{margin:0;overflow-wrap:anywhere}
 .announcement-layout{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(310px,.8fr);gap:24px;align-items:start}
 .announcement-editor,.announcement-live-preview,.announcement-history{padding:26px}
 .announcement-editor>p,.announcement-live-preview>p{margin:8px 0 22px}

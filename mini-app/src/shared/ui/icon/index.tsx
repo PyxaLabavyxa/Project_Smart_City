@@ -5,6 +5,7 @@ const paths = {
   device: "M7 2h10v20H7ZM11 18h2",
   clock:"M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM12 6v6l4 2",
   people:"M14 7a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM3 22v-4a6 6 0 0 1 12 0v4M18 4a3 3 0 0 1 0 6m1 4a5 5 0 0 1 3 4v4",
+  pushpin:"M16 9V3h1V2H7v1h1v6l-3 3v2h14v-2ZM12 14v8",
   info:"M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM12 11v6m0-10h.01",
   card: "M3 4h18v16H3ZM3 8h18M7 15h5",
   heat: "M6 3c-6 7 6 9 0 18M12 3c-6 7 6 9 0 18M18 3c-6 7 6 9 0 18",

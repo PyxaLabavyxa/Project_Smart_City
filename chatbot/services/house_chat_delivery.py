@@ -12,11 +12,6 @@ from maxapi.types.input_media import InputMedia
 from maxapi.utils.inline_keyboard import InlineKeyboardBuilder
 from sqlalchemy import select, update
 
-from maxapi.types import LinkButton
-from maxapi.types.errors import Error
-from maxapi.utils.inline_keyboard import InlineKeyboardBuilder
-from sqlalchemy import select, update
-
 from app.database.models import (
     Announcement,
     AnnouncementDelivery,
@@ -30,6 +25,7 @@ from app.database.models import (
     User,
 )
 from app.services.announcement_audience import residents, unavailable_reason
+from app.services.house_chats import normalize_chat_link
 from app.services.planned_works import announcement_message
 from chatbot.keyboards.inline import mini_app_username
 
@@ -144,8 +140,19 @@ async def process_menu(bot, sessions):
         )
         row.menu_status, row.menu_attempted_at = "sending", datetime.now(UTC)
     sending = False
+    link_update = {}
     try:
         await check_permissions(bot, chat_id)
+        # Older connections acquire a link when staff restore the pinned menu.
+        # A failed metadata request must not interrupt the existing menu delivery.
+        try:
+            info = checked(await asyncio.wait_for(bot.get_chat_by_id(id=chat_id), timeout=8))
+            link_update = {
+                "platform_link": normalize_chat_link(getattr(info, "link", None)),
+                "link_checked_at": datetime.now(UTC),
+            }
+        except Exception as exc:  # noqa: BLE001 - metadata must not interrupt menu delivery
+            logger.warning("Group link refresh failed: %s", type(exc).__name__)
         text = (
             f"👋 Привет! Я Домовед — помощник жителей дома.\n📍 {address}\n\n"
             "Через кнопки ниже можно сообщить о проблеме, посмотреть обращения и контакты УК. "
@@ -203,6 +210,7 @@ async def process_menu(bot, sessions):
                 HouseChat.menu_status == "sending",
             )
             .values(
+                **link_update,
                 menu_status=status,
                 status=state,
                 error=error,

@@ -12,6 +12,7 @@ from starlette.datastructures import UploadFile
 from smart_city_api.api.dependencies import Resident, Session
 from smart_city_api.schemas.app import CreateIssue, IssuePage, IssueResponse, Profile
 from smart_city_api.schemas.contacts import ContactsOutput
+from smart_city_api.schemas.house_chats import ResidentChatOutput
 from smart_city_api.schemas.issue_chat import (
     IssueChatPresenceInput,
     IssueMessageInput,
@@ -24,6 +25,7 @@ from smart_city_api.schemas.resident import ApartmentPage, ApartmentResponse, Ho
 from smart_city_api.services import chat_photos
 from smart_city_api.services.access import own_apartment_ids, require_house
 from smart_city_api.services.contacts import read_contacts
+from smart_city_api.services.house_chats import resident_chat
 from smart_city_api.services.issue_chat import own_issue, read_messages, send_message
 from smart_city_api.services.issues import (
     create_issue,
@@ -61,6 +63,12 @@ async def save_onboarding(data: OnboardingInput, session: Session, user: Residen
 async def contacts(house_id: int, session: Session, user: Resident):
     await require_house(session, user.id, house_id)
     return await read_contacts(session, house_id)
+
+
+@router.get("/houses/{house_id}/chat", response_model=ResidentChatOutput)
+async def house_chat(house_id: int, session: Session, user: Resident):
+    await require_house(session, user.id, house_id)
+    return await resident_chat(session, house_id)
 
 
 @router.get("/me/notifications", response_model=NotificationPreferences)

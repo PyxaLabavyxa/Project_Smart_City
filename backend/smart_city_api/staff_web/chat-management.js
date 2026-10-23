@@ -9,6 +9,7 @@ let announcementPage = 1, announcementTotal = 0, announcementBusy = false;
 let selectedHouseIds = new Set(), selectedResidentIds = new Set(), residentDirectory = new Map();
 let residentOptions = [], residentPage = 1, residentTotal = 0, residentRequest = 0, residentSearchTimer;
 let editingAnnouncement = null, previewAnnouncement = null, announcementSaved = "", connectingHouse = null;
+let editingChatLink = null;
 
 function chatState(chat) {
   if (!chat || chat.chat_id == null) return ["disconnected", "Не подключён"];
@@ -19,6 +20,10 @@ function chatState(chat) {
 function chatStatusHtml(chat) {
   const [kind, label] = chatState(chat);
   return `<span class="chat-state" data-state="${kind}">${label}</span>`;
+}
+function residentChatLinkHtml(chat) {
+  if (chat.chat_id == null) return "";
+  return `<p class="row-meta">${chat.join_url ? `Ссылка для жителей ${chat.custom_join_url ? "указана УК" : "получена от MAX"}` : "Для жителей нужна ссылка на группу"}</p><button class="secondary" data-chat-action="link" data-house="${chat.house_id}">${chat.join_url ? "Ссылка для жителей" : "Добавить ссылку"}</button>`;
 }
 function announcementSummary(item) {
   if (item.status === "draft") return "Черновик";
@@ -125,7 +130,7 @@ async function loadMaxChats() {
     const rows = await api("/max-chats");
     if (request !== maxChatRequest || profile !== state.profile) return;
     maxChatRows = rows;
-    $("max-chats-body").innerHTML = rows.map(chat => `<tr><td><strong>${esc(chat.address)}</strong></td><td>${chat.title ? esc(chat.title) : '<span class="muted">Группа не подключена</span>'}</td><td>${chatStatusHtml(chat)}${chat.error ? `<p class="chat-row-error">${esc(chat.error)}</p>` : ""}${chat.checked_at ? `<span class="row-meta">Проверено ${esc(date(chat.checked_at, true))}</span>` : ""}</td><td><div class="chat-row-actions">${chat.chat_id == null ? `<button class="primary" data-chat-action="code" data-house="${chat.house_id}">Подключить чат</button>` : `<button class="secondary" data-chat-action="menu" data-house="${chat.house_id}"${["pending", "sending"].includes(chat.menu_status) ? " disabled" : ""}>Восстановить меню</button><button class="secondary" data-chat-action="disconnect" data-house="${chat.house_id}">Отключить</button>`}</div></td></tr>`).join("");
+    $("max-chats-body").innerHTML = rows.map(chat => `<tr><td><strong>${esc(chat.address)}</strong></td><td>${chat.title ? esc(chat.title) : '<span class="muted">Группа не подключена</span>'}${residentChatLinkHtml(chat)}</td><td>${chatStatusHtml(chat)}${chat.error ? `<p class="chat-row-error">${esc(chat.error)}</p>` : ""}${chat.checked_at ? `<span class="row-meta">Проверено ${esc(date(chat.checked_at, true))}</span>` : ""}</td><td><div class="chat-row-actions">${chat.chat_id == null ? `<button class="primary" data-chat-action="code" data-house="${chat.house_id}">Подключить чат</button>` : `<button class="secondary" data-chat-action="menu" data-house="${chat.house_id}"${["pending", "sending"].includes(chat.menu_status) ? " disabled" : ""}>Восстановить меню</button><button class="secondary" data-chat-action="disconnect" data-house="${chat.house_id}">Отключить</button>`}</div></td></tr>`).join("");
     $("max-chats-empty").hidden = rows.length > 0;
     renderAnnouncementHouses();
     showError("max-chats-error", "");
@@ -161,6 +166,8 @@ window.resetChatManagement = () => {
   clearTimeout(residentSearchTimer); $("announcement-residents").replaceChildren(); $("selected-announcement-residents").replaceChildren();
   editingAnnouncement = previewAnnouncement = null; announcementSaved = "";
   $("chat-code-dialog").close(); $("announcement-dialog").close();
+  editingChatLink = null; $("chat-link-dialog").close(); $("chat-link-form").reset();
+  $("chat-link-address").textContent = ""; $("chat-link-current").textContent = ""; showError("chat-link-error", "");
   $("chat-connection-command").textContent = "";
   $("announcement-form").reset(); $("announcement-houses").replaceChildren();
   $("announcement-history").replaceChildren(); $("max-chats-body").replaceChildren();
@@ -180,6 +187,13 @@ $("max-chats-body").addEventListener("click", async event => {
   if (!house) return;
   const action = button.dataset.chatAction;
   const profile = state.profile;
+  if (action === "link") {
+    editingChatLink = { ...house, profile };
+    $("chat-link-address").textContent = house.address;
+    $("chat-link-url").value = house.custom_join_url || "";
+    $("chat-link-current").textContent = house.join_url ? `Сейчас используется: ${house.join_url}` : "Ссылка пока не указана. Можно добавить приглашение вручную или восстановить меню, чтобы бот запросил ссылку у MAX.";
+    showError("chat-link-error", ""); $("chat-link-dialog").showModal(); return;
+  }
   if (action === "disconnect" && !await confirmAction({ title: "Отключить домовой чат?", description: `Дом «${house.address}». Новые объявления и ещё не начавшиеся отправки в эту группу прекратятся.`, confirmLabel: "Отключить", destructive: true })) return;
   if (action === "menu" && !await confirmAction({ title: "Восстановить меню?", description: house.menu_status === "uncertain" ? "Предыдущая отправка меню могла пройти. Проверьте закреп в группе перед восстановлением." : "Бот обновит и закрепит прежнее сообщение с кнопками, а если оно удалено — создаст новое. Объявления отправляться не будут.", confirmLabel: "Восстановить" })) return;
   if (maxChatBusy || state.profile !== profile || !button.isConnected) return;
@@ -196,6 +210,24 @@ $("max-chats-body").addEventListener("click", async event => {
     await loadMaxChats();
   } catch (error) { showError("max-chats-error", error.message); }
   finally { maxChatBusy = false; button.disabled = false; }
+});
+$("close-chat-link").addEventListener("click", () => $("chat-link-dialog").close());
+$("chat-link-form").addEventListener("submit", async event => {
+  event.preventDefault();
+  const chat = editingChatLink;
+  if (!chat || chat.profile !== state.profile || maxChatBusy) return;
+  const link = $("chat-link-url").value.trim();
+  if (link && !/^https:\/\/max\.ru\/[A-Za-z0-9_-]+(?:\/[A-Za-z0-9_-]+)*\/?$/.test(link)) {
+    showError("chat-link-error", "Укажите ссылку на группу MAX вида https://max.ru/join/… без дополнительных параметров"); return;
+  }
+  maxChatBusy = true; $("save-chat-link").disabled = true;
+  try {
+    await api(`/max-chats/${chat.house_id}/link`, { method: "PUT", body: JSON.stringify({ chat_id: chat.chat_id, revision: chat.revision, join_url: $("chat-link-url").value.trim() || null }) });
+    if (state.profile !== chat.profile) return;
+    $("chat-link-dialog").close(); toast("Ссылка домового чата сохранена");
+    await loadMaxChats();
+  } catch (error) { if (state.profile === chat.profile) showError("chat-link-error", error.message); }
+  finally { maxChatBusy = false; $("save-chat-link").disabled = false; }
 });
 $("copy-chat-command").addEventListener("click", async () => {
   try { await navigator.clipboard.writeText($("chat-connection-command").textContent); toast("Команда скопирована"); }

@@ -12,7 +12,7 @@ from app.database.models import (
     UserApartment,
 )
 from app.services.announcement_audience import residents, unavailable_reason
-from app.services.house_chats import code_hash
+from app.services.house_chats import code_hash, normalize_chat_link
 from app.services.inbox import notify_residents
 from app.services.planned_works import WorkSchedule, announcement_body, announcement_topic
 from fastapi import HTTPException
@@ -47,6 +47,13 @@ async def list_chats(session, staff_id):
                 {
                     k: getattr(chat, k)
                     for k in ("chat_id", "title", "status", "menu_status", "error", "checked_at")
+                } | {
+                    "revision": chat.revision,
+                    "join_url": (
+                        normalize_chat_link(chat.join_url)
+                        or normalize_chat_link(chat.platform_link)
+                    ),
+                    "custom_join_url": chat.join_url,
                 }
                 if chat
                 else {}
@@ -54,6 +61,31 @@ async def list_chats(session, staff_id):
         )
         for house, chat in rows
     ]
+
+
+async def resident_chat(session, house_id):
+    chat = await session.get(HouseChat, house_id)
+    if not chat or chat.chat_id is None or chat.status == "disconnected":
+        return {"status": "not_connected"}
+    if chat.status != "connected":
+        return {"status": "unavailable"}
+    link = normalize_chat_link(chat.join_url) or normalize_chat_link(chat.platform_link)
+    if not link:
+        return {"status": "link_missing"}
+    return {"status": "available", "title": chat.title or "Общий чат дома", "join_url": link}
+
+
+async def save_chat_link(session, staff_id, house_id, data):
+    await staff_house(session, staff_id, house_id, lock=True)
+    chat = await session.scalar(
+        select(HouseChat).where(HouseChat.house_id == house_id).with_for_update()
+    )
+    if not chat or chat.chat_id is None:
+        raise HTTPException(409, "Сначала подключите домовой чат")
+    if chat.chat_id != data.chat_id or chat.revision != data.revision:
+        raise HTTPException(409, "Подключение изменилось. Обновите список чатов")
+    chat.join_url = data.join_url
+    await session.commit()
 
 
 async def connection_code(session, staff_id, house_id):
@@ -78,6 +110,8 @@ async def disconnect(session, staff_id, house_id):
     )
     if chat:
         chat.chat_id = chat.code_hash = chat.code_expires_at = chat.code_staff_id = None
+        chat.join_url = chat.platform_link = None
+        chat.link_checked_at = None
         chat.connected_by = chat.menu_message_id = None
         chat.revision += 1
         chat.status, chat.menu_status, chat.title, chat.error = "disconnected", "none", "", ""

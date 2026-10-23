@@ -19,8 +19,8 @@
   <script src="/staff/staff-report.js?v=20261023-review-fixes-1" defer></script>
   <script src="/staff/contacts-management.js?v=20261022-motion-1" defer></script>
   <script src="/staff/camera-management.js?v=20261023-review-fixes-1" defer></script>
-  <link rel="stylesheet" href="/staff/chat-management.css?v=20261022-works-3">
-  <script src="/staff/chat-management.js?v=20261022-works-3" defer></script>
+  <link rel="stylesheet" href="/staff/chat-management.css?v=20261023-house-chat-1">
+  <script src="/staff/chat-management.js?v=20261023-house-chat-1" defer></script>
 </head>
 <body>
   <section id="login-screen" class="login-screen" hidden>
@@ -228,6 +228,16 @@
     </fieldset></form>
   </dialog>
   <dialog id="staff-camera-view-dialog" class="staff-camera-dialog camera-view-dialog" aria-labelledby="staff-camera-view-title"><header class="camera-dialog-heading"><div><h2 id="staff-camera-view-title">Камера</h2><p id="staff-camera-view-place" class="muted"></p></div><button id="close-staff-camera-view" class="icon-button" type="button" aria-label="Закрыть просмотр камеры"><span data-icon="close" aria-hidden="true"></span></button></header><div class="camera-view-image"><div id="staff-camera-view-loading" class="camera-unavailable" role="status"><span data-icon="camera" aria-hidden="true"></span><span>Загружаем кадр…</span></div><img id="staff-camera-view-image" alt="Кадр с камеры"><div id="staff-camera-view-error" class="camera-unavailable" role="status" hidden><span data-icon="camera" aria-hidden="true"></span><strong>Камера недоступна</strong><span>Попробуйте обновить кадр</span></div></div><p id="staff-camera-view-note" class="camera-view-note" aria-label="Описание камеры" hidden></p><p id="staff-camera-view-reason" class="camera-view-reason" hidden></p><footer class="camera-view-footer"><span id="staff-camera-view-time" role="status">Получаем кадр…</span><button id="refresh-staff-camera-view" type="button" class="secondary"><span data-icon="refresh" aria-hidden="true"></span>Обновить кадр</button></footer></dialog>
+  <dialog id="chat-link-dialog" class="chat-management-dialog" aria-labelledby="chat-link-title">
+    <div class="recipient-heading"><h2 id="chat-link-title">Ссылка для жителей</h2><button id="close-chat-link" class="icon-button" type="button" aria-label="Закрыть настройку ссылки">×</button></div>
+    <p id="chat-link-address" class="muted"></p>
+    <form id="chat-link-form" class="chat-link-form">
+      <label for="chat-link-url">Приглашение в группу MAX<input id="chat-link-url" type="url" maxlength="1024" placeholder="https://max.ru/join/…" autocomplete="off" aria-describedby="chat-link-help"></label>
+      <p id="chat-link-help" class="form-help">Скопируйте ссылку из настроек подключённой группы. Жители этого дома увидят её в разделе «Сообщения». Если оставите поле пустым, используем ссылку, полученную от MAX.</p>
+      <p id="chat-link-current" class="form-help"></p><p id="chat-link-error" class="error" role="alert" hidden></p>
+      <button id="save-chat-link" class="primary" type="submit">Сохранить ссылку</button>
+    </form>
+  </dialog>
   <div id="toast" class="toast" role="status" hidden></div>
   <div id="boot" class="boot" role="status"><img src="/staff/assets/domoved-symbol.png" alt="" width="72" height="72"><p>Открываем ваш Домовед…</p></div>
   <dialog id="staff-report-dialog" class="staff-report-dialog" aria-labelledby="staff-report-title">
