@@ -205,8 +205,13 @@ async def issue_presence(
 
 
 @router.post("/houses/{house_id}/issues", response_model=IssueResponse, status_code=201)
-async def report(house_id: int, data: CreateIssue, session: Session, user: Resident):
-    return await create_issue(session, user.id, house_id, data)
+async def report(
+    house_id: int, data: CreateIssue, request: Request, session: Session, user: Resident
+):
+    return await create_issue(
+        session, user.id, house_id, data,
+        priority_classifier=request.app.state.issue_priority,
+    )
 
 
 @router.post(
@@ -256,7 +261,10 @@ async def report_with_photos(house_id: int, request: Request, session: Session, 
                     raise HTTPException(422, "Размер одной фотографии не должен превышать 10 МБ")
                 content = await file.read(MAX_BYTES + 1)
                 photos.append(await asyncio.to_thread(save_photo, root, content))
-            return await create_issue(session, user.id, house_id, data, photos)
+            return await create_issue(
+                session, user.id, house_id, data, photos,
+                priority_classifier=request.app.state.issue_priority,
+            )
     finally:
         if photos:
             async with request.app.state.database.sessions() as cleanup:

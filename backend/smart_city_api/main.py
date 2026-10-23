@@ -2,6 +2,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
 
+import httpx
 from app.database.registration_demo import seed_registration_demo
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -21,6 +22,7 @@ from smart_city_api.api.routes.services import router as services_router
 from smart_city_api.api.routes.staff import router as staff_router
 from smart_city_api.core.config import Settings
 from smart_city_api.db.session import Database
+from smart_city_api.services.issue_priority import IssuePriorityClassifier
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -36,7 +38,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             if database and settings.onboarding_test_mode:
                 async with database.sessions.begin() as session:
                     await seed_registration_demo(session)
-            yield
+            async with httpx.AsyncClient() as ai_client:
+                app.state.issue_priority = IssuePriorityClassifier(settings, ai_client)
+                yield
         finally:
             if database:
                 await database.close()

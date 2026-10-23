@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     )
     database_url: SecretStr | None = None
     bot_token: SecretStr | None = None
+    yandex_api_key: SecretStr | None = None
+    yandex_folder_id: str | None = None
     local_login_enabled: bool = False
     sample_data_enabled: bool = False
     onboarding_test_mode: bool = False

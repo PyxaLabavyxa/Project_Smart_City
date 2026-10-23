@@ -1,7 +1,7 @@
 import hashlib
 from datetime import UTC, datetime
 
-from app.database.enums import ISSUE_CATEGORIES_BY_SCOPE, IssuePriority, IssueStatus
+from app.database.enums import ISSUE_CATEGORIES_BY_SCOPE, IssueStatus
 from app.database.models import Apartment, House, Issue, IssueEvent, IssuePhoto, StaffNotification
 from app.services.inbox import issue_created
 from fastapi import HTTPException
@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from smart_city_api.schemas.app import CreateIssue, IssueHistory, IssueResponse, Location
 from smart_city_api.services.access import own_apartment_ids, require_house
+from smart_city_api.services.issue_priority import IssuePriorityClassifier
 from smart_city_api.services.locations import OUTDOOR_ZONES, validate_location
 
 CATEGORIES_BY_SCOPE = ISSUE_CATEGORIES_BY_SCOPE
@@ -104,6 +105,8 @@ async def create_issue(
     house_id: int,
     data: CreateIssue,
     photos: list[tuple[str, str]] | None = None,
+    *,
+    priority_classifier: IssuePriorityClassifier,
 ) -> IssueResponse:
     house = await require_house(session, user_id, house_id)
     place = data.place
@@ -148,6 +151,17 @@ async def create_issue(
     scope = "courtyard" if outdoor else "apartment" if place.zone == "apartment" else "entrance"
     if data.category not in CATEGORIES_BY_SCOPE[scope]:
         raise HTTPException(422, "Эта подкатегория недоступна для выбранного места")
+    # End the read-only transaction before waiting on an external service.
+    # In particular, do not occupy a DB connection for the AI deadline.
+    await session.rollback()
+    priority = await priority_classifier.classify(data)
+    # Access/location and concurrent retries may have changed while AI was running.
+    house = await require_house(session, user_id, house_id)
+    await validate_location(session, user_id, house, place)
+    existing = await session.scalar(statement)
+    if existing:
+        check_retry(existing)
+        return await issue_response(session, existing, house, user_id)
     issue = Issue(
         user_id=user_id,
         house_id=house_id,
@@ -155,7 +169,7 @@ async def create_issue(
         description=data.description,
         category=data.category,
         status=IssueStatus.NEW,
-        priority=IssuePriority.MEDIUM,
+        priority=priority,
         entrance=place.entrance,
         floor=place.floor,
         zone=place.zone,
