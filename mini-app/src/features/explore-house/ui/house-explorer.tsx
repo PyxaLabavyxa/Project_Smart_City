@@ -8,7 +8,7 @@ import styles from "./house-explorer.module.css";
 
 export function HouseExplorer({ initialPlace }: { initialPlace?: HouseLocation }) {
   const { issues, startAt } = useIssues();
-  const { house, selected: remembered, select } = useHouseSelection();
+  const { house, choices, selected: remembered, select } = useHouseSelection();
   const [selected, setLocal] = useState(initialPlace ?? remembered);
   const sheet = useRef<HTMLDialogElement>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -18,6 +18,7 @@ export function HouseExplorer({ initialPlace }: { initialPlace?: HouseLocation }
   function chooseRoom(place: HouseLocation) { setSelected(place); setSheetOpen(true); sheet.current?.showModal(); }
   function closeSheet() { sheet.current?.close(); }
   const outdoor = isOutdoorZone(selected.zone);
+  const ownApartment = selected.zone === "apartment" && choices.some(choice => choice.houseId === selected.houseId && choice.apartment === selected.apartment);
   const apartments = floorApartments(house, selected.entrance, selected.floor);
   const floorIssues = issues.filter(issue => issue.place?.houseId === house.id && (outdoor ? issue.place.zone === selected.zone : !isOutdoorZone(issue.place.zone) && issue.place.entrance === selected.entrance && issue.place.floor === selected.floor));
   const selectedIssues = floorIssues.filter(issue => sameLocation(issue.place, selected));
@@ -28,8 +29,8 @@ export function HouseExplorer({ initialPlace }: { initialPlace?: HouseLocation }
         <span className={styles.state} data-attention={selectedIssues.some(issue => issue.status !== "completed") || undefined} data-planned={selected.zone === "technical" && !selectedIssues.length || undefined}>{selectedIssues.some(issue => issue.status !== "completed") ? "△ Есть активное обращение" : selectedIssues.length ? "✓ Недавно решено" : selected.zone === "technical" ? "◷ Плановые работы" : "✓ В порядке"}</span>
         <p>{selectedIssues.length ? `Обращений по этому помещению: ${selectedIssues.length}. Подробности — ниже.` : "Обращений по этому помещению нет."}</p>
         <div data-tour="plan-actions" className={styles.actions}>
-          <Link className={styles.action} href="/issues/new?from=plan" onClick={() => { closeSheet(); select(selected); startAt(selected); }}>＋ Сообщить о проблеме</Link>
-          {selected.zone === "apartment" && selected.apartment !== house.residentApartment && <Link className={styles.action} href={conversationHref(selected.apartment, house.residentApartmentId)} onClick={() => { closeSheet(); select(selected); }}>Написать в квартиру {selected.apartment}</Link>}
+          {(selected.zone !== "apartment" || ownApartment) && <Link className={styles.action} href="/issues/new?from=plan" onClick={() => { closeSheet(); select(selected); startAt(selected); }}>＋ Сообщить о проблеме</Link>}
+          {selected.zone === "apartment" && !ownApartment && <Link className={styles.action} href={conversationHref(selected.apartment, house.residentApartmentId)} onClick={() => { closeSheet(); select(selected); }}>Написать в квартиру {selected.apartment}</Link>}
           {selected.zone !== "apartment" && <Link className={styles.action} onClick={closeSheet} href="/cameras">Камеры дома</Link>}
         </div>
         {sheetOpen && selectedIssues.length > 0 && <div onClick={event => { if ((event.target as Element).closest("a")) closeSheet(); }}><IssueList issues={selectedIssues} /></div>}
