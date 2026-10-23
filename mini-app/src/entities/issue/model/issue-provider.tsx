@@ -28,7 +28,6 @@ type IssueState = {
   resetDraft: () => void;
   addIssue: (input: CreateIssueInput) => Promise<string>;
   removeIssue: (id: string) => Promise<void>;
-  respondToResolution: (id: string, status: "completed" | "in-progress") => void;
 };
 const IssueContext = createContext<IssueState | null>(null);
 export function IssueProvider({ children, gateway }: { children: ReactNode; gateway: IssueGateway }) {
@@ -112,9 +111,6 @@ export function IssueProvider({ children, gateway }: { children: ReactNode; gate
     updateChatPhotos(current => { const next = { ...current }; delete next[id]; return next; });
     reload();
   }
-  function respondToResolution() {
-    throw new Error("Подтверждение решения пока недоступно");
-  }
   function addIssue(input: CreateIssueInput): Promise<string> {
     if (pending.current) return pending.current;
     const payload = JSON.stringify(input);
@@ -140,7 +136,7 @@ export function IssueProvider({ children, gateway }: { children: ReactNode; gate
   });
   const draftPlace = fallbackLocation(house, draft.place);
   const currentDraft = updateIssueDraft(draft, { place: draftPlace });
-  return <IssueContext.Provider value={{ chatSending, sendChat, chatPhotos, setChatPhotos: (issueId, photos) => updateChatPhotos(current => ({ ...current, [issueId]: photos })), loading, error, reload, issues: locatedIssues, draft: currentDraft, chatDrafts, setChatDraft: (id, text) => setChatDrafts(current => ({ ...current, [id]: text })), creating, createdIssueId, dismissCreationNotice: () => setCreatedIssueId(null), updateDraft: patch => setDraft(current => updateIssueDraft({ ...current, place: fallbackLocation(house, current.place) }, patch)), startAt: place => setDraft(current => updateIssueDraft(current, { place, step: initialReportStep(place) })), resetDraft, addIssue, removeIssue, respondToResolution }}>{children}</IssueContext.Provider>;
+  return <IssueContext.Provider value={{ chatSending, sendChat, chatPhotos, setChatPhotos: (issueId, photos) => updateChatPhotos(current => ({ ...current, [issueId]: photos })), loading, error, reload, issues: locatedIssues, draft: currentDraft, chatDrafts, setChatDraft: (id, text) => setChatDrafts(current => ({ ...current, [id]: text })), creating, createdIssueId, dismissCreationNotice: () => setCreatedIssueId(null), updateDraft: patch => setDraft(current => updateIssueDraft({ ...current, place: fallbackLocation(house, current.place) }, patch)), startAt: place => setDraft(current => updateIssueDraft(current, { place, step: initialReportStep(place) })), resetDraft, addIssue, removeIssue }}>{children}</IssueContext.Provider>;
 }
 export function useIssues() {
   const context = useContext(IssueContext);

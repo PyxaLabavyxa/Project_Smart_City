@@ -2,7 +2,9 @@ from app.database.enums import IssueStatus
 from app.services.registration import STAFF_SITE_NOTICE
 
 ISSUE_STATUS_LABELS = {
-    IssueStatus.NEW.value: "❌ Не обработано",
+    IssueStatus.NEW.value: "📋 Новое",
+    IssueStatus.ACCEPTED.value: "📥 Принято",
+    IssueStatus.ASSIGNED.value: "👤 Назначен исполнитель",
     IssueStatus.IN_PROGRESS.value: "🕒 В работе",
     IssueStatus.RESOLVED.value: "✅ Решено",
 }

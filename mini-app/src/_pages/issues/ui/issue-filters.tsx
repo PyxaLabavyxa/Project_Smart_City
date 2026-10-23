@@ -13,7 +13,7 @@ export function IssueFilters({ filters, categories, onChange, onReset }: {
 }) {
   const { activeTarget } = useOnboarding();
   const { house } = useHouseSelection();
-  const statusOptions = { all: "Все статусы", active: "Активные", ...issueStatusLabels, completed: "Решённые" };
+  const statusOptions = { all: "Все статусы", ...issueStatusLabels, completed: "Решённые" };
   const filteredStatus = filters.status !== "all";
   const count = [filters.category, filters.entrance, filters.floor, filters.zone, filteredStatus].filter(Boolean).length;
   const [expanded,setExpanded]=useState(false);

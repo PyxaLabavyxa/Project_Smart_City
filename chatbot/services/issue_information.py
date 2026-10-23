@@ -1,7 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database.repositories.repositories import IssueRepository
-from app.database.enums import IssueStatus
 from chatbot.lexicon.lexicon import ISSUE_STATUS_LABELS, LEXICON
 
 
@@ -13,10 +12,7 @@ async def get_issue_information(
     last_issue = await issues.get_last_issue(max_user_id, house_id)
     statuses = await issues.get_issue_statuses(max_user_id, house_id)
 
-    new = statuses["new"]
-    in_progress = statuses["in_progress"]
-    resolved = statuses["resolved"]
-    total = new + in_progress + resolved
+    total = sum(statuses.values())
 
     if last_issue is None:
         last_issue_text = LEXICON["no_issues"]
@@ -31,9 +27,7 @@ async def get_issue_information(
 
     all_statuses = "\n".join(
         f"{ISSUE_STATUS_LABELS[stat]}: {count}"
-        for stat, count in zip(
-            map(lambda x: x.value, IssueStatus), (new, in_progress, resolved)
-        )
+        for stat, count in statuses.items()
     )
 
     text = LEXICON["issue_statistics"].format(

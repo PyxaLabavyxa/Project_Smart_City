@@ -6,8 +6,7 @@ const historyLabels: Record<IssueStateStatus, string> = {
   accepted: "Принято управляющей компанией",
   assigned: "Назначен исполнитель",
   "in-progress": "В работе",
-  "awaiting-confirmation": "Ожидает подтверждения",
-  completed: "Выполнено",
+  completed: "Решено",
 };
 
 export function IssueHistory({ issue }: { issue: IssueRecord }) {

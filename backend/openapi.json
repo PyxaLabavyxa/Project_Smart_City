@@ -6982,6 +6982,8 @@
         "type": "string",
         "enum": [
           "new",
+          "accepted",
+          "assigned",
           "in_progress",
           "resolved"
         ],

@@ -3,7 +3,7 @@ import type { IssueRecord, IssueStateStatus } from "./issue";
 
 export const issueStatusLabels: Record<IssueStateStatus, string> = {
   new: "Новое", accepted: "Принято", assigned: "Назначен исполнитель",
-  "in-progress": "В работе", "awaiting-confirmation": "Ожидает подтверждения", completed: "Выполнено",
+  "in-progress": "В работе", completed: "Решено",
 };
 
 export const issueCategories = [
@@ -12,7 +12,7 @@ export const issueCategories = [
 ] as const;
 
 export type IssueFilters = {
-  status: "all" | "active" | IssueStateStatus;
+  status: "all" | IssueStateStatus;
   category: string;
   entrance: string;
   floor: string;
@@ -31,7 +31,7 @@ export function issueFiltersFromSearch(params: Pick<URLSearchParams, "get">, hou
   if (params.get("house") && params.get("house") !== houseId) return { ...initialIssueFilters };
   const status = params.get("status") ?? "all";
   return {
-    status: status === "active" || Object.hasOwn(issueStatusLabels, status) ? status as IssueFilters["status"] : "all",
+    status: Object.hasOwn(issueStatusLabels, status) ? status as IssueFilters["status"] : "all",
     category: params.get("category") ?? "", entrance: params.get("entrance") ?? "",
     floor: params.get("floor") ?? "", zone: params.get("zone") ?? "", query: params.get("query") ?? "",
     onlyMine: params.get("mine") === "1",
@@ -56,7 +56,7 @@ export function filterIssues(issues: readonly IssueRecord[], filters: IssueFilte
   const query = filters.query.trim().toLocaleLowerCase("ru");
   return issues.filter(issue => {
     if (filters.onlyMine && !issue.mine) return false;
-    if (filters.status === "active" ? issue.status === "completed" : filters.status !== "all" && issue.status !== filters.status) return false;
+    if (filters.status !== "all" && issue.status !== filters.status) return false;
     if (filters.category && issue.category !== filters.category) return false;
     if (filters.entrance && (!issue.place || isOutdoorZone(issue.place.zone) || issue.place.entrance !== Number(filters.entrance))) return false;
     if (filters.floor && (!issue.place || isOutdoorZone(issue.place.zone) || issue.place.floor !== Number(filters.floor))) return false;

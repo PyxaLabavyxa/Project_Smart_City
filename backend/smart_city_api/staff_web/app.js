@@ -4,7 +4,7 @@ const $ = (id) => document.getElementById(id);
 const apiRoot = "/api/v1/staff";
 const cameraPageSize = 8;
 const issuePageSize = 10;
-const statuses = { new: "Новое", in_progress: "В работе", resolved: "Решено" };
+const statuses = { new: "Новое", accepted: "Принято", assigned: "Назначен исполнитель", in_progress: "В работе", resolved: "Решено" };
 const priorities = { 1: "Высокий", 2: "Средний", 3: "Низкий" };
 const categories = {
   water: "Водоснабжение", heating: "Отопление", electricity: "Электричество",
@@ -159,7 +159,8 @@ async function enterWorkspace() {
   switchSection();
 }
 function updateStatSelection() {
-  $("list-title").textContent = { "": "Все обращения", new: "Новые обращения", in_progress: "Обращения в работе", resolved: "Решённые обращения" }[state.status];
+  $("list-title").textContent = { "": "Все обращения", new: "Новые обращения", accepted: "Принятые обращения", assigned: "Назначен исполнитель", in_progress: "Обращения в работе", resolved: "Решённые обращения" }[state.status];
+  $("status-filter").value = state.status;
   document.querySelectorAll(".stat").forEach((button) => {
     const selected = button.dataset.status === state.status;
     button.classList.toggle("selected", selected); button.setAttribute("aria-pressed", String(selected));
@@ -363,6 +364,9 @@ document.querySelectorAll(".stat").forEach((button) => button.addEventListener("
   state.status = button.dataset.status; state.page = 1; updateStatSelection(); loadList();
 }));
 for (const id of ["house-filter", "priority-filter"]) $(id).addEventListener("change", () => { state.page = 1; loadList(); });
+$("status-filter").addEventListener("change", () => {
+  state.status = $("status-filter").value; state.page = 1; updateStatSelection(); loadList();
+});
 $("search").addEventListener("input", () => { clearTimeout(searchTimer); searchTimer = setTimeout(() => { state.page = 1; loadList(); }, 300); });
 $("prev-page").addEventListener("click", () => { if (state.page > 1) { state.page--; loadList(); } });
 $("next-page").addEventListener("click", () => { if (state.page * issuePageSize < state.total) { state.page++; loadList(); } });

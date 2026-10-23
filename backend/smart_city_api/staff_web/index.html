@@ -8,11 +8,11 @@
   <title>Кабинет сотрудника · Домовед</title>
   <link rel="icon" href="/staff/assets/domoved-symbol.png" type="image/png">
   <link rel="preload" href="/staff/assets/onest-regular.ttf" as="font" type="font/ttf" crossorigin>
-  <link rel="stylesheet" href="/staff/style.css?v=20261023-review-fixes-1">
+  <link rel="stylesheet" href="/staff/style.css?v=20261023-small-fixes-1">
   <link rel="stylesheet" href="/staff/camera-management.css?v=20261023-review-fixes-1">
   <link rel="stylesheet" href="/staff/contacts-management.css?v=20261022-contact-patch-1">
   <script src="/staff/confirmation.js?v=20261021-motion-4" defer></script>
-  <script src="/staff/app.js?v=20261023-review-fixes-1" defer></script>
+  <script src="/staff/app.js?v=20261023-small-fixes-1" defer></script>
   <link rel="stylesheet" href="/staff/notification-inbox.css?v=20261022-4">
   <script src="/staff/notification-inbox.js?v=20261022-2" defer></script>
   <link rel="stylesheet" href="/staff/staff-report.css?v=20261022-motion-1">
@@ -71,7 +71,7 @@
         </section>
         <section class="inbox" aria-label="Список обращений">
           <div class="inbox-heading"><div><h2><span id="list-title">Все обращения</span> <span id="total-label" class="count-pill">0</span></h2><p>Каждое обращение — возможность сделать дом лучше</p></div><span class="table-caption"><span data-icon="clock" aria-hidden="true"></span> Сначала новые</span></div>
-          <div class="filters"><label class="search-field"><span data-icon="search" aria-hidden="true"></span><span class="sr-only">Поиск по номеру, заголовку или описанию</span><input id="search" type="search" placeholder="Найти обращение" maxlength="200"></label><label><span class="sr-only">Дом</span><select id="house-filter"><option value="">Все дома</option></select></label><label><span class="sr-only">Приоритет</span><select id="priority-filter"><option value="">Любой приоритет</option><option value="1">Высокий приоритет</option><option value="2">Средний приоритет</option><option value="3">Низкий приоритет</option></select></label></div>
+          <div class="filters"><label class="search-field"><span data-icon="search" aria-hidden="true"></span><span class="sr-only">Поиск по номеру, заголовку или описанию</span><input id="search" type="search" placeholder="Найти обращение" maxlength="200"></label><label><span class="sr-only">Статус обращения</span><select id="status-filter"><option value="">Все статусы</option><option value="new">Новое</option><option value="accepted">Принято</option><option value="assigned">Назначен исполнитель</option><option value="in_progress">В работе</option><option value="resolved">Решённые</option></select></label><label><span class="sr-only">Дом</span><select id="house-filter"><option value="">Все дома</option></select></label><label><span class="sr-only">Приоритет</span><select id="priority-filter"><option value="">Любой приоритет</option><option value="1">Высокий приоритет</option><option value="2">Средний приоритет</option><option value="3">Низкий приоритет</option></select></label></div>
           <p id="list-error" class="error list-error" role="alert" hidden></p>
           <div class="table-scroll"><table><thead><tr><th scope="col">Обращение</th><th scope="col">Дом / автор</th><th scope="col">Приоритет</th><th scope="col">Статус</th><th scope="col">Получено</th><th scope="col"><span class="sr-only">Открыть</span></th></tr></thead><tbody id="issues-body"></tbody></table></div>
           <div id="empty" class="empty" hidden><span data-icon="check-circle" aria-hidden="true"></span><h3>Здесь пока тихо</h3><p>Обращения жителей появятся автоматически.<br>Если включены фильтры, попробуйте их изменить.</p></div>

@@ -6,7 +6,6 @@ import { endpoints } from "@/shared/api/client";
 import { array } from "@/shared/api/parse";
 import { useRemote } from "@/shared/api/use-remote";
 import { RequestState } from "@/shared/ui/navigation/request-state";
-import { RefreshButton } from "@/shared/ui/refresh-button";
 import { Icon } from "@/shared/ui/icon";
 import { activeHouseWorks, houseWorkStatus, parseHouseWork, workPeriod } from "../model/house-work";
 import type { HouseWork } from "../model/house-work";
@@ -46,7 +45,7 @@ export function HouseWorks() {
   }, [house.id]);
   const [expanded, setExpanded] = useState(false);
   const works = activeHouseWorks(state.data ?? []);
-  return <section className={styles.schedule} aria-labelledby="works"><div className={styles.sectionHead}><h2 id="works">Работы в доме</h2><RefreshButton className={styles.workRefresh} onRefresh={state.reload} loading={state.loading} aria-label="Обновить работы в доме" /></div>
+  return <section className={styles.schedule} aria-labelledby="works"><div className={styles.sectionHead}><h2 id="works">Работы в доме</h2></div>
     <RequestState {...state} loading={state.loading && !state.data} />
     {works.length > 0 && <ul className={styles.workList}>{(expanded ? works : works.slice(0, 2)).map(work => <WorkCard key={work.id} work={work} />)}</ul>}
     {works.length > 2 && <button type="button" className={styles.workMore} aria-expanded={expanded} onClick={() => setExpanded(value => !value)}>{expanded ? "Свернуть список" : `Все работы · ${works.length}`}</button>}

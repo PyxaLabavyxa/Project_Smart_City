@@ -4432,6 +4432,8 @@ components:
       type: string
       enum:
       - new
+      - accepted
+      - assigned
       - in_progress
       - resolved
       title: IssueStatus

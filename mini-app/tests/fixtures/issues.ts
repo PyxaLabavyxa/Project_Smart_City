@@ -5,13 +5,13 @@ export const demoIssues: readonly IssueRecord[] = [
     title: "Уборка площадки после ремонта", category: "Уборка",
     address: "ул. Центральная, 18", location: "Подъезд 2 · этаж 9 · Коридор",
     place: { houseId: "central-18", entrance: 2, floor: 9, zone: "corridor" },
-    createdAt: "2026-09-22T08:00:00+03:00", status: "awaiting-confirmation",
+    createdAt: "2026-09-22T08:00:00+03:00", status: "in-progress",
     description: "После ремонта на площадке остались пыль и строительный мусор.",
     history: [
       { status: "new", at: "2026-09-22T08:00:00+03:00" },
       { status: "accepted", at: "2026-09-22T09:00:00+03:00" },
       { status: "in-progress", at: "2026-09-23T10:00:00+03:00" },
-      { status: "awaiting-confirmation", at: "2026-09-23T12:00:00+03:00" },
+      { status: "in-progress", at: "2026-09-23T12:00:00+03:00" },
     ],
   },
   {

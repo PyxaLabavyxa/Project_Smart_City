@@ -1,6 +1,6 @@
 import type { HouseLocation } from "@/entities/house";
 
-export type IssueStateStatus = "new" | "accepted" | "assigned" | "in-progress" | "awaiting-confirmation" | "completed";
+export type IssueStateStatus = "new" | "accepted" | "assigned" | "in-progress" | "completed";
 
 export type IssueRecord = {
   id: string;

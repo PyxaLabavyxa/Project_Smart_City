@@ -119,21 +119,12 @@ class IssueRepository:
         self, max_user_id: int, house_id: int
     ) -> dict[str, int | None]:
         stmt = (
-            select(
+            select(*[
                 func.coalesce(
-                    func.sum(case((Issue.status == IssueStatus.NEW, 1), else_=0)), 0
-                ).label("new"),
-                func.coalesce(
-                    func.sum(
-                        case((Issue.status == IssueStatus.IN_PROGRESS, 1), else_=0)
-                    ),
-                    0,
-                ).label("in_progress"),
-                func.coalesce(
-                    func.sum(case((Issue.status == IssueStatus.RESOLVED, 1), else_=0)),
-                    0,
-                ).label("resolved"),
-            )
+                    func.sum(case((Issue.status == status, 1), else_=0)), 0
+                ).label(status.value)
+                for status in IssueStatus
+            ])
             .join(User, Issue.user_id == User.id)
             .where(
                 and_(

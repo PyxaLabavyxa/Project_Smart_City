@@ -8,7 +8,7 @@ import type { IssueGateway } from "./issue-gateway";
 
 const categories: Record<string, string> = { water: "Водоснабжение", heating: "Отопление", electricity: "Электричество", elevator: "Лифт", entrance: "Подъезд", yard: "Двор", garbage: "Мусор", security: "Безопасность", other: "Другое" };
 function status(value: unknown): IssueStateStatus {
-  switch (value) { case "new": return "new"; case "in_progress": return "in-progress"; case "resolved": return "completed"; default: throw new Error("Неизвестный статус обращения"); }
+  switch (value) { case "new": return "new"; case "accepted": return "accepted"; case "assigned": return "assigned"; case "in_progress": return "in-progress"; case "resolved": return "completed"; default: throw new Error("Неизвестный статус обращения"); }
 }
 export function parseIssue(value: unknown, house: House): IssueRecord {
   const row = record(value);

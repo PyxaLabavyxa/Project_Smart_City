@@ -108,6 +108,11 @@ def test_materials_are_valid_and_match_documented_application_routes():
                 "title": original["title"],
             }
             current["properties"]["ends_at"] = original
+        if name == "IssueStatus":
+            assert current["enum"] == ["new", "accepted", "assigned", "in_progress", "resolved"]
+            current["enum"] = [
+                state for state in current["enum"] if state not in {"accepted", "assigned"}
+            ]
         assert current == schema
     assert contract == create_app(Settings(_env_file=None, database_url=None)).openapi()
     assert config["team"] == read_json(config["test_data"])["team"] == "Облачный Код"

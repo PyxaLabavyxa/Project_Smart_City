@@ -266,7 +266,7 @@ def test_scope_filters_pagination_and_authenticated_photos(staff_api):
     csrf = login(client)
     listing = client.get(ROOT + "/issues?page_size=1").json()
     assert listing["total"] == 2 and len(listing["items"]) == 1
-    assert listing["counts"] == {"new": 1, "in_progress": 0, "resolved": 1}
+    assert listing["counts"] == {"new": 1, "accepted": 0, "assigned": 0, "in_progress": 0, "resolved": 1}
     first = listing["items"][0]["id"]
     assert client.get(ROOT + "/issues?page_size=1&page=2").json()["items"][0]["id"] != first
     assert client.get(ROOT + "/issues?house_id=2").json()["items"] == []

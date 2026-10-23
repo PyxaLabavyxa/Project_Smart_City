@@ -48,5 +48,7 @@ ISSUE_CATEGORIES_BY_SCOPE = {
 
 class IssueStatus(StrEnum):
     NEW = "new"
+    ACCEPTED = "accepted"
+    ASSIGNED = "assigned"
     IN_PROGRESS = "in_progress"
     RESOLVED = "resolved"
