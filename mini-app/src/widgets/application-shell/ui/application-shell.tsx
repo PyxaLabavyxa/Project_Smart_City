@@ -1,5 +1,5 @@
 "use client";
-import type { ReactNode } from "react";
+import { useLayoutEffect, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { BottomNavigation } from "./bottom-navigation";
@@ -8,6 +8,9 @@ import { BrandWordmark } from "@/shared/ui/brand-mark";
 import { appIcon } from "@/shared/ui/artwork-assets";
 import { Icon } from "@/shared/ui/icon";
 import { ApartmentsReady } from "@/entities/house/ui/apartments-ready";
+import { useHouseSelection } from "@/entities/house";
+import { useIssues } from "@/entities/issue";
+import { IssueCreated } from "@/features/report-issue/ui/issue-created";
 import { NotificationBell } from "@/features/notifications/provider";
 
 function parentPage(path: string) {
@@ -20,11 +23,19 @@ function parentPage(path: string) {
 }
 export function ApplicationShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const { house } = useHouseSelection();
+  const { issues, createdIssueId, dismissCreationNotice } = useIssues();
+  const created = createdIssueId && (pathname === "/issues/new" || pathname === `/issues/${createdIssueId}`)
+    ? issues.find(issue => issue.id === createdIssueId && issue.place?.houseId === house.id) : undefined;
+  const confirmationId = created?.id;
+  useLayoutEffect(() => {
+    if (confirmationId) window.scrollTo({ top: 0, behavior: "instant" });
+  }, [confirmationId]);
   const neighborChat = pathname === "/messages" || pathname.startsWith("/messages/") || /^\/issues\/[1-9]\d*\/chat\/?$/.test(pathname);
   const parent = parentPage(pathname);
   const inlineBack = pathname === "/contacts" || pathname.startsWith("/cameras/");
   const needsDirectory = ["/plan", "/house", "/info"].includes(pathname) || pathname.startsWith("/messages") || pathname.startsWith("/cameras");
-  const immersive = neighborChat || pathname === "/issues/new";
+  const immersive = neighborChat || (pathname === "/issues/new" && !created);
   return <div data-immersive={immersive || undefined} className={`${styles.app}${neighborChat ? ` ${styles.chatApp}` : ""}`}>
     <a className={styles.skip} href="#main">Перейти к содержимому</a>
     <header className={styles.header}>
@@ -34,7 +45,7 @@ export function ApplicationShell({ children }: { children: ReactNode }) {
     </header>
     <main id="main" data-page-path={pathname} className={`${styles.main}${neighborChat ? ` ${styles.chatMain}` : ""}`} tabIndex={-1}>
 {!neighborChat && !inlineBack && !["/", "/issues", "/utilities", "/cameras", "/more", "/issues/new", "/contacts", "/plan"].includes(pathname) && <Link href={parent.href} className={styles.back} aria-label={`Назад: ${parent.label}`}><Icon name="back" /><span>{parent.label}</span></Link>}
-      <div key={pathname} className={`${styles.pageTransition}${neighborChat ? ` ${styles.chatTransition}` : ""}`}>{needsDirectory ? <ApartmentsReady>{children}</ApartmentsReady> : children}</div>
+      <div key={created ? `created:${created.id}` : pathname} className={`${styles.pageTransition}${neighborChat ? ` ${styles.chatTransition}` : ""}`}>{created ? <IssueCreated issue={created} onOpen={() => { dismissCreationNotice(); window.scrollTo({ top: 0, behavior: "instant" }); }} /> : needsDirectory ? <ApartmentsReady>{children}</ApartmentsReady> : children}</div>
     </main>
     <BottomNavigation />
   </div>;

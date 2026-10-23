@@ -71,7 +71,6 @@ export function ReportIssueForm({ cancelHref = "/issues", cancelLabel = "Все 
       submitted.current = false; setNavigating(false);
     }
   }
-  if (navigating) return <div className={styles.review} role="status"><h2>Обращение отправлено</h2><p>Открываем подтверждение…</p></div>;
   const error = (name: string) => errors[name] ? <span className={styles.error} id={name + "-error"} role="alert">{errors[name]}</span> : null;
   return <><header className={styles.pageHeader}>
     {draft.step >= 0 ? <button type="button" disabled={saving} aria-label="Назад: предыдущий шаг" onClick={() => goToStep(backStep)}><Icon name="back" size={24} /></button> : <Link href={cancelHref} aria-label={`Назад: ${cancelLabel}`}><Icon name="back" size={24} /></Link>}
