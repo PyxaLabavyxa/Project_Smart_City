@@ -38,3 +38,36 @@ test('an emergency-only number is never used as the dispatcher', () => {
   const office = { ...emergency, label: 'Приёмная', value: '123' };
   assert.equal(contactInformation([emergency, office]).dispatcher, office);
 });
+
+test('additional contacts exclude all primary fields and keep extra records in saved order', () => {
+  const items = [
+    { kind: 'phone', label: 'Диспетчерская', value: '123', note: '' },
+    { kind: 'email', label: 'Электронная почта', value: 'office@example.ru', note: '' },
+    { kind: 'website', label: 'Сайт УК', value: 'https://example.ru', note: '' },
+    { kind: 'address', label: 'Адрес офиса', value: 'Домовая, 1', note: '' },
+    { kind: 'schedule', label: 'График работы', value: 'Пн–пт, 9:00–18:00', note: '' },
+    { kind: 'schedule', label: 'Приём жителей', value: 'Вт, 15:00–18:00', note: '' },
+    { kind: 'phone', label: 'Аварийная служба', value: '112', note: '' },
+  ];
+  assert.deepEqual(contactInformation(items).additional, []);
+  const extras = [
+    { kind: 'phone', label: 'Бухгалтерия', value: '456', note: 'По будням' },
+    { kind: 'email', label: 'Почта бухгалтерии', value: 'billing@example.ru', note: '' },
+    { kind: 'address', label: 'Офис бухгалтерии', value: 'Домовая, 2', note: '' },
+  ];
+  const saved = [extras[0], ...items, ...extras.slice(1)];
+  assert.deepEqual(contactInformation(saved).additional, extras);
+  assert.equal(saved.length, 10);
+});
+
+test('fallback dispatcher and overlapping schedule labels each consume only one primary record', () => {
+  const office = { kind: 'phone', label: 'Приёмная', value: '123', note: '' };
+  const extra = { ...office, label: 'Бухгалтерия', value: '456' };
+  const schedule = { kind: 'schedule', label: 'График работы и приёма', value: 'Пн–пт', note: '' };
+  const info = contactInformation([office, extra, schedule]);
+  assert.equal(info.dispatcher, office);
+  assert.equal(info.hours, schedule);
+  assert.equal(info.reception, undefined);
+  assert.deepEqual(info.additional, [extra]);
+  assert.deepEqual(contactInformation([]).additional, []);
+});

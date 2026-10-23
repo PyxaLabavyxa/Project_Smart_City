@@ -23,7 +23,7 @@ function chatStatusHtml(chat) {
 }
 function residentChatLinkHtml(chat) {
   if (chat.chat_id == null) return "";
-  return `<p class="row-meta">${chat.join_url ? `Ссылка для жителей ${chat.custom_join_url ? "указана УК" : "получена от MAX"}` : "Для жителей нужна ссылка на группу"}</p><button class="secondary" data-chat-action="link" data-house="${chat.house_id}">${chat.join_url ? "Ссылка для жителей" : "Добавить ссылку"}</button>`;
+  return `<button class="secondary chat-resident-link" data-chat-action="link" data-house="${chat.house_id}">${chat.join_url ? "Ссылка для жителей" : "Добавить ссылку"}</button>`;
 }
 function announcementSummary(item) {
   if (item.status === "draft") return "Черновик";
@@ -130,7 +130,7 @@ async function loadMaxChats() {
     const rows = await api("/max-chats");
     if (request !== maxChatRequest || profile !== state.profile) return;
     maxChatRows = rows;
-    $("max-chats-body").innerHTML = rows.map(chat => `<tr><td><strong>${esc(chat.address)}</strong></td><td>${chat.title ? esc(chat.title) : '<span class="muted">Группа не подключена</span>'}${residentChatLinkHtml(chat)}</td><td>${chatStatusHtml(chat)}${chat.error ? `<p class="chat-row-error">${esc(chat.error)}</p>` : ""}${chat.checked_at ? `<span class="row-meta">Проверено ${esc(date(chat.checked_at, true))}</span>` : ""}</td><td><div class="chat-row-actions">${chat.chat_id == null ? `<button class="primary" data-chat-action="code" data-house="${chat.house_id}">Подключить чат</button>` : `<button class="secondary" data-chat-action="menu" data-house="${chat.house_id}"${["pending", "sending"].includes(chat.menu_status) ? " disabled" : ""}>Восстановить меню</button><button class="secondary" data-chat-action="disconnect" data-house="${chat.house_id}">Отключить</button>`}</div></td></tr>`).join("");
+    $("max-chats-body").innerHTML = rows.map(chat => `<tr><td><strong>${esc(chat.address)}</strong></td><td>${chat.chat_id == null ? '<span class="muted">Группа не подключена</span>' : residentChatLinkHtml(chat)}</td><td>${chatStatusHtml(chat)}${chat.error ? `<p class="chat-row-error">${esc(chat.error)}</p>` : ""}${chat.checked_at ? `<span class="row-meta">Проверено ${esc(date(chat.checked_at, true))}</span>` : ""}</td><td><div class="chat-row-actions">${chat.chat_id == null ? `<button class="primary" data-chat-action="code" data-house="${chat.house_id}">Подключить чат</button>` : `<button class="secondary" data-chat-action="menu" data-house="${chat.house_id}"${["pending", "sending"].includes(chat.menu_status) ? " disabled" : ""}>Восстановить меню</button><button class="secondary" data-chat-action="disconnect" data-house="${chat.house_id}">Отключить</button>`}</div></td></tr>`).join("");
     $("max-chats-empty").hidden = rows.length > 0;
     renderAnnouncementHouses();
     showError("max-chats-error", "");

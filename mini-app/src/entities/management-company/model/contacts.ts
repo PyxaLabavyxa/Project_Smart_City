@@ -8,17 +8,23 @@ export type ManagementContact = {
 export type ManagementContacts = { companyName: string; items: ManagementContact[] };
 
 export function contactInformation(items: readonly ManagementContact[]) {
-  const emergency = items.find(item => item.kind === "phone" && /авари|экстрен/i.test(item.label));
-  return {
-    dispatcher: items.find(item => item.kind === "phone" && /диспетчер/i.test(item.label))
-      ?? items.find(item => item.kind === "phone" && item !== emergency),
-    emergency,
-    email: items.find(item => item.kind === "email"),
-    website: items.find(item => item.kind === "website" && contactHref(item)),
-    office: items.find(item => item.kind === "address"),
-    hours: items.find(item => item.kind === "schedule" && /график|работ/i.test(item.label)),
-    reception: items.find(item => item.kind === "schedule" && /при[её]м/i.test(item.label)),
+  const remaining = [...items];
+  const take = (kind: ManagementContact["kind"], match?: RegExp) => {
+    const index = remaining.findIndex(item => item.kind === kind
+      && (!match || match.test(item.label))
+      && (kind !== "website" || contactHref(item)));
+    return index === -1 ? undefined : remaining.splice(index, 1)[0];
   };
+  // Match the primary fields in the staff form before collecting extra contacts.
+  const dispatcher = take("phone", /диспетчер/i);
+  const hours = take("schedule", /график|работ/i);
+  const reception = take("schedule", /при[её]м/i);
+  const emergency = take("phone", /авари|экстрен/i);
+  const email = take("email");
+  const website = take("website");
+  const office = take("address");
+  const primaryDispatcher = dispatcher ?? take("phone");
+  return { dispatcher: primaryDispatcher, emergency, email, website, office, hours, reception, additional: remaining };
 }
 
 export function contactHref(contact: ManagementContact): string | undefined {
