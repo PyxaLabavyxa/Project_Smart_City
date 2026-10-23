@@ -16,7 +16,7 @@ export function tourSidePlacement(target: TourRect, viewport: TourViewport, card
   return { side: right >= left ? "right" as const : "left" as const, width: Math.min(440, Math.max(left, right)) };
 }
 
-export function tourLayout(target: TourRect, viewport: TourViewport, card: { width: number; height: number }, bottomInset = viewport.width <= 760 ? 78 : 0, options?: { placement: "above"; guideHeight: number; topInset?: number } | { placement: "beside"; guideHeight: number; side: "left" | "right" }) {
+export function tourLayout(target: TourRect, viewport: TourViewport, card: { width: number; height: number }, bottomInset = viewport.width <= 760 ? 78 : 0, options?: { placement: "above"; guideHeight: number; topInset?: number } | { placement: "beside"; guideHeight: number; side: "left" | "right" }, focusRange?: { top: number; bottom: number }) {
   const margin = 12;
   const originX = viewport.left ?? 0;
   const originY = viewport.top ?? 0;
@@ -30,9 +30,11 @@ export function tourLayout(target: TourRect, viewport: TourViewport, card: { wid
     ? clamp(originY + (viewport.height - height) / 2, originY + options.guideHeight + margin, lowestTop)
     : options ? Math.min(originY + (options.topInset ?? margin), lowestTop) : lowestTop;
   const x = clamp(target.left - 8, originX + 4, originX + viewport.width - 4);
-  const y = clamp(target.top - 8, originY + 4, originY + viewport.height - 4);
+  const focusTop = Math.max(originY + 4, focusRange?.top ?? originY + 4);
+  const focusBottom = Math.max(focusTop, Math.min(originY + viewport.height - bottomInset - margin, focusRange?.bottom ?? Infinity));
+  const y = clamp(target.top - 8, focusTop, focusBottom);
   const right = clamp(target.left + target.width + 8, x, originX + viewport.width - 4);
-  const bottom = originY + viewport.height - bottomInset - margin;
+  const bottom = focusBottom;
   return {
     card: { left, top },
     spot: { left: x, top: y, width: right - x, height: Math.max(0, Math.min(target.top + target.height + 8, bottom) - y) },

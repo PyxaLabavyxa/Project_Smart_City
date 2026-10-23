@@ -4657,6 +4657,41 @@
             "type": "string",
             "title": "Readingperiod"
           },
+          "readingOpen": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Readingopen"
+          },
+          "readingClose": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Readingclose"
+          },
+          "readingAvailable": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Readingavailable"
+          },
           "due": {
             "anyOf": [
               {

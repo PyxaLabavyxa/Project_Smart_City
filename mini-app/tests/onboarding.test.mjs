@@ -153,3 +153,17 @@ test('a camera card is highlighted in full even when the guide overlaps it', () 
   assert.equal(spot.height, target.height + 16);
   assert.equal(spot.width, target.width + 16);
 });
+
+test('a tall target is revealed through a separate scroll window without overlapping the hint', () => {
+  const viewport = { width: 320, height: 568 };
+  const target = { left: 16, top: 8, width: 288, height: 430 };
+  const hint = { width: 296, height: 220 };
+  const layout = tourLayout(target, viewport, hint, 72);
+  const range = tourFocusRange(viewport, { ...layout.card, height: hint.height }, 0, 72, false, 10);
+  const { spot } = tourLayout(target, viewport, hint, 72, undefined, range);
+  assert(spot.height > 0);
+  assert(spot.top >= range.top);
+  assert(spot.top + spot.height <= range.bottom);
+  assert(spot.top + spot.height < layout.card.top);
+  assert.equal(target.height, 430);
+});

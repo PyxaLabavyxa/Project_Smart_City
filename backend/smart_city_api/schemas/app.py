@@ -133,6 +133,9 @@ class AccountResponse(BaseModel):
     residents: int
     period: str | None
     readingPeriod: str
+    readingOpen: date | None = None
+    readingClose: date | None = None
+    readingAvailable: bool | None = None
     due: date | None
     charges: list[Charge]
     meters: list[MeterResponse]

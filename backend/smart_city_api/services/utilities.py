@@ -50,6 +50,11 @@ async def load_account(
         period=invoice.period if invoice else None,
         due=invoice.due if invoice else None,
         readingPeriod=account.reading_period,
+        readingOpen=account.reading_open,
+        readingClose=account.reading_close,
+        readingAvailable=account.reading_open
+        <= datetime.now(ZoneInfo("Europe/Moscow")).date()
+        <= account.reading_close,
         charges=invoice.charges if invoice else [],
         meters=[
             MeterResponse(

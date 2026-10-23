@@ -7,6 +7,7 @@ from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from urllib.parse import urlencode
 from uuid import uuid4
+from zoneinfo import ZoneInfo
 
 import pytest
 from app.database.models import (
@@ -333,6 +334,33 @@ def test_meter_registration_access_period_and_reading_validation(api):
     )
     with engine.connect() as connection:
         assert connection.scalar(text("SELECT count(*) FROM meter_readings")) == 1
+
+
+def test_utilities_expose_the_actual_reading_window_in_moscow_time(api):
+    client, engine, period = api
+    today = datetime.now(ZoneInfo("Europe/Moscow")).date()
+    for opens, closes, available in [
+        (today, today, True),
+        (today - timedelta(days=5), today - timedelta(days=1), False),
+        (today + timedelta(days=1), today + timedelta(days=5), False),
+    ]:
+        with Session(engine) as session:
+            account = session.get(UtilityAccount, 1)
+            account.reading_open, account.reading_close = opens, closes
+            session.commit()
+        response = client.get("/api/v1/apartments/1/utilities", headers=headers())
+        assert response.status_code == 200
+        body = response.json()
+        assert body["readingOpen"] == opens.isoformat()
+        assert body["readingClose"] == closes.isoformat()
+        assert body["readingAvailable"] is available
+        assert body["readingPeriod"] == period
+        if not available:
+            assert client.post(
+                "/api/v1/meters/1/readings",
+                json={"value": "11", "period": period},
+                headers=headers(),
+            ).status_code == 409
 
 
 def test_catalogs_show_only_registered_data_and_unavailable_preview(api):

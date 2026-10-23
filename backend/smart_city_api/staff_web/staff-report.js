@@ -206,4 +206,5 @@ $("staff-report-form").addEventListener("submit", async event => {
   }
 });
 
+window.hasUnsavedStaffReport = () => reportDialog.open && reportDirty;
 window.resetStaffReport = () => { reportDialog.close(); reportOptions = reportPerson = null; reportRequest = null; reportDirty = false; reportManual = false; };

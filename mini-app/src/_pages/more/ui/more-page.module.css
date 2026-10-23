@@ -59,8 +59,8 @@
 .infoRow { display:flex; align-items:center; gap:calc(18 * var(--u)); min-height:calc(58 * var(--u)); padding:calc(12 * var(--u)) 0; font-size:calc(16 * var(--u)); }
 .infoRow + .infoRow { border-top:1px solid var(--color-line); }
 .infoRow > svg { flex-shrink:0; width:calc(22 * var(--u)); }
-.infoRow > strong { flex:1; font-weight:400; }
-.infoRow > span { color:var(--color-muted); text-align:right; font-size:calc(15 * var(--u)); }
+.infoRow > strong { flex:1 0 30%; min-width:0; font-weight:400; }
+.infoRow > span { flex:1 1 55%; min-width:0; overflow-wrap:anywhere; color:var(--color-muted); text-align:right; font-size:calc(15 * var(--u)); }
 .emergency { background:var(--color-warning-bg); border-radius:calc(16 * var(--u)); padding:calc(12 * var(--u)); margin-top:calc(16 * var(--u)); }
 .emergencyTitle { display:flex; align-items:center; gap:calc(16 * var(--u)); padding:calc(3 * var(--u)) calc(4 * var(--u)) calc(10 * var(--u)); }
 .emergencyTitle > svg { color:var(--color-warning); width:calc(42 * var(--u)); height:calc(42 * var(--u)); }

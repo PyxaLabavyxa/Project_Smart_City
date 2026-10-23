@@ -1,7 +1,7 @@
 export type MeterKind = "cold" | "hot" | "electricity";
 export type Meter = { id: string; kind: MeterKind; serial: string; previous: number; current?: number };
 export type Charge = { title: string; quantity: string; tariff: string; amount: number };
-export type UtilityAccount = { number: string; invoiceNumber: string; area: number; residents: number; period: string; readingPeriod: string; due: string; charges: Charge[]; meters: Meter[] };
+export type UtilityAccount = { number: string; invoiceNumber: string; area: number; residents: number; period: string; readingPeriod: string; readingOpen?: string; readingClose?: string; readingAvailable?: boolean; due: string; charges: Charge[]; meters: Meter[] };
 export interface UtilitiesGateway {
   loadAccount(): Promise<UtilityAccount | undefined>;
   saveReading(meterId: string, value: string): Promise<UtilityAccount>;

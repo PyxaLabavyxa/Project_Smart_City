@@ -72,7 +72,7 @@ function restoreReply(id) {
 }
 
 window.addEventListener("beforeunload", event => {
-  if (!replyDrafts.size) return;
+  if (!replyDrafts.size && !contactState.dirty && !window.hasUnsavedStaffReport?.()) return;
   event.preventDefault(); event.returnValue = "";
 });
 

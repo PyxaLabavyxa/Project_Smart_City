@@ -11,7 +11,6 @@ import styles from "./onboarding.module.css";
 import { prepareTourImages } from "./prepare";
 
 type Position = { spot: TourRect; card: { left: number; top: number }; settled: boolean; scrollable: boolean; compact: boolean };
-const canCompactHint = (target: string) => ["issue-controls", "plan-map", "utility-bill"].includes(target);
 
 export function OnboardingTour({ onStateChange, onFinish }: { onStateChange: (target: string | null, preparing: boolean) => void; onFinish: (result: "completed" | "skipped") => Promise<void> }) {
   const router = useRouter();
@@ -117,8 +116,8 @@ export function OnboardingTour({ onStateChange, onFinish }: { onStateChange: (ta
       const navigationRect = document.querySelector('#main + nav')?.getBoundingClientRect();
       const navigationHeight = navigationRect && navigationRect.top > viewport.height / 2 ? navigationRect.height : 0;
       const viewportKey = `${viewport.width}:${viewport.height}:${viewport.left}:${viewport.top}`;
-      const adaptiveHint = canCompactHint(steps[step].target);
-      const besideEligible = viewport.width >= 768 && !steps[step].guide;
+      const adaptiveHint = !steps[step].guide;
+      const besideEligible = viewport.width >= 768 && (!steps[step].guide || !!found.closest('dialog[data-tour-preview]'));
       if ((adaptiveHint || besideEligible) && measuredViewport !== viewportKey) {
         panel?.removeAttribute("data-compact");
         card.current.style.maxHeight = "none";
@@ -134,13 +133,17 @@ export function OnboardingTour({ onStateChange, onFinish }: { onStateChange: (ta
       const sideGuide = steps[step].target === "issue-location" && matchMedia("(min-width:900px) and (max-height:850px)").matches;
       const guideHeight = (adaptiveHint && !beside) || sideGuide ? 0 : artworkHeight;
       const above = !!steps[step].guide && !matchMedia("(min-width:768px)").matches;
-      const maxCardHeight = Math.max(80, viewport.height - navigationHeight - guideHeight - 28);
+      const focusSpace = beside ? 0 : Math.min(96, found.getBoundingClientRect().height);
+      const maxCardHeight = Math.max(80, viewport.height - navigationHeight - guideHeight - focusSpace - 28);
       card.current.style.maxHeight = `${maxCardHeight}px`;
       card.current.style.minHeight = compact ? "0px" : `${Math.min(220, maxCardHeight)}px`;
       const cardRect = card.current.getBoundingClientRect();
       const options = beside ? { placement: "beside" as const, side: beside.side, guideHeight } : above ? { placement: "above" as const, guideHeight: steps[step].guide === "hanging" ? guideHeight : 0, topInset: steps[step].guide === "inset" ? guideHeight + 4 : undefined } : undefined;
       const layout = tourLayout(found.getBoundingClientRect(), viewport, cardRect, navigationHeight, options);
       let range = beside ? { top: viewport.top + 16, bottom: viewport.top + viewport.height - navigationHeight - 16 } : tourFocusRange(viewport, { top: layout.card.top, height: cardRect.height }, above ? options!.guideHeight : guideHeight, navigationHeight, above, adaptiveHint ? 10 : 16);
+      if (above && found.getBoundingClientRect().height > range.bottom - range.top) {
+        range = tourFocusRange(viewport, { top: layout.card.top, height: cardRect.height }, 0, navigationHeight, true);
+      }
       if (adaptiveHint && !beside) {
         const clearOfGuide = tourFocusRange(viewport, { top: layout.card.top, height: cardRect.height }, artworkHeight, navigationHeight, false);
         if (found.getBoundingClientRect().height <= clearOfGuide.bottom - clearOfGuide.top) range = clearOfGuide;
@@ -159,7 +162,7 @@ export function OnboardingTour({ onStateChange, onFinish }: { onStateChange: (ta
         // Fixed controls and the report sheet do not move with document scrolling.
         let fixed = !!found.closest("dialog");
         const sheet = found.closest("dialog");
-        if (sideGuide && sheet) sheet.scrollTop = tourScrollTop(rect, sheet.scrollTop, range);
+        if (sheet) sheet.scrollTop = tourScrollTop(rect, sheet.scrollTop, range);
         for (let node: HTMLElement | null = found; node && !fixed; node = node.parentElement) fixed = getComputedStyle(node).position === "fixed";
         const top = fixed ? window.scrollY : tourScrollTop(rect, window.scrollY, range);
         if (Math.abs(top - window.scrollY) > 1) {
@@ -175,7 +178,7 @@ export function OnboardingTour({ onStateChange, onFinish }: { onStateChange: (ta
         if (Math.abs(window.scrollY - destination) < 1 || performance.now() >= scrollDeadline) scrolling = false;
         else schedule();
       }
-      const nextLayout = tourLayout(found.getBoundingClientRect(), viewport, cardRect, navigationHeight, options);
+      const nextLayout = tourLayout(found.getBoundingClientRect(), viewport, cardRect, navigationHeight, options, beside ? undefined : range);
       const next = { ...nextLayout, settled: !scrolling, scrollable: rect.height > range.bottom - range.top, compact };
       setPosition(previous => JSON.stringify(previous) === JSON.stringify(next) ? previous : next);
     };
@@ -231,7 +234,7 @@ export function OnboardingTour({ onStateChange, onFinish }: { onStateChange: (ta
       <div className={styles.segments} role="progressbar" aria-valuemin={1} aria-valuemax={visibleSteps.length} aria-valuenow={visibleIndex + 1} aria-label={`Шаг ${visibleIndex + 1} из ${visibleSteps.length}`}>{visibleSteps.map((item, index) => <span key={item.target} data-filled={index <= visibleIndex || undefined} />)}</div>
       <h2 id="tour-title" tabIndex={-1} ref={heading}>{current.title}</h2>
       <p id="tour-description" className={styles.description}>{current.text}</p>
-      {position?.scrollable && !position.compact && <p className={styles.scrollHint}>Прокрутите выделенный блок</p>}
+      {position?.scrollable && <p className={styles.scrollHint}>Прокрутите выделенный блок</p>}
       <footer><button type="button" className={styles.back} onClick={() => finish()}>Пропустить</button><div>{previousStep !== null && <button type="button" className={styles.back} onClick={() => move(previousStep!)} aria-label="Предыдущая подсказка"><Icon name="arrow" size={16} style={{ transform: "rotate(180deg)" }} /></button>}<button type="button" disabled={!ready} className={styles.next} onClick={() => nextStep === null ? finish("completed") : move(nextStep)}>{nextStep === null ? "Готово" : "Далее"}<Icon name="arrow" size={15} /></button></div></footer>
     </section>
     </div>

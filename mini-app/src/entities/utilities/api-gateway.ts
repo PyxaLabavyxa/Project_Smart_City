@@ -9,6 +9,9 @@ function parseAccount(value: unknown): UtilityAccount | undefined {
     number: string(row.number), invoiceNumber: row.invoiceNumber === null ? "" : string(row.invoiceNumber),
     area: decimal(row.area), residents: number(row.residents), period: row.period === null ? "" : string(row.period),
     readingPeriod: string(row.readingPeriod), due: row.due === null ? "" : string(row.due),
+    readingOpen: row.readingOpen == null ? undefined : string(row.readingOpen),
+    readingClose: row.readingClose == null ? undefined : string(row.readingClose),
+    readingAvailable: typeof row.readingAvailable === "boolean" ? row.readingAvailable : undefined,
     charges: array(row.charges, value => { const c = record(value); return { title: string(c.title), quantity: string(c.quantity), tariff: string(c.tariff), amount: number(c.amount) }; }),
     meters: array(row.meters, value => {
       const m = record(value);

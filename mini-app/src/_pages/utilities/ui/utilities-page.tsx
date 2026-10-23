@@ -39,6 +39,6 @@ export function UtilitiesPage() {
     </section>
     <aside className={styles.account}><div className={styles.accountHeading}><span className={styles.accountIcon}><Icon name="building" size={28} /></span><div><h2>Квартира {house.residentApartment}</h2><p>{house.address}</p><p className={styles.muted}>Подъезд {apartment.entrance} · Этаж {apartment.floor}</p></div></div><dl className={styles.totals}><div><dt>Лицевой счёт</dt><dd>{account.number}</dd></div></dl></aside>
    </div>
-  </div> : <Meters key={`${house.id}:${house.residentApartment}`} meters={account.meters} apartment={house.residentApartment} period={account.readingPeriod} onSave={saveReading} />}
+  </div> : <Meters key={`${house.id}:${house.residentApartment}:${account.readingPeriod}`} meters={account.meters} apartment={house.residentApartment} period={account.readingPeriod} readingOpen={account.readingOpen} readingClose={account.readingClose} readingAvailable={account.readingAvailable} onSave={saveReading} />}
  </div>;
 }

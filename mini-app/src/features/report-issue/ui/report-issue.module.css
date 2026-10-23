@@ -151,6 +151,9 @@
   .sheet { inset:0; margin:auto; height:fit-content; max-height:calc(100dvh - 48px); border-radius:24px; }
   .handle { display:none; }
 }
+@media(min-width:768px) and (max-height:660px) {
+  .sheet[data-tour-preview] { margin-inline-start:12px; margin-inline-end:auto; }
+}
 @media(min-width:900px) and (max-height:850px) {
   .sheet[data-tour-preview] { inset:12px 0 auto; margin:0 auto; max-height:calc(100dvh - 260px); overflow-y:auto; }
 }
