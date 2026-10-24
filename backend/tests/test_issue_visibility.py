@@ -2,7 +2,7 @@ from datetime import UTC, datetime
 
 import pytest
 from app.database.models import Apartment, House, Issue, User, UserApartment
-from sqlalchemy import delete
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from tests.test_api import headers, issue_body
@@ -121,17 +121,65 @@ def test_membership_matches_house_and_entrance_together_and_supports_multiple_ap
     assert client.get(f"/api/v1/issues/{issue['id']}", headers=headers()).status_code == 200
 
 
-def test_author_retains_own_report_from_another_entrance_and_staff_sees_all_scopes(visibility_api):
+def test_authorship_does_not_bypass_entrance_membership_and_staff_sees_all_scopes(visibility_api):
     client, _, _ = visibility_api
     entrance = report(client, {"zone": "corridor", "entrance": 2, "floor": 2})
     private = report(client, {"zone": "apartment", "entrance": 1, "floor": 1, "apartment_id": 1})
     yard = report(client, {"zone": "courtyard"})
-    assert entrance["id"] in ids(client, 101)
+    assert entrance["id"] not in ids(client, 101)
+    assert client.get(f"/api/v1/issues/{entrance['id']}", headers=headers()).status_code == 404
     assert entrance["id"] in ids(client, 102)
     assert entrance["id"] not in ids(client, 104)
     login(client)
     staff_ids = {row["id"] for row in client.get(ROOT + "/issues").json()["items"]}
     assert {entrance["id"], private["id"], yard["id"]} <= staff_ids
+
+
+def test_selected_apartment_limits_the_feed_when_resident_owns_both_entrances(visibility_api):
+    client, engine, _ = visibility_api
+    first = report(client, {"zone": "corridor", "entrance": 1, "floor": 1})
+    second = report(client, {"zone": "corridor", "entrance": 2, "floor": 3}, author=102)
+    yard = report(client, {"zone": "courtyard"})
+    private = report(client, {"zone": "apartment", "entrance": 1, "floor": 1, "apartment_id": 1})
+    other_private = report(client, {"zone": "apartment", "entrance": 2, "floor": 3, "apartment_id": 2}, author=102)
+    with Session(engine) as session:
+        session.add(UserApartment(user_id=1, apartment_id=2))
+        upstairs = session.scalar(select(Apartment.id).where(Apartment.house_id == 1, Apartment.entrance == 1, Apartment.floor == 2))
+        session.commit()
+    first_feed = ids(client, 101, ISSUES + "?apartment_id=1")
+    second_feed = ids(client, 101, ISSUES + "?apartment_id=2")
+    assert first["id"] in first_feed and first["id"] not in second_feed
+    assert second["id"] not in first_feed and second["id"] in second_feed
+    assert {yard["id"], private["id"]} <= first_feed & second_feed
+    assert other_private["id"] not in first_feed | second_feed
+    # Switching back restores the first entrance; floor does not restrict its audience.
+    assert ids(client, 101, ISSUES + "?apartment_id=1") == first_feed
+    assert first["id"] in ids(client, 104, ISSUES + f"?apartment_id={upstairs}")
+
+
+def test_selected_apartment_must_be_owned_and_belong_to_the_requested_house(visibility_api):
+    client, engine, _ = visibility_api
+    with Session(engine) as session:
+        another_house = session.scalar(select(Apartment.id).where(Apartment.house_id == 2, Apartment.entrance == 2))
+    for apartment in (2, 3, another_house, 999999):
+        assert client.get(ISSUES + f"?apartment_id={apartment}", headers=headers()).status_code == 404
+    for apartment in (0, -1, "wrong"):
+        assert client.get(ISSUES + f"?apartment_id={apartment}", headers=headers()).status_code == 422
+
+
+def test_selected_entrance_is_applied_before_pagination(visibility_api):
+    client, engine, _ = visibility_api
+    first = report(client, {"zone": "corridor", "entrance": 1, "floor": 1})
+    report(client, {"zone": "corridor", "entrance": 2, "floor": 3}, author=102)
+    yard = report(client, {"zone": "courtyard"})
+    with Session(engine) as session:
+        session.add(UserApartment(user_id=1, apartment_id=2))
+        session.commit()
+    page = client.get(ISSUES + f"?apartment_id=1&limit=1&cursor={first['id'] - 1}", headers=headers()).json()
+    assert [item["id"] for item in page["items"]] == [first["id"]]
+    page = client.get(ISSUES + f"?apartment_id=1&limit=1&cursor={page['next_cursor']}", headers=headers()).json()
+    assert [item["id"] for item in page["items"]] == [yard["id"]]
+    assert page["next_cursor"] is None
 
 
 def test_pagination_excludes_hidden_issues_before_computing_the_cursor(visibility_api):

@@ -23,7 +23,7 @@ from smart_city_api.schemas.notifications import NotificationPreferences
 from smart_city_api.schemas.onboarding import OnboardingInput, OnboardingOutput
 from smart_city_api.schemas.resident import ApartmentPage, ApartmentResponse, HouseResponse
 from smart_city_api.services import chat_photos
-from smart_city_api.services.access import own_apartment_ids, require_house
+from smart_city_api.services.access import own_apartment_ids, require_apartment, require_house
 from smart_city_api.services.contacts import read_contacts
 from smart_city_api.services.house_chats import resident_chat
 from smart_city_api.services.issue_chat import own_issue, read_messages, send_message
@@ -139,16 +139,21 @@ async def apartments(
 
 @router.get("/houses/{house_id}/issues", response_model=IssuePage)
 async def issues(
-    house_id: int, session: Session, user: Resident, cursor: Cursor = 0, limit: Limit = 100
+    house_id: int, session: Session, user: Resident, cursor: Cursor = 0, limit: Limit = 100,
+    apartment_id: Annotated[int | None, Query(gt=0)] = None,
 ):
     house = await require_house(session, user.id, house_id)
+    if apartment_id is not None:
+        apartment = await require_apartment(session, user.id, apartment_id)
+        if apartment.house_id != house.id:
+            raise HTTPException(404, "Квартира не найдена в выбранном доме")
     rows = (
         await session.scalars(
             select(Issue)
             .where(
                 Issue.house_id == house_id,
                 Issue.id > cursor,
-                visible_issues(user.id),
+                visible_issues(user.id, apartment_id),
             )
             .order_by(Issue.id)
             .limit(limit + 1)

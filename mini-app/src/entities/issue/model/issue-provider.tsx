@@ -7,6 +7,7 @@ import { type IssueRecord } from "./issue";
 import { useHouseSelection, fallbackLocation, resolveLocation, formatLocation, type HouseLocation } from "@/entities/house";
 import { emptyDraft, initialReportStep, updateIssueDraft, type IssueDraft } from "./issue-draft";
 import type { CreateIssueInput, IssueGateway } from "./issue-gateway";
+import { visibleInSelectedHome } from "./issue-visibility";
 
 type IssueState = {
   loading: boolean;
@@ -130,7 +131,7 @@ export function IssueProvider({ children, gateway }: { children: ReactNode; gate
     pending.current = task;
     return task;
   }
-  const locatedIssues = issues.map(issue => {
+  const locatedIssues = issues.filter(issue => visibleInSelectedHome(issue, house)).map(issue => {
     const place = resolveLocation(house, issue.place);
     return { ...issue, place, location: place ? formatLocation(place) : issue.location };
   });

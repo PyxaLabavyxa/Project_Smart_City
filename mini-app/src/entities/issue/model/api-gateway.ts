@@ -37,8 +37,10 @@ export function parseIssue(value: unknown, house: House): IssueRecord {
   };
 }
 export function createIssueGateway(api: ApiClient, house: House): IssueGateway {
+  const selectedApartment = house.residentApartmentId;
+  const listPath = endpoints.issues(house.id) + (selectedApartment ? `?apartment_id=${selectedApartment}` : "");
   return {
-    list: signal => readPages(api, endpoints.issues(house.id), value => parseIssue(value, house), signal),
+    list: signal => readPages(api, listPath, value => parseIssue(value, house), signal),
     get: async (id, signal) => parseIssue(await api(endpoints.issue(id), { signal }), house),
     async remove(id) { await api(endpoints.issue(id), { method: "DELETE" }); },
     async create(input, requestId) {

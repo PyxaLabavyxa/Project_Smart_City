@@ -17,24 +17,35 @@ from smart_city_api.services.locations import OUTDOOR_ZONES, validate_location
 CATEGORIES_BY_SCOPE = ISSUE_CATEGORIES_BY_SCOPE
 
 
-def visible_issues(user_id: int):
+def visible_issues(user_id: int, apartment_id: int | None = None):
     """Resident visibility; unknown legacy locations stay author-only."""
     apartments = select(Apartment.id).where(
         Apartment.id.in_(own_apartment_ids(user_id)),
         Apartment.house_id == Issue.house_id,
     )
+    if apartment_id is not None:
+        apartments = apartments.where(Apartment.id == apartment_id)
+    entrance_zones = ("entrance", "corridor", "stairs", "elevator", "technical")
+    shared_zones = OUTDOOR_ZONES | set(entrance_zones)
     return and_(
         Issue.rejected_at.is_(None),
         Issue.deleted_at.is_(None),
         apartments.exists(),
         or_(
-            Issue.user_id == user_id,
+            and_(
+                Issue.user_id == user_id,
+                or_(
+                    Issue.apartment_id.is_not(None),
+                    Issue.zone.is_(None),
+                    Issue.zone.not_in(shared_zones),
+                ),
+            ),
             and_(
                 Issue.apartment_id.is_(None),
                 or_(
                     Issue.zone.in_(OUTDOOR_ZONES),
                     and_(
-                        Issue.zone.in_(("entrance", "corridor", "stairs", "elevator", "technical")),
+                        Issue.zone.in_(entrance_zones),
                         apartments.where(Apartment.entrance == Issue.entrance).exists(),
                     ),
                 ),

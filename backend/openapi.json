@@ -939,6 +939,23 @@
               "default": 100,
               "title": "Limit"
             }
+          },
+          {
+            "name": "apartment_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "exclusiveMinimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Apartment Id"
+            }
           }
         ],
         "responses": {
