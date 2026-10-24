@@ -1,5 +1,12 @@
 export type TourRect = { left: number; top: number; width: number; height: number };
 export type TourViewport = { width: number; height: number; left?: number; top?: number };
+export function tourBounds(rects: readonly TourRect[]): TourRect {
+  const left = Math.min(...rects.map(rect => rect.left));
+  const top = Math.min(...rects.map(rect => rect.top));
+  return { left, top, width: Math.max(...rects.map(rect => rect.left + rect.width)) - left,
+    height: Math.max(...rects.map(rect => rect.top + rect.height)) - top };
+}
+
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(value, max));
 
 /** Compact only when the normal hint and the unscaled target cannot fit together. */
@@ -16,7 +23,7 @@ export function tourSidePlacement(target: TourRect, viewport: TourViewport, card
   return { side: right >= left ? "right" as const : "left" as const, width: Math.min(440, Math.max(left, right)) };
 }
 
-export function tourLayout(target: TourRect, viewport: TourViewport, card: { width: number; height: number }, bottomInset = viewport.width <= 760 ? 78 : 0, options?: { placement: "above"; guideHeight: number; topInset?: number } | { placement: "beside"; guideHeight: number; side: "left" | "right" }, focusRange?: { top: number; bottom: number }) {
+export function tourLayout(target: TourRect, viewport: TourViewport, card: { width: number; height: number }, bottomInset = viewport.width <= 760 ? 78 : 0, options?: { placement: "above"; guideHeight: number; topInset?: number; attached?: boolean } | { placement: "below"; gap: number } | { placement: "beside"; guideHeight: number; side: "left" | "right" }, focusRange?: { top: number; bottom: number }) {
   const margin = 12;
   const originX = viewport.left ?? 0;
   const originY = viewport.top ?? 0;
@@ -28,16 +35,20 @@ export function tourLayout(target: TourRect, viewport: TourViewport, card: { wid
   const lowestTop = originY + viewport.height - bottomInset - height - margin;
   const top = options?.placement === "beside"
     ? clamp(originY + (viewport.height - height) / 2, originY + options.guideHeight + margin, lowestTop)
-    : options ? Math.min(originY + (options.topInset ?? margin), lowestTop) : lowestTop;
-  const x = clamp(target.left - 8, originX + 4, originX + viewport.width - 4);
+    : options?.placement === "below"
+      ? clamp(target.top + target.height + options.gap, originY + margin, lowestTop)
+      : options?.placement === "above"
+        ? options.attached ? clamp(target.top - height - options.guideHeight - margin, originY + (options.topInset ?? margin), lowestTop) : Math.min(originY + (options.topInset ?? margin), lowestTop)
+        : lowestTop;
+  const x = clamp(target.left - 10, originX + 4, originX + viewport.width - 4);
   const focusTop = Math.max(originY + 4, focusRange?.top ?? originY + 4);
-  const focusBottom = Math.max(focusTop, Math.min(originY + viewport.height - bottomInset - margin, focusRange?.bottom ?? Infinity));
-  const y = clamp(target.top - 8, focusTop, focusBottom);
-  const right = clamp(target.left + target.width + 8, x, originX + viewport.width - 4);
+  const focusBottom = Math.max(focusTop, Math.min(originY + viewport.height - bottomInset - (focusRange ? 4 : margin), focusRange?.bottom ?? Infinity));
+  const y = clamp(target.top - 12, focusTop, focusBottom);
+  const right = clamp(target.left + target.width + 10, x, originX + viewport.width - 4);
   const bottom = focusBottom;
   return {
     card: { left, top },
-    spot: { left: x, top: y, width: right - x, height: Math.max(0, Math.min(target.top + target.height + 8, bottom) - y) },
+    spot: { left: x, top: y, width: right - x, height: Math.max(0, Math.min(target.top + target.height + 12, bottom) - y) },
   };
 }
 

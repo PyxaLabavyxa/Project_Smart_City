@@ -59,3 +59,13 @@ test('common areas keep reporting and cameras without apartment messaging', () =
     assert.doesNotMatch(html, /Написать в квартиру/);
   }
 });
+
+
+test('old outdoor plan links show an indoor floor without territory tabs or an outdoor room card', () => {
+  for (const zone of ['house', 'courtyard', 'parking']) {
+    const html = actions({ houseId:'1', entrance:1, floor:1, zone });
+    assert.doesNotMatch(html, /Другие зоны дома|Перейти к этажам дома|Общая территория|>Двор<|>Парковка</);
+    assert.match(html, /Этаж 2/);
+    assert.match(html, /Коридор/);
+  }
+});

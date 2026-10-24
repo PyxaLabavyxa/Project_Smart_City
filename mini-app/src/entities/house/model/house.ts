@@ -94,6 +94,11 @@ export function residentFloorLocation(house: House): HouseLocation {
   return { houseId: house.id, entrance: resident?.entrance ?? 1, floor: resident?.floor ?? 1, zone: "corridor" };
 }
 
+export function floorPlanLocation(house: House, place: HouseLocation): HouseLocation {
+  const current = resolveLocation(house, place);
+  return current && !isOutdoorZone(current.zone) ? current : residentFloorLocation(house);
+}
+
 export function fallbackLocation(house: House, place: HouseLocation): HouseLocation {
   return resolveLocation(house, place) ?? { houseId: house.id, entrance: Math.max(1, Math.min(house.entrances, place.entrance)), floor: Math.max(1, Math.min(house.floors, place.floor)), zone: "corridor" };
 }

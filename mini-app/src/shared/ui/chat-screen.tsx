@@ -28,7 +28,7 @@ export function ChatScreen({ title, subtitle, avatar, backHref, backLabel, actio
   }, []);
   return <div ref={page} className={styles.page} data-chat-screen data-inbox={inbox || undefined}>
     {inbox && <Link href="/" className={styles.inboxBrand} aria-label="Домовед — главная"><BrandWordmark /></Link>}
-    <header className={styles.header}>
+    <header data-tour={inbox ? "message-header" : undefined} className={styles.header}>
       <Link href={backHref} className={styles.back} aria-label={backLabel}><Icon name="back" size={24} /></Link>
       {avatar !== undefined && <span className={styles.avatar} aria-hidden="true">{avatar}</span>}
       <div className={styles.recipient}><h1>{title}</h1>{subtitle && <p>{subtitle}</p>}</div>

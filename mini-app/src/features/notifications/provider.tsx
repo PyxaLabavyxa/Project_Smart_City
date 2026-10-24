@@ -47,7 +47,7 @@ export function useNotifications() {
 }
 export function NotificationBell() {
   const { count } = useNotifications();
-  return <Link href="/notifications" className={styles.bell} aria-label={count ? `Уведомления: ${count} непрочитанных` : "Уведомления"}>
+  return <Link data-tour="notifications-bell" href="/notifications" className={styles.bell} aria-label={count ? `Уведомления: ${count} непрочитанных` : "Уведомления"}>
     <Icon name="bell" size={24} />{count > 0 && <span className={styles.badge} aria-hidden="true">{count > 99 ? "99+" : count}</span>}
   </Link>;
 }

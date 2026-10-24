@@ -26,7 +26,7 @@ export function HouseGroupChat({ houseId }: { houseId: string }) {
   const url = chat?.joinUrl;
   const subtitle = initial ? "Загружаем чат…" : state.error ? "Не удалось проверить доступность" : chat?.status === "available" ? "Открыть группу в MAX" : chat?.status === "unavailable" ? "Временно недоступен. Попробуйте позже" : chat?.status === "link_missing" ? "Ссылка на группу пока не добавлена" : "УК ещё не подключила чат этого дома";
   const content = <><span className={styles.avatar}><Icon name="people" size={25} /></span><span className={styles.text}><span className={styles.title}>Общий чат дома <span className={styles.badge}>MAX</span></span><span className={styles.subtitle}>{subtitle}</span></span></>;
-  return <li className={styles.row} data-available={!!url || undefined} aria-busy={initial}>
+  return <li data-tour="house-group-chat" className={styles.row} data-available={!!url || undefined} aria-busy={initial}>
     {url ? <a className={styles.link} href={url} target="_blank" rel="noopener noreferrer" aria-label={`Открыть общий чат дома в MAX: ${chat?.title}`} onClick={event => {
       const bridge = (window as Window & { WebApp?: { initData?: string; openMaxLink?: (url: string) => void } }).WebApp;
       if (openHouseChat(url, bridge)) event.preventDefault();

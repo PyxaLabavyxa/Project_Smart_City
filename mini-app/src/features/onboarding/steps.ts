@@ -3,21 +3,100 @@ import type { ZhorikPose } from "@/shared/ui/zhorik";
 type TourStep = {
   href: string; target: string; title: string; text: string;
   pose: ZhorikPose; guide?: "hanging" | "inset"; side?: "right";
+  include?: readonly string[]; attached?: boolean; overlapGuide?: boolean; normalHint?: boolean; scrollAnchor?: string; reserveNavigation?: boolean; wholeItems?: string;
 };
 
 export const tourSteps: readonly TourStep[] = [
-  { href: "/", target: "choose-house", pose: "open", title: "Привет! Я Жорик", text: "Помогу освоиться в Домоведе. Начнём с адреса: здесь можно выбрать одну из ваших квартир." },
-  { href: "/issues", target: "report-issue", pose: "hanging", guide: "hanging", title: "Создать обращение", text: "Кнопка внизу открывает создание обращения. Начните с выбора места." },
-  { href: "/issues", target: "issue-controls", pose: "point", title: "Фильтры обращений", text: "Во вкладке «Мои» — обращения, которые вы создали. Статус, категорию, подъезд и этаж выбирайте в фильтрах. Найти нужное обращение поможет строка поиска." },
-  { href: "/issues", target: "issue-location", pose: "hanging", guide: "hanging", title: "Место проблемы", text: "Выберите подъезд, двор или квартиру. Для подъезда уточните зону на плане, затем — подкатегорию." },
-  { href: "/plan", target: "plan-selection", pose: "point", side: "right", title: "Выберите этаж или квартиру", text: "Выберите подъезд и этаж. Или введите номер квартиры и нажмите «Найти»." },
-  { href: "/plan", target: "plan-map", pose: "point", side: "right", title: "Помещения на плане", text: "Нажмите на квартиру, лифт или холл, чтобы увидеть обращения. Значок △ отмечает активную проблему." },
-  { href: "/plan", target: "plan-room", pose: "rest", title: "Действия с квартирой", text: "Нажмите на квартиру. В её карточке — обращения, связь с соседями и кнопка сообщения о проблеме." },
-  { href: "/messages", target: "new-message", pose: "open", title: "Написать соседу", text: "Нажмите «+», выберите квартиру и начните переписку. Телефоны и личные контакты соседей скрыты." },
-  { href: "/utilities", target: "utility-bill", pose: "point", side: "right", title: "Проверить квитанцию", text: "Здесь сумма к оплате, ниже — начисления по услугам. Проверьте период и срок." },
-  { href: "/utilities", target: "meter-reading", pose: "point", side: "right", title: "Передать показания", text: "Введите новые показания счётчиков и нажмите «Передать показания». Значения не должны быть меньше предыдущих." },
-  { href: "/cameras", target: "camera-card", pose: "peek", side: "right", title: "Открыть камеру", text: "Нажмите на карточку, чтобы рассмотреть кадр из подъезда или двора. Рядом указано состояние камеры." },
-  { href: "camera", target: "camera-report", pose: "hanging", guide: "hanging", title: "Проблема в кадре?", text: "Эта кнопка откроет обращение. Место камеры подставится само." },
-  { href: "/health", target: "health-overview", pose: "rest", title: "Состояние дома", text: "Здесь оценка здоровья дома. Ниже — история на графике и состояние систем. Оценка зависит от обращений жителей." },
-  { href: "/more", target: "replay-tour", pose: "open", title: "Вернуться к подсказкам", text: "Обучение всегда можно повторить этой кнопкой. Здесь же находятся план, переписки и информация о доме. Готово!" },
+  {
+    href: "/",
+    target: "home-overview",
+    reserveNavigation: false,
+    include: ['[data-tour="home-health"]'],
+    attached: true,
+    pose: "peek",
+    title: "Ваш дом — рядом",
+    text: "Привет! Я Жорик. Здесь можно переключаться между своими квартирами. На главной — состояние дома, активные обращения и запланированные работы."
+  },
+  {
+    href: "/plan",
+    target: "plan-map",
+    attached: true,
+    overlapGuide: true,
+    pose: "point",
+    side: "right",
+    title: "Дом на плане",
+    text: "Выберите этаж и нажмите на помещение: увидите обращения в общих зонах или сможете написать соседу. Значок △ отмечает активную проблему."
+  },
+  {
+    href: "/issues",
+    target: "report-issue",
+    scrollAnchor: '[data-tour="issues-heading"]',
+    attached: true,
+    pose: "hanging",
+    guide: "hanging",
+    title: "Сообщить о проблеме",
+    text: "Что-то сломалось? Нажмите «Создать обращение», укажите место, опишите проблему и добавьте фото. Обращение получит управляющая компания."
+  },
+  {
+    href: "/issues",
+    target: "issue-overview",
+    scrollAnchor: '[data-tour="issues-heading"]',
+    include: ['[data-tour="issues-heading"]'],
+    wholeItems: '[data-tour="issue-list"] > li',
+    normalHint: true,
+    reserveNavigation: false,
+    attached: true,
+    pose: "peek",
+    title: "Следите за обращениями",
+    text: "Во вкладке «Мои» — ваши обращения со статусами и ответами УК. Во вкладке «Все» — обращения дома. Найти нужное помогут поиск и фильтры."
+  },
+  {
+    href: "/cameras",
+    target: "camera-overview",
+    normalHint: true,
+    include: ['[data-tour="camera-card"]'],
+    attached: true,
+    pose: "peek",
+    title: "Камеры дома и ваша камера",
+    text: "Смотрите камеры дома или подключите свою кнопкой «Добавить». Личная камера видна только вам, общая — соседям после одобрения УК."
+  },
+  {
+    href: "/utilities",
+    target: "utility-navigation",
+    normalHint: true,
+    include: ['[data-tour="utility-charges"]'],
+    attached: true,
+    pose: "point",
+    side: "right",
+    title: "Начисления и показания",
+    text: "В «Квитанциях» — начисления за выбранный месяц. В «Показаниях» можно передать значения счётчиков. Всё относится к выбранной квартире."
+  },
+  {
+    href: "/messages",
+    target: "message-header",
+    include: ['[data-tour="house-group-chat"]'],
+    normalHint: true,
+    attached: true,
+    pose: "peek",
+    title: "На связи с соседями",
+    text: "Нажмите «+», чтобы выбрать квартиру и написать соседу без обмена телефонами. Если к дому подключён чат MAX, переход в него тоже будет здесь."
+  },
+  {
+    href: "/contacts",
+    target: "management-contacts",
+    include: ['[data-tour="management-info"] > :nth-child(3)'],
+    normalHint: true,
+    attached: true,
+    pose: "peek",
+    title: "УК — на связи",
+    text: "Здесь — связь с УК, диспетчерская и часы приёма. Ниже — аварийная служба. Раздел доступен в «Ещё»."
+  },
+  {
+    href: "/more",
+    target: "invite-neighbors",
+    pose: "hanging",
+    guide: "hanging",
+    title: "Пригласите соседей",
+    text: "Поделитесь ссылкой на свой дом или скачайте листовку с QR-кодом для подъезда. Настройки и повтор обучения тоже доступны в разделе «Ещё»."
+  }
 ];

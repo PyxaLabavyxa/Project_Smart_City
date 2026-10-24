@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { tourFocusRange, tourLayout, tourNeedsCompact, tourScrollTop, tourSidePlacement } from '../src/features/onboarding/tour-layout.ts';
+import { tourBounds, tourFocusRange, tourLayout, tourNeedsCompact, tourScrollTop, tourSidePlacement } from '../src/features/onboarding/tour-layout.ts';
 
 test('short wide screens put the hint beside the full target when a column fits', () => {
   const viewport = { width: 1024, height: 600 };
@@ -12,7 +12,7 @@ test('short wide screens put the hint beside the full target when a column fits'
   assert(layout.card.left + side.width <= viewport.width - 12);
   assert(layout.card.top >= 112);
   assert(layout.card.top + 270 <= viewport.height - 12);
-  assert.equal(layout.spot.height, target.height + 16);
+  assert.equal(layout.spot.height, target.height + 24);
   assert.equal(tourSidePlacement(target, { width: 393, height: 851 }, 245, 74), null);
   assert.equal(tourSidePlacement(target, { width: 1024, height: 1000 }, 245, 0), null);
   assert.equal(tourSidePlacement({ ...target, width: 820 }, viewport, 245, 0), null);
@@ -64,10 +64,10 @@ test('full card highlight includes padding and is independent of the hint positi
   const card = { width: 328, height: 260 };
   const target = { left: 16, top: 16, width: 358, height: 350 };
   const { spot } = tourLayout(target, viewport, card);
-  assert.equal(spot.left, 8);
-  assert.equal(spot.top, 8);
-  assert.equal(spot.width, 374);
-  assert.equal(spot.height, 366);
+  assert.equal(spot.left, 6);
+  assert.equal(spot.top, 4);
+  assert.equal(spot.width, 378);
+  assert.equal(spot.height, 374);
   const tall = tourLayout({ ...target, height: 900 }, viewport, card);
   assert.equal(tall.spot.top + tall.spot.height, viewport.height - 78 - 12);
 });
@@ -149,9 +149,9 @@ test('upper hints remain still as their target scrolls into view', () => {
 test('a camera card is highlighted in full even when the guide overlaps it', () => {
   const target = { left: 16, top: 30, width: 358, height: 285 };
   const { spot } = tourLayout(target, { width: 390, height: 700 }, { width: 366, height: 290 }, 78);
-  assert.equal(spot.top, target.top - 8);
-  assert.equal(spot.height, target.height + 16);
-  assert.equal(spot.width, target.width + 16);
+  assert.equal(spot.top, target.top - 12);
+  assert.equal(spot.height, target.height + 24);
+  assert.equal(spot.width, target.width + 20);
 });
 
 test('a tall target is revealed through a separate scroll window without overlapping the hint', () => {
@@ -166,4 +166,26 @@ test('a tall target is revealed through a separate scroll window without overlap
   assert(spot.top + spot.height <= range.bottom);
   assert(spot.top + spot.height < layout.card.top);
   assert.equal(target.height, 430);
+});
+
+
+test('one highlight spans separated controls and content without changing their layout', () => {
+  assert.deepEqual(tourBounds([
+    {left:16, top:90, width:358, height:50},
+    {left:20, top:160, width:350, height:280},
+  ]), {left:16, top:90, width:358, height:350});
+});
+
+test('attached hints stay close to their target and respect viewport edges', () => {
+  const viewport = {width:390, height:844};
+  const target = {left:16, top:80, width:358, height:280};
+  const card = {width:366, height:240};
+  const below = tourLayout(target, viewport, card, 74, {placement:'below', gap:20});
+  assert.equal(below.card.top, 380);
+  assert(below.card.top + card.height <= viewport.height - 74 - 12);
+  const button = {...target, top:690, height:56};
+  const above = tourLayout(button, viewport, card, 74, {placement:'above', guideHeight:160, attached:true});
+  assert.equal(above.card.top + card.height + 160 + 12, button.top);
+  const clipped = tourLayout({...target, top:700}, viewport, card, 74, {placement:'below', gap:20});
+  assert.equal(clipped.card.top + card.height, viewport.height - 74 - 12);
 });

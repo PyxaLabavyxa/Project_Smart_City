@@ -20,7 +20,7 @@ export function HomeStartup({ children }: { children: ReactNode }) {
   // A failed optional service must not hide navigation to working sections.
   const error = apartmentsState.error;
   const ready = !pending && !error;
-  if (!opened && pathname === "/" && ready) setOpened(true);
+  if (!opened && (pathname !== "/" || ready)) setOpened(true);
   if (pathname !== "/" || opened || ready) return children;
   function retry() {
     for (const state of [apartmentsState, issues, messages, utilities]) {

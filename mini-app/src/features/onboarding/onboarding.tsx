@@ -6,11 +6,11 @@ import { nextTourIndex } from "./tour-navigation";
 import { StartupScreen } from "@/shared/ui/startup-screen";
 import { Icon } from "@/shared/ui/icon";
 import { tourSteps as steps } from "./steps";
-import { tourFocusRange, tourLayout, tourNeedsCompact, tourScrollTop, tourSidePlacement, type TourRect } from "./tour-layout";
+import { tourBounds, tourFocusRange, tourLayout, tourNeedsCompact, tourScrollTop, tourSidePlacement, type TourRect } from "./tour-layout";
 import styles from "./onboarding.module.css";
 import { prepareTourImages } from "./prepare";
 
-type Position = { spot: TourRect; card: { left: number; top: number }; settled: boolean; scrollable: boolean; compact: boolean };
+type Position = { spot: TourRect; card: { left: number; top: number }; settled: boolean; scrollable: boolean; compact: boolean; guide?: "hanging" | "inset" };
 
 export function OnboardingTour({ onStateChange, onFinish }: { onStateChange: (target: string | null, preparing: boolean) => void; onFinish: (result: "completed" | "skipped") => Promise<void> }) {
   const router = useRouter();
@@ -21,12 +21,11 @@ export function OnboardingTour({ onStateChange, onFinish }: { onStateChange: (ta
   const preparationRun = useRef<AbortController | null>(null);
   const [destination, setDestination] = useState("/");
   const [position, setPosition] = useState<Position | null>(null);
-  const cameraPath = useRef("/cameras");
   const dialog = useRef<HTMLDialogElement>(null);
   const card = useRef<HTMLElement>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const returnTo = useRef("/");
-  const focusRegion = useRef<{ element: HTMLElement; top: number; bottom: number } | null>(null);
+  const focusRegion = useRef<{ element: HTMLElement; rect: () => TourRect; top: number; bottom: number } | null>(null);
   const touchY = useRef<number | null>(null);
   const isOpen = step !== null || preparation !== null;
   const prepare = useCallback(() => {
@@ -65,9 +64,7 @@ export function OnboardingTour({ onStateChange, onFinish }: { onStateChange: (ta
     return () => { element.close(); delete document.documentElement.dataset.tourActive; document.body.style.overflow = overflow; document.body.style.paddingBottom = paddingBottom; };
   }, [isOpen]);
   const move = useCallback((next: number) => {
-    const camera = document.querySelector('[data-tour="camera-card"]')?.closest("a");
-    if (camera && /^\/cameras\/[1-9][0-9]*$/.test(camera.pathname)) cameraPath.current = camera.pathname;
-    const href = steps[next].href === "camera" ? cameraPath.current : steps[next].href;
+    const href = steps[next].href;
     setPosition(null);
     onStateChange(steps[next].target, false);
     setDestination(href);
@@ -76,7 +73,7 @@ export function OnboardingTour({ onStateChange, onFinish }: { onStateChange: (ta
   }, [router, onStateChange]);
   useEffect(() => {
     if (step === null || pathname !== destination) return;
-    let observed: HTMLElement | null = null;
+    let observed: HTMLElement[] = [];
     let lastGeometry = "";
     let frame = 0;
     let waitTimer: ReturnType<typeof setTimeout> | undefined;
@@ -84,6 +81,7 @@ export function OnboardingTour({ onStateChange, onFinish }: { onStateChange: (ta
     let scrollDestination = 0;
     let scrollDeadline = 0;
     let normalCardHeight = 0;
+    let normalGuideHeight = 0;
     let measuredViewport = "";
     const started = performance.now();
     const schedule = () => { if (!frame) frame = requestAnimationFrame(update); };
@@ -92,7 +90,7 @@ export function OnboardingTour({ onStateChange, onFinish }: { onStateChange: (ta
       frame = 0;
       if (!card.current) return;
       const found = [...document.querySelectorAll<HTMLElement>(`[data-tour="${steps[step].target}"]`)]
-        .find(element => element.getBoundingClientRect().width > 0 && element.getBoundingClientRect().height > 0);
+        .find(element => element.getBoundingClientRect().width > 0 && element.getBoundingClientRect().height > 0 && element.getAttribute("aria-busy") !== "true");
       if (!found) {
         if (performance.now() - started < 1800 || document.querySelector('#main [aria-busy="true"]')) {
           waitTimer = setTimeout(schedule, 100);
@@ -104,6 +102,14 @@ export function OnboardingTour({ onStateChange, onFinish }: { onStateChange: (ta
         if (next === null) finish("completed"); else move(next);
         return;
       }
+      const elements = [found, ...(steps[step].include ?? []).flatMap(selector => {
+        const element = [...document.querySelectorAll<HTMLElement>(selector)].find(item => item.getBoundingClientRect().width > 0 && item.getBoundingClientRect().height > 0);
+        return element ? [element] : [];
+      })];
+      const rows = steps[step].wholeItems;
+      if (rows) elements.push(...[...document.querySelectorAll<HTMLElement>(rows)]
+        .filter(element => element.getBoundingClientRect().width > 0 && element.getBoundingClientRect().height > 0).slice(0, 1));
+      const targetRect = () => tourBounds(elements.map(element => element.getBoundingClientRect()));
       const visible = window.visualViewport;
       const viewport = {
         width: Math.min(window.innerWidth, visible?.width ?? window.innerWidth),
@@ -114,57 +120,65 @@ export function OnboardingTour({ onStateChange, onFinish }: { onStateChange: (ta
       panel?.style.setProperty("--tour-width", `${Math.min(440, viewport.width - 24)}px`);
       panel?.style.setProperty("--tour-height", `${viewport.height}px`);
       const navigationRect = document.querySelector('#main + nav')?.getBoundingClientRect();
-      const navigationHeight = navigationRect && navigationRect.top > viewport.height / 2 ? navigationRect.height : 0;
+      const navigationHeight = steps[step].reserveNavigation !== false && !steps[step].normalHint && navigationRect && navigationRect.top > viewport.height / 2 ? navigationRect.height : 0;
       const viewportKey = `${viewport.width}:${viewport.height}:${viewport.left}:${viewport.top}`;
-      const adaptiveHint = !steps[step].guide;
-      const besideEligible = viewport.width >= 768 && (!steps[step].guide || !!found.closest('dialog[data-tour-preview]'));
+      const guide = viewport.width < 768 ? steps[step].guide : undefined;
+      if (panel) { if (guide) panel.dataset.guide = guide; else delete panel.dataset.guide; }
+      const adaptiveHint = !guide;
+      const besideEligible = viewport.width >= 768 && (!guide || !!found.closest('dialog[data-tour-preview]'));
       if ((adaptiveHint || besideEligible) && measuredViewport !== viewportKey) {
         panel?.removeAttribute("data-compact");
         card.current.style.maxHeight = "none";
         card.current.style.minHeight = "220px";
         normalCardHeight = card.current.getBoundingClientRect().height;
+        normalGuideHeight = card.current.previousElementSibling?.getBoundingClientRect().height ?? 0;
         measuredViewport = viewportKey;
       }
-      const beside = besideEligible ? tourSidePlacement(found.getBoundingClientRect(), viewport, normalCardHeight, navigationHeight) : null;
+      const beside = besideEligible ? tourSidePlacement(targetRect(), viewport, normalCardHeight, navigationHeight) : null;
       if (beside) panel?.style.setProperty("--tour-width", `${beside.width}px`);
-      const compact = !beside && adaptiveHint && tourNeedsCompact(viewport, found.getBoundingClientRect().height, normalCardHeight, navigationHeight);
+      const reservedGuide = steps[step].attached && !steps[step].overlapGuide ? normalGuideHeight : 0;
+      const compact = !steps[step].normalHint && !beside && adaptiveHint && tourNeedsCompact(viewport, targetRect().height, normalCardHeight + reservedGuide, navigationHeight);
       panel?.toggleAttribute("data-compact", compact);
       const artworkHeight = card.current.previousElementSibling?.getBoundingClientRect().height ?? 0;
-      const sideGuide = steps[step].target === "issue-location" && matchMedia("(min-width:900px) and (max-height:850px)").matches;
-      const guideHeight = (adaptiveHint && !beside) || sideGuide ? 0 : artworkHeight;
-      const above = !!steps[step].guide && !matchMedia("(min-width:768px)").matches;
-      const focusSpace = beside ? 0 : Math.min(96, found.getBoundingClientRect().height);
+      const guideHeight = adaptiveHint && !beside ? 0 : artworkHeight;
+      const above = !!guide && !matchMedia("(min-width:768px)").matches;
+      const focusSpace = beside ? 0 : Math.min(96, targetRect().height);
       const maxCardHeight = Math.max(80, viewport.height - navigationHeight - guideHeight - focusSpace - 28);
       card.current.style.maxHeight = `${maxCardHeight}px`;
       card.current.style.minHeight = compact ? "0px" : `${Math.min(220, maxCardHeight)}px`;
       const cardRect = card.current.getBoundingClientRect();
-      const options = beside ? { placement: "beside" as const, side: beside.side, guideHeight } : above ? { placement: "above" as const, guideHeight: steps[step].guide === "hanging" ? guideHeight : 0, topInset: steps[step].guide === "inset" ? guideHeight + 4 : undefined } : undefined;
-      const layout = tourLayout(found.getBoundingClientRect(), viewport, cardRect, navigationHeight, options);
-      let range = beside ? { top: viewport.top + 16, bottom: viewport.top + viewport.height - navigationHeight - 16 } : tourFocusRange(viewport, { top: layout.card.top, height: cardRect.height }, above ? options!.guideHeight : guideHeight, navigationHeight, above, adaptiveHint ? 10 : 16);
-      if (above && found.getBoundingClientRect().height > range.bottom - range.top) {
+      const options = beside ? { placement: "beside" as const, side: beside.side, guideHeight } : above ? { placement: "above" as const, guideHeight: guide === "hanging" ? guideHeight : 0, topInset: guide === "inset" ? guideHeight + 4 : undefined, attached: steps[step].attached } : undefined;
+      const layout = tourLayout(targetRect(), viewport, cardRect, navigationHeight, options);
+      let range = beside ? { top: viewport.top + 16, bottom: viewport.top + viewport.height - navigationHeight - 20 } : tourFocusRange(viewport, { top: layout.card.top, height: cardRect.height }, above ? options!.guideHeight : guideHeight, navigationHeight, above, 24);
+      if (above && targetRect().height > range.bottom - range.top) {
         range = tourFocusRange(viewport, { top: layout.card.top, height: cardRect.height }, 0, navigationHeight, true);
       }
-      if (adaptiveHint && !beside) {
-        const clearOfGuide = tourFocusRange(viewport, { top: layout.card.top, height: cardRect.height }, artworkHeight, navigationHeight, false);
-        if (found.getBoundingClientRect().height <= clearOfGuide.bottom - clearOfGuide.top) range = clearOfGuide;
+      if (adaptiveHint && !beside && !steps[step].overlapGuide) {
+        const clearOfGuide = tourFocusRange(viewport, { top: layout.card.top, height: cardRect.height }, artworkHeight, navigationHeight, false, 24);
+        if (targetRect().height <= clearOfGuide.bottom - clearOfGuide.top) range = clearOfGuide;
       }
-      focusRegion.current = { element: found, ...range };
-      if (found !== observed) {
+      if (above) range.bottom = viewport.top + viewport.height - navigationHeight - 4;
+      const paddedRange = { top: range.top + 12, bottom: range.bottom - 12 };
+      focusRegion.current = { element: found, rect: targetRect, ...paddedRange };
+      if (elements.length !== observed.length || elements.some((element, index) => element !== observed[index])) {
         observer.disconnect();
-        observed = found;
-        observer.observe(found);
+        observed = elements;
+        for (const element of elements) observer.observe(element);
         observer.observe(card.current);
       }
-      const rect = found.getBoundingClientRect();
+      const rect = targetRect();
       const geometry = `${viewportKey}:${Math.round(cardRect.height)}:${Math.round(rect.height)}`;
       if (geometry !== lastGeometry) {
         lastGeometry = geometry;
         // Fixed controls and the report sheet do not move with document scrolling.
         let fixed = !!found.closest("dialog");
         const sheet = found.closest("dialog");
-        if (sheet) sheet.scrollTop = tourScrollTop(rect, sheet.scrollTop, range);
+        if (sheet) sheet.scrollTop = tourScrollTop(rect, sheet.scrollTop, paddedRange);
         for (let node: HTMLElement | null = found; node && !fixed; node = node.parentElement) fixed = getComputedStyle(node).position === "fixed";
-        const top = fixed ? window.scrollY : tourScrollTop(rect, window.scrollY, range);
+        const anchorSelector = steps[step].scrollAnchor;
+        const anchor = anchorSelector ? document.querySelector<HTMLElement>(anchorSelector) : null;
+        const top = anchor ? Math.max(0, window.scrollY + anchor.getBoundingClientRect().top - viewport.top - 20)
+          : fixed ? window.scrollY : tourScrollTop(rect, window.scrollY, paddedRange);
         if (Math.abs(top - window.scrollY) > 1) {
           const immediate = matchMedia("(prefers-reduced-motion: reduce)").matches || document.documentElement.dataset.motionInput === "keyboard";
           scrolling = !immediate;
@@ -178,18 +192,24 @@ export function OnboardingTour({ onStateChange, onFinish }: { onStateChange: (ta
         if (Math.abs(window.scrollY - destination) < 1 || performance.now() >= scrollDeadline) scrolling = false;
         else schedule();
       }
-      const nextLayout = tourLayout(found.getBoundingClientRect(), viewport, cardRect, navigationHeight, options, beside ? undefined : range);
-      const next = { ...nextLayout, settled: !scrolling, scrollable: rect.height > range.bottom - range.top, compact };
+      const finalOptions = steps[step].attached && !above && !beside
+        ? { placement: "below" as const, gap: !compact && !steps[step].overlapGuide ? artworkHeight + 16 : 20 }
+        : options;
+      const nextLayout = tourLayout(targetRect(), viewport, cardRect, navigationHeight, finalOptions, beside || rows ? undefined : range);
+      const next = { ...nextLayout, settled: !scrolling, scrollable: !steps[step].normalHint && rect.height > range.bottom - range.top && !found.closest("[data-chat-screen]"), compact, guide };
       setPosition(previous => JSON.stringify(previous) === JSON.stringify(next) ? previous : next);
     };
     // Let the target's context-driven filters, tabs and preview sheet commit first.
     frame = requestAnimationFrame(() => { frame = requestAnimationFrame(update); });
+    const mutations = new MutationObserver(schedule);
+    const main = document.getElementById("main");
+    if (main) mutations.observe(main, { childList: true, subtree: true });
     window.addEventListener("scroll", schedule, true);
     window.addEventListener("resize", schedule);
     window.visualViewport?.addEventListener("resize", schedule);
     window.visualViewport?.addEventListener("scroll", schedule);
     return () => {
-      clearTimeout(waitTimer); cancelAnimationFrame(frame); observer.disconnect();
+      clearTimeout(waitTimer); cancelAnimationFrame(frame); observer.disconnect(); mutations.disconnect();
       window.removeEventListener("scroll", schedule, true); window.removeEventListener("resize", schedule);
       window.visualViewport?.removeEventListener("resize", schedule); window.visualViewport?.removeEventListener("scroll", schedule);
       if (scrolling) window.scrollTo({ top: window.scrollY, behavior: "instant" });
@@ -199,9 +219,9 @@ export function OnboardingTour({ onStateChange, onFinish }: { onStateChange: (ta
   const scrollTarget = (delta: number) => {
     const focus = focusRegion.current;
     if (!focus) return;
-    const rect = focus.element.getBoundingClientRect();
+    const rect = focus.rect();
     if (rect.height <= focus.bottom - focus.top) return;
-    const distance = delta > 0 ? Math.min(delta, Math.max(0, rect.bottom - focus.bottom)) : Math.max(delta, Math.min(0, rect.top - focus.top));
+    const distance = delta > 0 ? Math.min(delta, Math.max(0, rect.top + rect.height - focus.bottom)) : Math.max(delta, Math.min(0, rect.top - focus.top));
     const sheet = focus.element.closest("dialog");
     if (sheet) sheet.scrollTop += distance;
     else window.scrollBy({ top: distance, behavior: "instant" });
@@ -227,8 +247,8 @@ export function OnboardingTour({ onStateChange, onFinish }: { onStateChange: (ta
       actions={preparation.error ? <><button type="button" onClick={() => { setPreparation({ percent: 0 }); void prepare(); }}>Попробовать снова</button><button type="button" onClick={() => finish()}>Открыть приложение без подготовки</button></> : undefined}
     /> : current && <>
     {position ? <div aria-hidden="true" className={styles.spot} data-tour-spot={current.target} style={position.spot} /> : <div className={styles.shade} />}
-    <div key={current.target} className={styles.panel} data-target={current.target} data-ready={visible} data-guide={current.guide} data-scrollable={position?.scrollable || undefined} data-compact={position?.compact || undefined} style={position?.card}>
-      <Zhorik pose={current.pose} mirrored={current.side === "right" && current.pose === "point"} className={`${styles.guide} ${current.side === "right" ? styles.guideRight : ""}`} />
+    <div key={current.target} className={styles.panel} data-target={current.target} data-overlap-guide={current.overlapGuide || undefined} data-normal-hint={current.normalHint || undefined} data-ready={visible} data-guide={position ? position.guide : current.guide} data-scrollable={position?.scrollable || undefined} data-compact={position?.compact || undefined} style={position?.card}>
+      <Zhorik pose={current.pose === "hanging" && position && !position.guide ? "peek" : current.pose} mirrored={current.side === "right" && current.pose === "point"} className={`${styles.guide} ${current.side === "right" ? styles.guideRight : ""}`} />
     <section ref={card} className={styles.card}>
       <div className={styles.top}><span className={styles.stepLabel}>Подсказка {visibleIndex + 1} из {visibleSteps.length}</span><span className={styles.compactLabel}>{visibleIndex + 1}/{visibleSteps.length} · {current.title}</span><button type="button" onClick={() => finish()} aria-label="Закрыть обучение" title="Пропустить обучение"><Icon name="close" size={17} /></button></div>
       <div className={styles.segments} role="progressbar" aria-valuemin={1} aria-valuemax={visibleSteps.length} aria-valuenow={visibleIndex + 1} aria-label={`Шаг ${visibleIndex + 1} из ${visibleSteps.length}`}>{visibleSteps.map((item, index) => <span key={item.target} data-filled={index <= visibleIndex || undefined} />)}</div>
