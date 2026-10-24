@@ -3,7 +3,7 @@ import { categoriesForPlace, reportCategoryLabel } from "./report-categories.ts"
 import type { IssueRecord, IssueStateStatus } from "./issue";
 
 export const issueStatusLabels: Record<IssueStateStatus, string> = {
-  new: "Новое", accepted: "Принято", assigned: "Назначен исполнитель",
+  new: "Новое", accepted: "Принято", assigned: "Поручено",
   "in-progress": "В работе", completed: "Решено",
 };
 

@@ -74,7 +74,7 @@ test('invalid saved URL filters cannot leave invisible active constraints', () =
 });
 
 test('all five staff statuses filter independently and category choices do not depend on status', () => {
-  assert.deepEqual(Object.values(issueStatusLabels), ['Новое', 'Принято', 'Назначен исполнитель', 'В работе', 'Решено']);
+  assert.deepEqual(Object.values(issueStatusLabels), ['Новое', 'Принято', 'Поручено', 'В работе', 'Решено']);
   const issues = Object.keys(issueStatusLabels).map(status => issue('Лифт', 'elevator', status));
   for (const status of Object.keys(issueStatusLabels)) {
     const selected = filterIssues(issues, { ...initialIssueFilters, status, category: 'Лифт', zone: 'elevator', entrance: '2', floor: '5' });
