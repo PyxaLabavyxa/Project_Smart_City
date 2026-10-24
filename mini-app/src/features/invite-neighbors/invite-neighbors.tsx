@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useRef, useState, type ReactNode } from "react";
 import { useHouseSelection } from "@/entities/house";
 import { useApi } from "@/shared/api/context";
 import { apiUrl, endpoints, maxLaunchData } from "@/shared/api/client";
@@ -15,12 +15,12 @@ import styles from "./invite-neighbors.module.css";
 
 type DownloadBridge = { downloadFile?: (url: string, filename: string) => Promise<unknown> };
 
-export function InviteNeighbors() {
+export function InviteNeighbors({ headerContent }: { headerContent?: ReactNode }) {
   const { house } = useHouseSelection();
-  return <Invitation key={house.id} houseId={house.id} />;
+  return <Invitation key={house.id} houseId={house.id} headerContent={headerContent} />;
 }
 
-function Invitation({ houseId }: { houseId: string }) {
+function Invitation({ houseId, headerContent }: { houseId: string; headerContent?: ReactNode }) {
   const api = useApi();
   const load = useCallback(async (signal: AbortSignal) => parseInvitation(await api(endpoints.invitation(houseId), { signal }), houseId), [api, houseId]);
   const state = useRemote(load);
@@ -65,7 +65,7 @@ function Invitation({ houseId }: { houseId: string }) {
     } finally { setDownloading(false); }
   }
 
-  return <SectionPage title="Пригласить соседей" description="Пусть весь дом будет на связи">
+  return <SectionPage title="Пригласить соседей" headerContent={headerContent}>
     {!state.data ? <RequestState {...state} page /> : <div className={styles.content}>
       <div className={styles.intro}><div><h2>Соседи, вы с нами?</h2><p>Покажите QR-код или отправьте ссылку в чат. Ваш дом уже будет выбран при регистрации.</p></div><Zhorik pose="wave" className={styles.mascot} /></div>
       <section className={styles.invitation} aria-labelledby="invite-address">

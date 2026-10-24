@@ -4,11 +4,12 @@ import { useState } from "react";
 import { totalApartments, findApartment, useHouseSelection, PlaceLink } from "@/entities/house";
 import { Icon } from "@/shared/ui/icon";
 import styles from "./services.module.css";
+import { HouseAddress } from "@/widgets/house-address";
 export function HouseInformation() {
  const [documentNotice,setDocumentNotice]=useState("");
  const { house,selected }=useHouseSelection(); const resident=findApartment(house,house.residentApartment);
  return <div className={styles.columns}>
-  <Link className={styles.address} href="/house"><span className={styles.icon}><Icon name="pin" /></span><span><strong>{house.address.replace(/^г\.\s*Казань,?\s*ул\.\s*/, "")}</strong><small>г. Казань</small></span><Icon name="arrow" /></Link>
+  <HouseAddress compact showMeta={false} />
   <section className={styles.house}><h2>Характеристики дома</h2><dl className={styles.facts}>
    <div><dt><Icon name="stairs" />Этажей</dt><dd>{house.floors}</dd></div><div><dt><Icon name="door" />Подъездов</dt><dd>{house.entrances}</dd></div><div><dt><Icon name="home" />Квартир</dt><dd>{totalApartments(house)}</dd></div><div><dt><Icon name="calendar" />Год постройки</dt><dd>—</dd></div>
   </dl><PlaceLink place={selected} className={styles.button}><Icon name="plan" />Открыть план этажа</PlaceLink></section>

@@ -6,7 +6,7 @@ import { money, totalCharges, useUtilityAccount, invoiceDue, invoicePeriod } fro
 import { Icon } from "@/shared/ui/icon";
 import { RefreshButton } from "@/shared/ui/refresh-button";
 import { SectionLoading } from "@/shared/ui/navigation/section-loading";
-import { HomeAddress } from "@/_pages/home/ui/home-address";
+import { HouseAddress } from "@/widgets/house-address";
 import { useOnboarding } from "@/features/onboarding/onboarding-context";
 import { Payment } from "./payment";
 import { Meters } from "./meters";
@@ -23,7 +23,7 @@ export function UtilitiesPage() {
  const total = account ? totalCharges(account.charges) : 0;
  return <div className={styles.page}>
   <h1>ЖКХ</h1>
-  <HomeAddress compact apartmentOnly />
+  <HouseAddress compact apartmentOnly />
   <div data-tour="utility-navigation" className={styles.tabs} role="group" aria-label="Раздел ЖКХ"><button type="button" aria-pressed={currentTab === "bill"} onClick={() => setTab("bill")}>Квитанции</button><button type="button" aria-pressed={currentTab === "meters"} onClick={() => setTab("meters")}>Показания</button></div>
   {loading ? <SectionLoading label="Загружаем лицевой счёт…" /> : error || !account ? <section className={styles.panel}><p role={error ? "alert" : "status"}>{error || "Лицевой счёт пока не подключён."}</p><RefreshButton className={styles.secondary} onRefresh={reload} loading={loading}>Повторить</RefreshButton></section> : !apartment ? <section className={styles.panel}><h2>Квартира не найдена</h2><p>Проверьте привязку квартиры к дому.</p></section> : currentTab === "bill" ? <div className={styles.content}>
    <div className={styles.layout}>

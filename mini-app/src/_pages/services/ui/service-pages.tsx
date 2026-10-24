@@ -5,16 +5,17 @@ import { RecipientSelector } from "@/features/select-recipient";
 import { HealthSummary } from "./health-summary";
 import { HouseInformation } from "./house-information";
 import styles from "./health-summary.module.css";
+import { HouseAddress } from "@/widgets/house-address";
 
 export function HealthPage() {
-  return <SectionPage title="Здоровье дома" description="Состояние систем вашего дома">
+  return <SectionPage title="Здоровье дома" headerContent={<HouseAddress compact showMeta={false} />}>
     <HealthSummary />
     <Link href="/issues" className={styles.allIssues}><Icon name="issues" size={21} /><span>Все обращения дома</span><Icon name="arrow" size={18} /></Link>
   </SectionPage>;
 }
 
 export function MessagesPage({ from }: { from?: "plan" | "home" }) {
-  return <RecipientSelector openSelected={!!from} />;
+  return <RecipientSelector openSelected={!!from} houseAddress={<HouseAddress compact showMeta={false} className={styles.chatHouseAddress} />} />;
 }
 
 export function HouseInfoPage() {

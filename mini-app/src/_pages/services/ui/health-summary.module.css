@@ -66,6 +66,7 @@
 .system { padding:calc(18 * var(--u)) 0; }
 .allIssues { display:flex; align-items:center; gap:12px; max-width:760px; min-height:56px; margin:12px auto 0; padding:16px 18px; border:1px solid var(--color-line); border-radius:var(--radius-card); background:var(--color-surface); color:var(--color-action); font-size:15px; font-weight:600; }
 .allIssues > span { flex:1; }
+.chatHouseAddress { --house-address-size:14px; }
 .allIssues > svg { flex-shrink:0; }
 @media(hover:hover) { .allIssues:hover { background:var(--color-soft); } }
 @media(min-width:768px) {

@@ -5,7 +5,7 @@ import { issueFiltersFromSearch, issueFiltersSearch, normalizeIssueFilters, type
 import { useHouseSelection } from "@/entities/house";
 import { ReportIssueLink } from "@/features/report-issue";
 import { IssueFilters } from "./issue-filters";
-import { HomeAddress } from "@/_pages/home/ui/home-address";
+import { HouseAddress } from "@/widgets/house-address";
 import styles from "./issues-page.module.css";
 import { RequestState } from "@/shared/ui/navigation/request-state";
 import { RefreshButton } from "@/shared/ui/refresh-button";
@@ -31,10 +31,11 @@ export function IssuesPage() {
     setFilters(current => ({ ...initialIssueFilters, onlyMine: current.onlyMine }));
   }
   if ((loading || error) && !issues.length) return <RequestState loading={loading} error={error} reload={reload} page />;
-  return <div className={styles.content}><HomeAddress compact /><header className={styles.heading}>
+  return <div className={styles.content}><header className={styles.heading}>
     <h1 data-tour="issues-heading">Обращения</h1>
     <div className={styles.create}><ReportIssueLink /></div>
   </header>
+    <HouseAddress compact className={styles.houseAddress} />
     <div data-tour="issue-overview"><div data-tour="issue-status" className={styles.statusRow}>
       <nav className={styles.tabs} aria-label="Список обращений">{tabs.map(tab => {
         const count = tab.value === "mine" ? mineCount : issues.length;

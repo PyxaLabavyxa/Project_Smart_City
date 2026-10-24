@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { conversationHref } from "@/shared/api/conversation-route";
 
@@ -12,7 +12,7 @@ import chatStyles from "@/shared/ui/chat-screen.module.css";
 import { RequestState } from "@/shared/ui/navigation/request-state";
 import { HouseGroupChat } from "./house-group-chat";
 
-export function RecipientSelector({ openSelected = false }: { openSelected?: boolean }) {
+export function RecipientSelector({ openSelected = false, houseAddress }: { openSelected?: boolean; houseAddress?: ReactNode }) {
   const { house, selected, select } = useHouseSelection();
   const { messages, drafts, photoDrafts, loading, error, reload } = useMessages();
   const dialog = useRef<HTMLDialogElement>(null);
@@ -42,7 +42,7 @@ export function RecipientSelector({ openSelected = false }: { openSelected?: boo
     dialog.current?.showModal();
   }
   return <>
-    <ChatScreen title="Сообщения" subtitle={house.address} backHref="/more" backLabel="Назад: Ещё" inbox action={<button type="button" data-tour="new-message" className={chatStyles.newChat} aria-label="Новая переписка" title="Написать соседу" onClick={openPicker}><Icon name="plus" size={24} /></button>}>
+    <ChatScreen title="Сообщения" subtitle={houseAddress ? undefined : house.address} headerContent={houseAddress} backHref="/more" backLabel="Назад: Ещё" inbox action={<button type="button" data-tour="new-message" className={chatStyles.newChat} aria-label="Новая переписка" title="Написать соседу" onClick={openPicker}><Icon name="plus" size={24} /></button>}>
       <div data-tour="message-panel" className={styles.inbox}>
         <RequestState loading={loading} error={error} reload={reload} />
         <label className={styles.field}>Поиск по перепискам<input type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Квартира или сообщение" /></label>

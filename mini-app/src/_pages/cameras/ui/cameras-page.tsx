@@ -14,6 +14,7 @@ import { Icon } from "@/shared/ui/icon";
 import { RefreshButton } from "@/shared/ui/refresh-button";
 import { useOnboarding } from "@/features/onboarding/onboarding-context";
 import { cameraVisibilityLabel, filterCameras, type CameraFilters } from "../model/camera";
+import { HouseAddress } from "@/widgets/house-address";
 
 const emptyFilters: CameraFilters = { type: "all", entrance: "", floor: "", zone: "" };
 
@@ -33,7 +34,7 @@ function LoadedCamerasPage() {
   const cameras = filterCameras(state.data ?? [], filters);
   const updateLocationFilter = (name: "entrance" | "floor" | "zone", value: string) => setFilters(previous => changeLocationFilter(previous, name, value));
   return <SectionPage title="Камеры" description="Личные и общедоступные камеры" backHref="/" backLabel="На главную">
-    <div className={styles.pageTools}><p className={styles.address}><Icon name="pin" size={20} />{house.address}</p>
+    <div className={styles.pageTools}><HouseAddress compact showMeta={false} className={styles.address} />
     <div data-tour="camera-overview" className={styles.toolbar}><Link data-tour="camera-add" href="/cameras/new" className={styles.addButton}><Icon name="plus" size={18} />Добавить</Link><button type="button" className={styles.filterToggle} aria-expanded={filtersOpen} aria-controls="camera-filters" onClick={() => setFiltersOpen(open => !open)}><Icon name="settings" size={20} /><span>Фильтры</span>{filterCount > 0 && <span className={styles.filterCount}>{filterCount}</span>}</button><RefreshButton className={styles.refreshList} loading={state.loading} onRefresh={state.reload} iconSize={20} aria-label="Обновить список камер" /></div>
     </div><fieldset id="camera-filters" className={styles.filters} hidden={!filtersOpen} data-motion-panel>
       <legend>Фильтры камер</legend>

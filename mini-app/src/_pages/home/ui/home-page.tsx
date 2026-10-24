@@ -9,7 +9,7 @@ import { RequestState } from "@/shared/ui/navigation/request-state";
 import { HousePreview } from "./house-preview";
 import { HouseWorks } from "./house-works";
 import { HouseArt } from "@/shared/ui/house-art";
-import { HomeAddress } from "./home-address";
+import { HouseAddress } from "@/widgets/house-address";
 import styles from "./home-page.module.css";
 
 export function HomePage() {
@@ -22,7 +22,7 @@ export function HomePage() {
  const active = issues.filter(issue => issue.status !== "completed").sort((a,b) => Date.parse(b.createdAt)-Date.parse(a.createdAt));
  const threads = messageThreads(messages).filter(item => item.apartment !== house.residentApartment && findApartment(house,item.apartment));
  return <div className={styles.dashboard}>
-  <header data-tour="home-overview" className={styles.heading}><HouseArt className={styles.houseIllustration} /><HomeAddress /></header>
+  <header data-tour="home-overview" className={styles.heading}><HouseArt className={styles.houseIllustration} /><HouseAddress /></header>
   <div data-tour="home-health" className={styles.healthCard}>
    <Link data-tour="house-health" href="/health" className={styles.healthLink}><strong>{issuesLoading || issuesError ? "—" : score}<small>/100</small><Icon name="arrow" size={18} /></strong><span>Здоровье дома</span></Link>
    <Link href="/issues" className={styles.activeCount}><strong>{issuesLoading || issuesError ? "—" : active.length}</strong><span>активных<br />обращений</span></Link>
