@@ -1,6 +1,6 @@
 "use client";
 import { useLayoutEffect, type ReactNode } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { BottomNavigation } from "./bottom-navigation";
 import styles from "./shell.module.css";
@@ -12,17 +12,19 @@ import { useHouseSelection } from "@/entities/house";
 import { useIssues } from "@/entities/issue";
 import { IssueCreated } from "@/features/report-issue/ui/issue-created";
 import { NotificationBell } from "@/features/notifications/provider";
+import { notificationReturn } from "@/features/notifications/notification-route";
 
 function parentPage(path: string) {
   if (path.startsWith("/settings/")) return { href:"/settings", label:"Настройки" };
   if (path === "/plan") return { href:"/house", label:"Ваш дом" };
   if (path.startsWith("/issues/")) return { href:"/issues", label:"Обращения" };
   if (path.startsWith("/cameras/")) return { href:"/cameras", label:"Камеры" };
-  if (["/notifications", "/invite", "/settings", "/health", "/messages", "/info", "/plan", "/house", "/contacts"].includes(path)) return { href:"/more", label:"Ещё" };
+  if (["/invite", "/settings", "/health", "/messages", "/info", "/plan", "/house", "/contacts"].includes(path)) return { href:"/more", label:"Ещё" };
   return { href:"/", label:"На главную" };
 }
 export function ApplicationShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const search = useSearchParams();
   const { house } = useHouseSelection();
   const { issues, createdIssueId, dismissCreationNotice } = useIssues();
   const created = createdIssueId && (pathname === "/issues/new" || pathname === `/issues/${createdIssueId}`)
@@ -32,7 +34,7 @@ export function ApplicationShell({ children }: { children: ReactNode }) {
     if (confirmationId) window.scrollTo({ top: 0, behavior: "instant" });
   }, [confirmationId]);
   const neighborChat = pathname === "/messages" || pathname.startsWith("/messages/") || /^\/issues\/[1-9]\d*\/chat\/?$/.test(pathname);
-  const parent = parentPage(pathname);
+  const parent = pathname === "/notifications" ? notificationReturn(search.get("returnTo")) : parentPage(pathname);
   const inlineBack = pathname === "/contacts" || pathname.startsWith("/cameras/");
   const needsDirectory = ["/plan", "/house", "/info"].includes(pathname) || pathname.startsWith("/messages") || pathname.startsWith("/cameras");
   const immersive = neighborChat || (pathname === "/issues/new" && !created);

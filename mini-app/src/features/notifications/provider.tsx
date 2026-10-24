@@ -1,11 +1,12 @@
 "use client";
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useApi } from "@/shared/api/context";
 import { number, record } from "@/shared/api/parse";
 import { Icon } from "@/shared/ui/icon";
 import styles from "./notifications.module.css";
+import { notificationInboxHref } from "./notification-route";
 
 const Context = createContext<{ count: number; update: (value: number) => void; navigate: (href: string) => void } | null>(null);
 export function NotificationsProvider({ children }: { children: ReactNode }) {
@@ -47,7 +48,9 @@ export function useNotifications() {
 }
 export function NotificationBell() {
   const { count } = useNotifications();
-  return <Link data-tour="notifications-bell" href="/notifications" className={styles.bell} aria-label={count ? `Уведомления: ${count} непрочитанных` : "Уведомления"}>
+  const pathname = usePathname();
+  const search = useSearchParams();
+  return <Link data-tour="notifications-bell" href={notificationInboxHref(pathname, search.toString())} className={styles.bell} aria-label={count ? `Уведомления: ${count} непрочитанных` : "Уведомления"}>
     <Icon name="bell" size={24} />{count > 0 && <span className={styles.badge} aria-hidden="true">{count > 99 ? "99+" : count}</span>}
   </Link>;
 }
