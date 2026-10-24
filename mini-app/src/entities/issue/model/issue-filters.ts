@@ -121,6 +121,6 @@ export function filterIssues(issues: readonly IssueRecord[], filters: IssueFilte
     if (filters.entrance && (!issue.place || isOutdoorZone(issue.place.zone) || issue.place.entrance !== Number(filters.entrance))) return false;
     if (filters.floor && (!issue.place || isOutdoorZone(issue.place.zone) || issue.place.floor !== Number(filters.floor))) return false;
     if (filters.zone && issue.place?.zone !== filters.zone) return false;
-    return !query || `${issue.title} ${issue.description} ${issue.location}`.toLocaleLowerCase("ru").includes(query);
+    return !query || `${issue.title} ${issue.description} ${issue.location} ${reportCategoryLabel(issue.place, issue.category)}`.toLocaleLowerCase("ru").includes(query);
   }).sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
 }

@@ -9,6 +9,25 @@ import { filterIssues, initialIssueFilters } from '../src/entities/issue/model/i
 const place = zone => ({ houseId: '1', entrance: 1, floor: 1, zone });
 const values = zone => categoriesForPlace(place(zone)).map(item => item.value);
 
+test('saved issues use the same specific category names as the creation form', () => {
+  assert.equal(reportCategoryLabel(place('courtyard'), 'Двор'), 'Благоустройство');
+  assert.equal(reportCategoryLabel(place('courtyard'), 'Мусор'), 'Уборка и мусор');
+  assert.equal(reportCategoryLabel(place('courtyard'), 'Электричество'), 'Уличное освещение');
+  assert.equal(reportCategoryLabel(place('courtyard'), 'Водоснабжение'), 'Вода и ливнёвка');
+  assert.equal(reportCategoryLabel(place('corridor'), 'Водоснабжение'), 'Вода и протечки');
+  assert.equal(reportCategoryLabel(place('apartment'), 'Водоснабжение'), 'Вода и канализация');
+  assert.equal(reportCategoryLabel(place('entrance'), 'Подъезд'), 'Двери и общие зоны');
+  assert.equal(reportCategoryLabel(undefined, 'Водоснабжение'), 'Водоснабжение');
+  assert.equal(reportCategoryLabel(place('corridor'), 'Старая категория'), 'Старая категория');
+});
+
+test('search finds the subcategory displayed on a saved issue without changing its filter value', () => {
+  const issue = { id: '1', title: 'Скамейка', description: 'Сломана доска', location: 'Двор', category: 'Двор', place: place('courtyard'), createdAt: '2026-10-24T07:00:00Z', status: 'new' };
+  assert.deepEqual(filterIssues([issue], { ...initialIssueFilters, query: 'благоустройство' }), [issue]);
+  assert.deepEqual(filterIssues([issue], { ...initialIssueFilters, category: 'Двор' }), [issue]);
+  assert.equal(issue.category, 'Двор');
+});
+
 test('visibility hints follow the selected place and entrance', () => {
   assert.match(reportVisibilityLabel(place('apartment')), /только вы и сотрудники/);
   for (const zone of ['courtyard', 'parking', 'house']) {

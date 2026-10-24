@@ -53,8 +53,8 @@ export function categoriesForPlace(place: Pick<HouseLocation, "zone">) {
   return categoriesByZone[place.zone];
 }
 
-export function reportCategoryLabel(place: Pick<HouseLocation, "zone">, category: string) {
-  return categoriesForPlace(place).find(item => item.value === category)?.label ?? category;
+export function reportCategoryLabel(place: Pick<HouseLocation, "zone"> | undefined, category: string) {
+  return place ? categoriesForPlace(place).find(item => item.value === category)?.label ?? category : category;
 }
 
 export function reportVisibilityLabel(place: HouseLocation): string {

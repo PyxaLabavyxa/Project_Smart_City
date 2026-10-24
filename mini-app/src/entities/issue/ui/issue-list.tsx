@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { type IssueRecord } from "../model/issue";
+import { reportCategoryLabel } from "../model/report-categories";
 import { IssueStatus } from "./issue-status";
 import { IssueCategoryIcon } from "./issue-category-icon";
 import styles from "./issue-list.module.css";
@@ -12,7 +13,7 @@ export function IssueList({ issues, wide = false, compact = false }: { issues: r
               <div className={styles.body}>
                 <h2>{issue.title}</h2>
                 <p className={styles.location}>{issue.location}</p>
-                <p className={styles.category}>{issue.category}</p>
+                <p className={styles.category}>{reportCategoryLabel(issue.place, issue.category)}</p>
                 <div className={styles.state}>
                   <IssueStatus status={issue.status} />
                   {issue.priority === "high" && <span className={styles.priority}>Высокий приоритет</span>}
