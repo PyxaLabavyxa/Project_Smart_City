@@ -4,4 +4,4 @@
 .accepted, .completed { color: var(--color-success); background: var(--color-success-bg); }
 .in-progress { color: var(--color-warning); background: var(--color-warning-bg); }
 
-.badge { font-size:calc(14 * var(--u)); font-weight:400; border-radius:calc(10 * var(--u)); padding:calc(7 * var(--u)) calc(12 * var(--u)); white-space:nowrap; line-height:1.2; }
+.badge { flex-shrink:0; justify-content:center; width:calc(92 * var(--u)); height:calc(30 * var(--u)); font-size:calc(14 * var(--u)); font-weight:400; border-radius:calc(10 * var(--u)); padding:0 calc(8 * var(--u)); white-space:nowrap; line-height:1.2; }
