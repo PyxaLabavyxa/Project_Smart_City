@@ -29,6 +29,16 @@ def callback_event():
     )
 
 
+def test_rejected_issue_notification_keeps_menu_without_unavailable_issue_link():
+    from chatbot.services.staff_notifications import reply_keyboard
+
+    rows = reply_keyboard(75, rejected=True).payload.buttons
+    assert len(rows) == 2
+    assert rows[0][0].web_app
+    assert rows[1][0].payload == "open_main_menu"
+    assert all(getattr(button, "url", None) is None for row in rows for button in row)
+
+
 @pytest.mark.parametrize("after_house_choice", [False, True])
 def test_last_issue_button_can_start_a_conversation_before_staff_reply(
     staff_api, after_house_choice

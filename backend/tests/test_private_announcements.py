@@ -13,6 +13,7 @@ from tests.test_staff import ROOT, login
 
 from app.database.models import AnnouncementPrivateDelivery, House, User, UserApartment
 from chatbot.middlewares.private_dialog import PrivateDialogMiddleware, record_dialog
+from chatbot.keyboards.inline import inl_notification
 from chatbot.services.house_chat_delivery import process_private_announcement
 
 pytest_plugins = ["tests.test_api", "tests.test_staff"]
@@ -92,7 +93,10 @@ def test_private_draft_freezes_deduplicated_eligible_recipients(staff_api):
         + BODY["text"],
         parse_mode=ParseMode.HTML,
         notify=True,
+        attachments=[inl_notification()],
     )
+    buttons = bot.send_message.call_args.kwargs["attachments"][0].payload.buttons
+    assert buttons[-1][0].payload == "open_main_menu"
 
 
 def test_one_selected_resident_is_not_a_house_broadcast(staff_api):

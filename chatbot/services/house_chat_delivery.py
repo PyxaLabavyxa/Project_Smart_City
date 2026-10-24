@@ -27,7 +27,7 @@ from app.database.models import (
 from app.services.announcement_audience import residents, unavailable_reason
 from app.services.house_chats import normalize_chat_link
 from app.services.planned_works import announcement_message
-from chatbot.keyboards.inline import mini_app_username
+from chatbot.keyboards.inline import inl_notification, mini_app_username
 
 logger = logging.getLogger(__name__)
 WELCOME_IMAGE = Path(__file__).resolve().parents[1] / "assets" / "welcome-house.png"
@@ -358,6 +358,7 @@ async def process_private_announcement(bot, sessions):
                 user_id=max_id,
                 text=text,
                 notify=True,
+                attachments=[inl_notification()],
                 parse_mode=ParseMode(message_format) if message_format else None,
             )
         )

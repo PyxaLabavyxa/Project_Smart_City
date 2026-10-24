@@ -75,6 +75,10 @@ def test_worker_lease_retry_order_and_no_redelivery(staff_api):
                 button = kwargs["attachments"][0].payload.buttons[0][0]
                 assert button.url.endswith("?startapp=issue_1")
                 assert kwargs["attachments"][0].payload.buttons[1][0].web_app
+                assert (
+                    kwargs["attachments"][0].payload.buttons[2][0].payload
+                    == "open_main_menu"
+                )
                 return object()
 
             bot.send_message.side_effect = sent

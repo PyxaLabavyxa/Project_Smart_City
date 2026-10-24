@@ -80,6 +80,12 @@ async def process_main_menu(event: MessageCreated, context: MemoryContext):
     await event.message.edit(text=LEXICON["bot_start"], attachments=[inl_menu()])
 
 
+@router.message_callback(F.callback.payload == "open_main_menu")
+async def process_notification_main_menu(event: MessageCallback, context: MemoryContext):
+    await context.clear()
+    await event.message.answer(text=LEXICON["bot_start"], attachments=[inl_menu()])
+
+
 @router.message_created(Command("help"))
 async def process_command_help(event: MessageCreated):
     await event.message.answer(text=LEXICON["help"], attachments=[inl_menu()])

@@ -42,6 +42,19 @@ def inl_mini_app():
     return builder.as_markup()
 
 
+def inl_notification(*, issue_id: int | None = None):
+    builder = InlineKeyboardBuilder()
+    if issue_id is not None:
+        builder.add(issue_app_button(issue_id))
+        builder.row(mini_app_button())
+    else:
+        builder.add(mini_app_button())
+    builder.row(
+        CallbackButton(text=LEXICON["back_to_menu"], payload="open_main_menu")
+    )
+    return builder.as_markup()
+
+
 def inl_menu() -> AttachmentType.INLINE_KEYBOARD:
     builder = InlineKeyboardBuilder()
 

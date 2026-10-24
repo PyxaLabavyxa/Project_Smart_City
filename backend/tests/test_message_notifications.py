@@ -85,6 +85,9 @@ def test_worker_retries_outage_and_does_not_redeliver_success(api):
             assert bot.send_message.call_count == 2
             assert bot.send_message.call_args.kwargs["user_id"] == 102
             assert "квартиры 7" in bot.send_message.call_args.kwargs["text"]
+            buttons = bot.send_message.call_args.kwargs["attachments"][0].payload.buttons
+            assert buttons[0][0].web_app
+            assert buttons[1][0].payload == "open_main_menu"
             with Session(engine) as session:
                 assert session.scalar(select(MessageNotification)).sent_at is not None
         finally:

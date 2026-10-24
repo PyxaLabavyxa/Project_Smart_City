@@ -4,7 +4,6 @@ from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 from maxapi.types.errors import Error
-from maxapi.utils.inline_keyboard import InlineKeyboardBuilder
 from sqlalchemy import exists, or_, select, update
 
 from app.database.models import (
@@ -18,19 +17,13 @@ from app.database.models import (
 )
 from app.database.notification_preferences import notification_enabled
 from app.database.session import session_factory
-from chatbot.keyboards.inline import issue_app_button, mini_app_button
+from chatbot.keyboards.inline import inl_notification
 
 logger = logging.getLogger(__name__)
 
 
 def reply_keyboard(issue_id: int, *, rejected: bool = False):
-    builder = InlineKeyboardBuilder()
-    if not rejected:
-        builder.add(issue_app_button(issue_id))
-        builder.row(mini_app_button())
-    else:
-        builder.add(mini_app_button())
-    return builder.as_markup()
+    return inl_notification(issue_id=None if rejected else issue_id)
 
 
 def active_chat(now):

@@ -16,7 +16,7 @@ from app.database.models import (
 )
 from app.database.notification_preferences import notification_enabled
 from app.database.session import session_factory
-from chatbot.keyboards.inline import inl_mini_app
+from chatbot.keyboards.inline import inl_notification
 
 logger = logging.getLogger(__name__)
 
@@ -78,7 +78,7 @@ async def deliver_pending(bot, sessions=session_factory):
                     bot.send_message(
                         user_id=notification.max_user_id,
                         notify=True,
-                        attachments=[inl_mini_app()],
+                        attachments=[inl_notification()],
                         text=(
                             f"Новое сообщение от квартиры {sender.number}\n"
                             f"{house.address} · для квартиры {recipient.number}\n\n"

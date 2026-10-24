@@ -36,6 +36,10 @@ not opened the bot; the existing restrictions still apply to private MAX message
 House chat automation remains limited to the pinned menu and explicit announcements. New issues,
 status changes and private conversations are never posted to the house group by this feature.
 
+Private bot notifications for issue updates/replies, apartment messages and announcements include
+a separate “Главное меню” button. It sends a new main menu message, preserving the notification
+and its links. Navigation inside an unfinished bot report continues to edit its existing message.
+
 ## Presence and delivery states
 
 Inbox rows are inserted in the domain event transaction, independently of bot delivery,

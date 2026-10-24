@@ -124,7 +124,9 @@ class RegistrationAccessTests(unittest.IsolatedAsyncioTestCase):
         events = [self.event(text="/help")]
         events.extend(
             self.event(payload=payload)
-            for payload in ("back_to_menu", "send_report", "my_issues", "staff_reply_1")
+            for payload in (
+                "back_to_menu", "open_main_menu", "send_report", "my_issues", "staff_reply_1"
+            )
         )
         for event in events:
             with self.subTest(
@@ -232,6 +234,24 @@ class RegistrationAccessTests(unittest.IsolatedAsyncioTestCase):
         await self.dispatcher.handle(event)
         self.assert_registration_prompt(event)
         event.bot.edit_message.assert_not_awaited()
+
+    async def test_notification_menu_sends_new_message_and_keeps_notification(self):
+        await self.link_apartment()
+        await self.dispatcher.handle(self.event(payload="send_report"))
+        context = self.dispatcher.contexts[0]
+        self.assertEqual(await context.get_state(), FSMReport.waiting)
+        event = self.event(payload="open_main_menu")
+        for _ in range(2):
+            await self.dispatcher.handle(event)
+        self.assertEqual(event.message.answer.await_count, 2)
+        self.assertEqual(event.message.answer.call_args.kwargs["text"], LEXICON["bot_start"])
+        self.assertEqual(
+            self.payloads(event.message.answer.call_args), {"send_report", "my_issues"}
+        )
+        event.message.edit.assert_not_awaited()
+        event.bot.edit_message.assert_not_awaited()
+        self.assertIsNone(await context.get_state())
+        self.assertEqual(await context.get_data(), {})
 
     async def test_unknown_user_is_sent_to_start(self):
         event = self.event(max_id=999)
