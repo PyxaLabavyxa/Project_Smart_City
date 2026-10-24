@@ -8,11 +8,11 @@
   <title>Кабинет сотрудника · Домовед</title>
   <link rel="icon" href="/staff/assets/domoved-symbol.png" type="image/png">
   <link rel="preload" href="/staff/assets/onest-regular.ttf" as="font" type="font/ttf" crossorigin>
-  <link rel="stylesheet" href="/staff/style.css?v=20261023-small-fixes-1">
+  <link rel="stylesheet" href="/staff/style.css?v=20261024-status-overview-1">
   <link rel="stylesheet" href="/staff/camera-management.css?v=20261023-review-fixes-1">
   <link rel="stylesheet" href="/staff/contacts-management.css?v=20261022-contact-patch-1">
   <script src="/staff/confirmation.js?v=20261021-motion-4" defer></script>
-  <script src="/staff/app.js?v=20261023-small-fixes-1" defer></script>
+  <script src="/staff/app.js?v=20261024-status-overview-2" defer></script>
   <link rel="stylesheet" href="/staff/notification-inbox.css?v=20261022-4">
   <script src="/staff/notification-inbox.js?v=20261022-2" defer></script>
   <link rel="stylesheet" href="/staff/staff-report.css?v=20261022-motion-1">
@@ -63,19 +63,39 @@
       <div id="issues-section" class="content">
         <div class="page-heading"><div><span class="eyebrow">ВАШ ДОМ ПОД ПРИСМОТРОМ</span><h1>Обращения жителей</h1><p class="muted">Помогайте с важным. Будьте рядом в деталях.</p></div><div class="issue-heading-actions"><button id="refresh" class="secondary"><span data-icon="refresh" aria-hidden="true"></span> Обновить</button><button id="new-staff-report" class="primary"><span data-icon="plus" aria-hidden="true"></span>Создать обращение</button></div></div>
         <div id="no-houses" class="notice" hidden>Пока вам не назначены дома. Попросите администратора добавить доступ.</div>
-        <section class="stats" aria-label="Статистика обращений">
-          <button class="stat selected" data-status="" aria-pressed="true"><span class="stat-label">Все обращения</span><span class="stat-icon" data-icon="inbox" aria-hidden="true"></span><strong id="count-all">—</strong><small>В ваших домах</small></button>
-          <button class="stat" data-status="new" aria-pressed="false"><span class="stat-label">Новые</span><span class="stat-icon blue" data-icon="message" aria-hidden="true"></span><strong id="count-new">—</strong><small>Ждут вашего внимания</small></button>
-          <button class="stat" data-status="in_progress" aria-pressed="false"><span class="stat-label">В работе</span><span class="stat-icon warm" data-icon="tool" aria-hidden="true"></span><strong id="count-progress">—</strong><small>Становимся ближе к решению</small></button>
-          <button class="stat" data-status="resolved" aria-pressed="false"><span class="stat-label">Решены</span><span class="stat-icon mint" data-icon="check-circle" aria-hidden="true"></span><strong id="count-resolved">—</strong><small>Спасибо за вашу заботу</small></button>
+        <section class="status-overview" aria-label="Статусы обращений">
+          <div id="issue-status-tabs" class="status-options" role="group" aria-label="Фильтр обращений по статусу">
+            <button class="status-option selected" type="button" data-status="" aria-pressed="true" aria-controls="issues-body"><span class="status-symbol" data-icon="inbox" aria-hidden="true"></span><span class="status-label">Все обращения</span><strong id="count-all" class="status-count">—</strong></button>
+            <button class="status-option" type="button" data-status="new" aria-pressed="false" aria-controls="issues-body"><span class="status-symbol" data-icon="message" aria-hidden="true"></span><span class="status-label">Новые</span><strong id="count-new" class="status-count">—</strong></button>
+            <button class="status-option" type="button" data-status="accepted" aria-pressed="false" aria-controls="issues-body"><span class="status-symbol" data-icon="inbox-in" aria-hidden="true"></span><span class="status-label">Принято</span><strong id="count-accepted" class="status-count">—</strong></button>
+            <button class="status-option" type="button" data-status="assigned" aria-pressed="false" aria-controls="issues-body"><span class="status-symbol" data-icon="users" aria-hidden="true"></span><span class="status-label">Назначен исполнитель</span><strong id="count-assigned" class="status-count">—</strong></button>
+            <button class="status-option" type="button" data-status="in_progress" aria-pressed="false" aria-controls="issues-body"><span class="status-symbol" data-icon="tool" aria-hidden="true"></span><span class="status-label">В работе</span><strong id="count-progress" class="status-count">—</strong></button>
+            <button class="status-option" type="button" data-status="resolved" aria-pressed="false" aria-controls="issues-body"><span class="status-symbol" data-icon="check-circle" aria-hidden="true"></span><span class="status-label">Решены</span><strong id="count-resolved" class="status-count">—</strong></button>
+          </div>
+          <p class="status-overview-hint">Выберите статус, чтобы отфильтровать обращения</p>
         </section>
         <section class="inbox" aria-label="Список обращений">
-          <div class="inbox-heading"><div><h2><span id="list-title">Все обращения</span> <span id="total-label" class="count-pill">0</span></h2><p>Каждое обращение — возможность сделать дом лучше</p></div><span class="table-caption"><span data-icon="clock" aria-hidden="true"></span> Сначала новые</span></div>
-          <div class="filters"><label class="search-field"><span data-icon="search" aria-hidden="true"></span><span class="sr-only">Поиск по номеру, заголовку или описанию</span><input id="search" type="search" placeholder="Найти обращение" maxlength="200"></label><label><span class="sr-only">Статус обращения</span><select id="status-filter"><option value="">Все статусы</option><option value="new">Новое</option><option value="accepted">Принято</option><option value="assigned">Назначен исполнитель</option><option value="in_progress">В работе</option><option value="resolved">Решённые</option></select></label><label><span class="sr-only">Дом</span><select id="house-filter"><option value="">Все дома</option></select></label><label><span class="sr-only">Приоритет</span><select id="priority-filter"><option value="">Любой приоритет</option><option value="1">Высокий приоритет</option><option value="2">Средний приоритет</option><option value="3">Низкий приоритет</option></select></label></div>
+          <div class="issue-list-toolbar">
+            <div class="inbox-heading"><h2><span id="list-title">Все обращения</span> <span id="total-label" class="count-pill">0</span></h2></div>
+            <div class="filters"><label class="search-field"><span data-icon="search" aria-hidden="true"></span><span class="sr-only">Поиск по номеру, заголовку или описанию</span><input id="search" type="search" placeholder="Найти обращение" maxlength="200"></label><label class="select-field"><span data-icon="building" aria-hidden="true"></span><span class="sr-only">Дом</span><select id="house-filter"><option value="">Все дома</option></select></label><label class="select-field"><span data-icon="filter" aria-hidden="true"></span><span class="sr-only">Приоритет</span><select id="priority-filter"><option value="">Приоритет</option><option value="1">Высокий приоритет</option><option value="2">Средний приоритет</option><option value="3">Низкий приоритет</option></select></label></div>
+          </div>
           <p id="list-error" class="error list-error" role="alert" hidden></p>
           <div class="table-scroll"><table><thead><tr><th scope="col">Обращение</th><th scope="col">Дом / автор</th><th scope="col">Приоритет</th><th scope="col">Статус</th><th scope="col">Получено</th><th scope="col"><span class="sr-only">Открыть</span></th></tr></thead><tbody id="issues-body"></tbody></table></div>
           <div id="empty" class="empty" hidden><span data-icon="check-circle" aria-hidden="true"></span><h3>Здесь пока тихо</h3><p>Обращения жителей появятся автоматически.<br>Если включены фильтры, попробуйте их изменить.</p></div>
-          <footer class="pagination"><span id="page-label" role="status">Загружаем обращения…</span><div><button id="prev-page" class="secondary" aria-label="Предыдущая страница" disabled>Назад</button><button id="next-page" class="secondary" aria-label="Следующая страница" disabled>Далее</button></div></footer>
+          <footer class="pagination issue-pagination">
+            <span id="page-label" role="status">Загружаем обращения…</span>
+            <div class="issue-pagination-actions">
+              <nav id="issue-pagination" class="pagination-controls" aria-label="Страницы обращений" hidden>
+                <button id="prev-page" type="button" class="secondary" aria-label="Предыдущая страница" disabled>Назад</button>
+                <span id="issue-page-numbers" class="page-numbers"></span>
+                <button id="next-page" type="button" class="secondary" aria-label="Следующая страница" disabled>Далее</button>
+              </nav>
+              <form id="issue-page-jump" class="page-jump" hidden>
+                <label for="issue-page-input">Страница</label><input id="issue-page-input" type="number" min="1" step="1" inputmode="numeric" required aria-label="Номер страницы обращений">
+                <button type="submit" class="secondary">Перейти</button>
+              </form>
+            </div>
+          </footer>
         </section>
         <footer class="workspace-footer"><span>Домовед · кабинет сотрудника</span><span>Данные обновляются каждые 20 секунд</span></footer>
       </div>

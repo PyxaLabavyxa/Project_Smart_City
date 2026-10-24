@@ -14,6 +14,7 @@ const categories = {
 const zones = { apartment: "Квартира", corridor: "Коридор", elevator: "Лифт", stairs: "Лестница", entrance: "Входная группа", courtyard: "Двор", parking: "Парковка", house: "Общая территория дома", technical: "Техническая зона", yard: "Двор", roof: "Крыша", basement: "Подвал" };
 const iconPaths = {
   inbox: '<path d="M5 3h14v18H5zM8 7h8M8 11h8M8 15h5"/>',
+  "inbox-in": '<path d="M12 3v9m-3-3 3 3 3-3M5 11l-2 5v5h18v-5l-2-5M3 16h5l2 3h4l2-3h5"/>',
   users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/><circle cx="9" cy="7" r="4"/>',
   phone: '<path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.79 19.79 0 0 1 11.19 19a19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-2.91-8.67A2 2 0 0 1 4.27 2.14h3a2 2 0 0 1 2 1.72c.12.96.35 1.9.69 2.79a2 2 0 0 1-.45 2.11L8.24 10a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.89.34 1.83.57 2.79.69A2 2 0 0 1 22 16.92z"/>',
   message: '<path d="M21 15a3 3 0 0 1-3 3H8l-5 4V6a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3zM7 8h10M7 12h6"/>',
@@ -21,6 +22,7 @@ const iconPaths = {
   refresh: '<path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1.01 6.74 2.82L21 8"/><path d="M21 3v5h-5"/>',
   grid: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
   list: '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
+  filter: '<path d="M4 7h16M7 12h10M10 17h4"/>',
   camera: '<rect x="3" y="5" width="13" height="14" rx="3"/><path d="m16 10 5-3v10l-5-3z"/>',
   search: '<circle cx="10.5" cy="10.5" r="7.5"/><path d="m16 16 5 5"/>',
   tool: '<path d="M14.7 6.3a5 5 0 0 0-6.3 6.3l-5.7 5.7a2.1 2.1 0 0 0 3 3l5.7-5.7a5 5 0 0 0 6.3-6.3l-3 3-3-3z"/>',
@@ -46,7 +48,7 @@ function icon(name) {
 }
 document.querySelectorAll("[data-icon]").forEach(node => { node.innerHTML = icon(node.dataset.icon); });
 const categoryIcons = { water: "water", heating: "bulb", electricity: "bulb", elevator: "elevator", entrance: "door", yard: "tree", garbage: "trash", security: "shield", other: "tool" };
-const state = { profile: null, status: "", page: 1, total: 0, detail: null, listRequest: 0, detailRequest: 0, busy: false };
+const state = { profile: null, status: "", page: 1, loadedPage: 1, listLoading: false, total: 0, detail: null, listRequest: 0, detailRequest: 0, busy: false };
 const contactState = { request: 0, house: "", loaded: false, dirty: false, loading: false, saving: false };
 let searchTimer, toastTimer, messageAction, statusAction, rejectionAction;
 const replyDrafts = new Map();
@@ -107,6 +109,7 @@ function showLogin() {
   window.resetChatManagement?.();
   window.resetStaffInbox?.();
   state.profile = null; state.detail = null; state.listRequest++; state.detailRequest++;
+  state.page = state.loadedPage = 1; state.total = 0; state.listLoading = false; renderIssuePagination();
   $("issue-dialog").close(); $("photo-dialog").close();
   $("full-photo").removeAttribute("src"); $("detail-content").replaceChildren();
   $("registrations-body").replaceChildren();
@@ -136,7 +139,8 @@ async function api(path, options = {}) {
   return response.status === 204 ? null : response.json();
 }
 async function enterWorkspace() {
-  state.profile = await api("/me"); state.page = 1; state.status = "";
+  state.profile = await api("/me"); state.page = state.loadedPage = 1; state.total = 0; state.status = "";
+  document.querySelectorAll(".status-count").forEach(count => { count.textContent = "—"; });
   $("staff-name").textContent = state.profile.name;
   $("avatar").textContent = state.profile.name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
   $("house-filter").innerHTML = '<option value="">Все дома</option>' + state.profile.houses.map((house) => `<option value="${house.id}">${esc(house.address)}</option>`).join("");
@@ -160,27 +164,64 @@ async function enterWorkspace() {
 }
 function updateStatSelection() {
   $("list-title").textContent = { "": "Все обращения", new: "Новые обращения", accepted: "Принятые обращения", assigned: "Назначен исполнитель", in_progress: "Обращения в работе", resolved: "Решённые обращения" }[state.status];
-  $("status-filter").value = state.status;
-  document.querySelectorAll(".stat").forEach((button) => {
+  document.querySelectorAll("#issue-status-tabs [data-status]").forEach((button) => {
     const selected = button.dataset.status === state.status;
     button.classList.toggle("selected", selected); button.setAttribute("aria-pressed", String(selected));
   });
 }
 function badge(status) { return `<span class="badge ${esc(status)}"><i class="status-dot ${esc(status)}"></i>${esc(statuses[status] || status)}</span>`; }
+function renderIssuePagination() {
+  const totalPages = Math.ceil(state.total / issuePageSize), current = state.loadedPage;
+  const pages = new Set([1, totalPages]);
+  if (totalPages <= 7) for (let page = 1; page <= totalPages; page++) pages.add(page);
+  else {
+    for (let page = current - 1; page <= current + 1; page++) pages.add(page);
+    if (current <= 4) for (let page = 1; page <= 5; page++) pages.add(page);
+    if (current >= totalPages - 3) for (let page = totalPages - 4; page <= totalPages; page++) pages.add(page);
+  }
+  const buttons = [], ordered = [...pages].filter(page => page >= 1 && page <= totalPages).sort((a, b) => a - b);
+  let previous = 0;
+  function pageButton(page) {
+    return `<button type="button" class="secondary page-number" data-issue-page="${page}" aria-label="Страница ${page}"${page === current ? ' aria-current="page"' : ""}${state.listLoading ? " disabled" : ""}>${page}</button>`;
+  }
+  for (const page of ordered) {
+    if (page - previous === 2) buttons.push(pageButton(previous + 1));
+    else if (previous && page - previous > 2) buttons.push('<span class="page-ellipsis" aria-hidden="true">…</span>');
+    buttons.push(pageButton(page)); previous = page;
+  }
+  $("issue-page-numbers").innerHTML = buttons.join("");
+  $("issue-pagination").hidden = totalPages === 0;
+  $("issue-pagination").setAttribute("aria-busy", String(state.listLoading));
+  $("prev-page").disabled = state.listLoading || current <= 1;
+  $("next-page").disabled = state.listLoading || current >= totalPages;
+  $("issue-page-jump").hidden = totalPages <= 7;
+  $("issue-page-input").max = Math.max(1, totalPages);
+  if (document.activeElement !== $("issue-page-input")) $("issue-page-input").value = current;
+  $("issue-page-input").disabled = state.listLoading;
+  $("issue-page-jump").querySelector("button").disabled = state.listLoading;
+}
+async function goToIssuePage(page) {
+  if (state.listLoading || !Number.isInteger(page) || page < 1 || page > Math.ceil(state.total / issuePageSize) || page === state.loadedPage) return;
+  state.page = page;
+  await loadList();
+  if (state.profile) $("issue-page-numbers").querySelector('[aria-current="page"]')?.focus({ preventScroll: true });
+}
 async function loadList() {
   if (!state.profile) return;
   const request = ++state.listRequest;
   const params = new URLSearchParams({ page: state.page, page_size: issuePageSize });
   for (const [key, value] of Object.entries({ status: state.status, house_id: $("house-filter").value, priority: $("priority-filter").value, q: $("search").value.trim() })) if (value) params.set(key, value);
   $("refresh").disabled = true;
+  state.listLoading = true; renderIssuePagination();
   try {
     const data = await api(`/issues?${params}`);
     if (request !== state.listRequest || !state.profile) return;
     showError("list-error", ""); state.total = data.total;
     if (state.page > 1 && (state.page - 1) * issuePageSize >= data.total) { state.page = Math.max(1, Math.ceil(data.total / issuePageSize)); return loadList(); }
     $("count-all").textContent = Object.values(data.counts).reduce((a, b) => a + b, 0);
-    $("count-new").textContent = data.counts.new; $("count-progress").textContent = data.counts.in_progress;
-    $("count-resolved").textContent = data.counts.resolved; $("nav-count").textContent = data.counts.new;
+    const countIds = { new: "count-new", accepted: "count-accepted", assigned: "count-assigned", in_progress: "count-progress", resolved: "count-resolved" };
+    for (const [status, id] of Object.entries(countIds)) $(id).textContent = data.counts[status] ?? 0;
+    $("nav-count").textContent = data.counts.new;
     $("total-label").textContent = data.total;
     $("issues-body").innerHTML = data.items.map((issue) => `<tr>
       <td><div class="issue-summary"><span class="category-icon ${esc(issue.category)}">${icon(categoryIcons[issue.category])}</span><div><button class="issue-title" data-open="${issue.id}">${esc(issue.title)}</button><span class="row-meta">№ ${issue.id} · ${esc(categories[issue.category])}${issue.photo_count ? ` · Фото: ${issue.photo_count}` : ""}</span></div></div></td>
@@ -189,14 +230,15 @@ async function loadList() {
       <td class="status-cell">${badge(issue.status)}</td><td class="date-cell">${esc(date(issue.created_at, true))}</td>
       <td class="open-cell"><button class="row-open" data-open="${issue.id}" aria-label="Открыть обращение №${issue.id}">Открыть</button></td></tr>`).join("");
     $("empty").hidden = data.total !== 0;
-    $("prev-page").disabled = state.page <= 1; $("next-page").disabled = state.page * issuePageSize >= data.total;
-    $("page-label").textContent = data.total ? `${(state.page - 1) * issuePageSize + 1}–${Math.min(state.page * issuePageSize, data.total)} из ${data.total} обращений` : "Нет обращений";
+    state.loadedPage = state.page;
+    $("page-label").textContent = data.total ? `${(state.page - 1) * issuePageSize + 1}–${Math.min(state.page * issuePageSize, data.total)} из ${data.total} обращений · Страница ${state.page} из ${Math.ceil(data.total / issuePageSize)}` : "Нет обращений";
     $("sync-label").textContent = `Обновлено ${new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}`;
   } catch (error) {
     if (request !== state.listRequest) return;
+    state.page = state.loadedPage;
     showError("list-error", error.message); $("sync-label").textContent = "Нет обновлений";
     $("page-label").textContent = "Не удалось обновить список";
-  } finally { if (request === state.listRequest) $("refresh").disabled = false; }
+  } finally { if (request === state.listRequest) { $("refresh").disabled = false; state.listLoading = false; renderIssuePagination(); } }
 }
 function renderConversation(detail) {
   if (!$("conversation")) return;
@@ -360,16 +402,18 @@ $("refresh-detail").addEventListener("click", async () => {
   await openDetail(state.detail.id);
   if ($("reject-reason")) $("reject-reason").value = reason;
 });
-document.querySelectorAll(".stat").forEach((button) => button.addEventListener("click", () => {
+document.querySelectorAll("#issue-status-tabs [data-status]").forEach((button) => button.addEventListener("click", () => {
   state.status = button.dataset.status; state.page = 1; updateStatSelection(); loadList();
 }));
 for (const id of ["house-filter", "priority-filter"]) $(id).addEventListener("change", () => { state.page = 1; loadList(); });
-$("status-filter").addEventListener("change", () => {
-  state.status = $("status-filter").value; state.page = 1; updateStatSelection(); loadList();
-});
 $("search").addEventListener("input", () => { clearTimeout(searchTimer); searchTimer = setTimeout(() => { state.page = 1; loadList(); }, 300); });
-$("prev-page").addEventListener("click", () => { if (state.page > 1) { state.page--; loadList(); } });
-$("next-page").addEventListener("click", () => { if (state.page * issuePageSize < state.total) { state.page++; loadList(); } });
+$("prev-page").addEventListener("click", () => { void goToIssuePage(state.loadedPage - 1); });
+$("next-page").addEventListener("click", () => { void goToIssuePage(state.loadedPage + 1); });
+$("issue-page-numbers").addEventListener("click", event => {
+  const button = event.target.closest("[data-issue-page]");
+  if (button) void goToIssuePage(Number(button.dataset.issuePage));
+});
+$("issue-page-jump").addEventListener("submit", event => { event.preventDefault(); void goToIssuePage(Number($("issue-page-input").value)); });
 $("issues-body").addEventListener("click", (event) => { const button = event.target.closest("[data-open]"); if (button) openDetail(Number(button.dataset.open)); });
 $("close-detail").addEventListener("click", () => { if (!state.busy) $("issue-dialog").close(); });
 $("issue-dialog").addEventListener("cancel", (event) => { if (state.busy) event.preventDefault(); });
@@ -386,7 +430,7 @@ setInterval(async () => {
   if (!state.profile || document.hidden || state.busy || confirmationDialog.open || $("staff-camera-form-dialog").open || $("staff-camera-view-dialog").open || $("camera-action-menu").matches(":popover-open")) return;
   if (window.location.hash === "#registrations") await loadRegistrations();
   else if (window.location.hash === "#cameras") await loadCameras();
-  else if (window.location.hash !== "#contacts") await loadList();
+  else if (window.location.hash !== "#contacts" && !state.listLoading) await loadList();
   const id = state.detail?.id;
   if (id && $("issue-dialog").open) {
     try { const detail = await api(`/issues/${id}`); if (state.detail?.id === id && !state.busy) renderConversation(detail); }
