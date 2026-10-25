@@ -71,6 +71,28 @@ def test_materials_are_valid_and_match_documented_application_routes():
     # Preserve its operations and fields, allowing new routes and optional response fields.
     for path, operations in public_contract["paths"].items():
         for method, operation in operations.items():
+            if path == "/api/v1/houses/{house_id}/issues" and method == "get":
+                current_operation = json.loads(json.dumps(contract["paths"][path][method]))
+                parameters = current_operation["parameters"]
+                assert [p for p in parameters if p["name"] == "apartment_id"] == [
+                    {
+                        "name": "apartment_id",
+                        "in": "query",
+                        "required": False,
+                        "schema": {
+                            "anyOf": [
+                                {"type": "integer", "exclusiveMinimum": 0},
+                                {"type": "null"},
+                            ],
+                            "title": "Apartment Id",
+                        },
+                    }
+                ]
+                current_operation["parameters"] = [
+                    p for p in parameters if p["name"] != "apartment_id"
+                ]
+                assert current_operation == operation
+                continue
             if path == "/api/v1/cameras/{camera_id}/settings" and method == "post":
                 # Compatible extension: accept metadata alone as well as the deployed full edit.
                 current_operation = json.loads(json.dumps(contract["paths"][path][method]))

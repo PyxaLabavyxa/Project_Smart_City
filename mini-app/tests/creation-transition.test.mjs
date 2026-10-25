@@ -5,12 +5,13 @@ import { createRequire } from 'node:module';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import ts from 'typescript';
+import { notificationReturn } from '../src/features/notifications/notification-route.ts';
 const require = createRequire(import.meta.url);
 const source = readFileSync(new URL('../src/widgets/application-shell/ui/application-shell.tsx', import.meta.url), 'utf8');
 const compiled = ts.transpileModule(source, { compilerOptions: { jsx: ts.JsxEmit.ReactJSX, module: ts.ModuleKind.CommonJS } }).outputText;
-function render(pathname, { created = '11', houseId = '1' } = {}) {
+function render(pathname, { created = '11', houseId = '1', search = '' } = {}) {
   const imports = {
-    'next/navigation': { usePathname: () => pathname },
+    'next/navigation': { usePathname: () => pathname, useSearchParams: () => new URLSearchParams(search) },
     'next/link': { __esModule: true, default: ({ children, prefetch, ...props }) => { void prefetch; return React.createElement('a', props, children); } },
     './bottom-navigation': { BottomNavigation: () => null },
     './shell.module.css': { __esModule: true, default: {} },
@@ -19,6 +20,7 @@ function render(pathname, { created = '11', houseId = '1' } = {}) {
     '@/shared/ui/icon': { Icon: () => null },
     '@/entities/house/ui/apartments-ready': { ApartmentsReady: ({ children }) => children },
     '@/features/notifications/provider': { NotificationBell: () => null },
+    '@/features/notifications/notification-route': { notificationReturn },
     '@/entities/house': { useHouseSelection: () => ({ house: { id: '1' } }) },
     '@/entities/issue': { useIssues: () => ({ createdIssueId: created, issues: [{ id: '11', place: { houseId } }], dismissCreationNotice() {} }) },
     '@/features/report-issue/ui/issue-created': { IssueCreated: () => React.createElement('p', { 'data-issue-created': true }, 'Confirmed creation') },
@@ -42,4 +44,10 @@ test('creation feedback does not cover other pages, another house or unconfirmed
     assert.doesNotMatch(html, /Confirmed creation/);
     assert.match(html, /Route is loading/);
   }
+});
+
+test('notification header returns to the exact originating conversation', () => {
+  const html = render('/notifications', { search: new URLSearchParams({ returnTo: '/messages/8?from=145' }).toString() });
+  assert.match(html, /href="\/messages\/8\?from=145"/);
+  assert.match(html, />К переписке<\/span>/);
 });

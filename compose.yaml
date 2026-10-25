@@ -39,6 +39,7 @@ services:
     environment:
       <<: *database
       BOT_TOKEN: ${BOT_TOKEN:-}
+      MINI_APP_BOT_USERNAME: ${MINI_APP_BOT_USERNAME:-t282_hakaton_max_bot}
       YANDEX_API_KEY: ${YANDEX_API_KEY:-}
       YANDEX_FOLDER_ID: ${YANDEX_FOLDER_ID:-}
       SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
